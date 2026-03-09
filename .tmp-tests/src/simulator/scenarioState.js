@@ -1,5 +1,8 @@
 export const BASE_SIM_HOURS_PER_SECOND = 0.1;
 export const DEFAULT_SPEED_MULTIPLIER = 1;
+export const DEFAULT_STEP_MATERIAL_COST_PER_UNIT = 0;
+export const DEFAULT_STEP_LABOR_RATE_PER_HOUR = 30;
+export const DEFAULT_STEP_EQUIPMENT_RATE_PER_HOUR = 20;
 export const STEP_FIELDS = [
     "capacityUnits",
     "ctBaseline",
@@ -67,6 +70,22 @@ export function toNumber(value, fallback) {
 export function getSimulationHorizonHours(scenario) {
     return Math.max(8, Math.min(720, Math.round(toNumber(scenario.simulationHorizonHours, 8))));
 }
+export function buildScenarioLibraryStepColumns(stepModels) {
+    return stepModels.flatMap((step) => STEP_FIELDS.map((field) => stepScenarioKey(step.stepId, field)));
+}
+export function buildResolvedStepScenario(stepModels, scenario, defaultsByStepId) {
+    const next = {};
+    stepModels.forEach((step) => {
+        const values = buildInspectorValues(step, scenario, defaultsByStepId?.get(step.stepId));
+        if (!values) {
+            return;
+        }
+        STEP_FIELDS.forEach((field) => {
+            next[stepScenarioKey(step.stepId, field)] = values[field];
+        });
+    });
+    return next;
+}
 export function buildInspectorValues(step, scenario, defaults) {
     if (!step) {
         return null;
@@ -77,8 +96,8 @@ export function buildInspectorValues(step, scenario, defaults) {
         ctMultiplier: Math.max(0.1, toNumber(scenario[stepScenarioKey(step.stepId, "ctMultiplier")], 1)),
         downtimePct: Math.max(0, Math.min(95, toNumber(scenario[stepScenarioKey(step.stepId, "downtimePct")], 0))),
         leadTimeMinutes: Math.max(0, toNumber(scenario[stepScenarioKey(step.stepId, "leadTimeMinutes")], step.leadTimeMinutes ?? 0)),
-        materialCostPerUnit: Math.max(0, toNumber(scenario[stepScenarioKey(step.stepId, "materialCostPerUnit")], defaults?.materialCostPerUnit ?? 0)),
-        laborRatePerHour: Math.max(0, toNumber(scenario[stepScenarioKey(step.stepId, "laborRatePerHour")], defaults?.laborRatePerHour ?? 0)),
-        equipmentRatePerHour: Math.max(0, toNumber(scenario[stepScenarioKey(step.stepId, "equipmentRatePerHour")], defaults?.equipmentRatePerHour ?? 0))
+        materialCostPerUnit: Math.max(0, toNumber(scenario[stepScenarioKey(step.stepId, "materialCostPerUnit")], defaults?.materialCostPerUnit ?? DEFAULT_STEP_MATERIAL_COST_PER_UNIT)),
+        laborRatePerHour: Math.max(0, toNumber(scenario[stepScenarioKey(step.stepId, "laborRatePerHour")], defaults?.laborRatePerHour ?? DEFAULT_STEP_LABOR_RATE_PER_HOUR)),
+        equipmentRatePerHour: Math.max(0, toNumber(scenario[stepScenarioKey(step.stepId, "equipmentRatePerHour")], defaults?.equipmentRatePerHour ?? DEFAULT_STEP_EQUIPMENT_RATE_PER_HOUR))
     };
 }

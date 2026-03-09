@@ -172,7 +172,7 @@ run("scenario step-cost overrides take precedence over master-data defaults", ()
     assert.equal(analysis.summary.materialCostPerUnit, 35);
     assertClose(analysis.summary.laborCostPerUnit, (8 * 10) / 60 + (9 * 6) / 60);
 });
-run("missing selling price and material cost produce blocking validations", () => {
+run("missing selling price blocks analysis while missing costs use app defaults", () => {
     const model = createModel();
     const masterData = {
         ...createMasterData(),
@@ -185,16 +185,16 @@ run("missing selling price and material cost produce blocking validations", () =
                 equipmentType: "cut_station",
                 productKey: "*",
                 materialCostPerUnit: null,
-                laborRatePerHour: 8,
-                equipmentRatePerHour: 3
+                laborRatePerHour: null,
+                equipmentRatePerHour: null
             },
             {
                 stepId: "pack",
                 equipmentType: "pack_station",
                 productKey: "*",
-                materialCostPerUnit: 5,
-                laborRatePerHour: 4,
-                equipmentRatePerHour: 2
+                materialCostPerUnit: null,
+                laborRatePerHour: null,
+                equipmentRatePerHour: null
             }
         ]
     };
@@ -206,7 +206,9 @@ run("missing selling price and material cost produce blocking validations", () =
     const analysis = buildThroughputAnalysis(model, masterData, scenario, output);
     assert.equal(analysis.hasBlockingErrors, true);
     assert.ok(analysis.validations.some((validation) => validation.code === "selling-price-missing"));
-    assert.ok(analysis.validations.some((validation) => validation.code === "material-cost-missing"));
+    assert.equal(analysis.summary.materialCostPerUnit, 0);
+    assert.equal(analysis.summary.laborCostPerUnit, 8);
+    assert.equal(analysis.summary.equipmentCostPerUnit, 5.333333333333333);
 });
 run("profit and loss totals sum known costs and floor transfer-price lots", () => {
     const model = createModel();
@@ -241,8 +243,8 @@ run("profit and loss totals sum known costs and floor transfer-price lots", () =
     assertClose(analysis.profitLossRows[0]?.total ?? null, 100);
     assertClose(analysis.profitLossRows[1]?.total ?? null, 7.5);
     assertClose(analysis.profitLossRows[2]?.total ?? null, ((8 * 10) / 60 + (4 * 6) / 60) * 1.5);
-    assertClose(analysis.profitLossRows[3]?.total ?? null, ((2 * 6) / 60) * 1.5);
-    assertClose(analysis.profitLossRows[4]?.total ?? null, 100 - 7.5 - (((8 * 10) / 60 + (4 * 6) / 60) * 1.5) - (((2 * 6) / 60) * 1.5));
+    assertClose(analysis.profitLossRows[3]?.total ?? null, (((20 * 10) / 60) + ((2 * 6) / 60)) * 1.5);
+    assertClose(analysis.profitLossRows[4]?.total ?? null, 100 - 7.5 - (((8 * 10) / 60 + (4 * 6) / 60) * 1.5) - ((((20 * 10) / 60) + ((2 * 6) / 60)) * 1.5));
 });
 run("CSV builders include the expected summary and step fields", () => {
     const model = createModel();

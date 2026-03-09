@@ -1,16 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { GraphCanvas } from "../components/GraphCanvas";
 import { KpiRow } from "../components/KpiRow";
 import { OperationalDiagnosisCard } from "../components/OperationalDiagnosisCard";
 import { ParameterSidebar } from "../components/ParameterSidebar";
+import { ScenarioLibraryPanel } from "../components/ScenarioLibraryPanel";
 import { StepInspector } from "../components/StepInspector";
 import { ThroughputAnalysisPanel } from "../components/ThroughputAnalysisPanel";
 import { createBottleneckForecastOutput } from "../lib/bottleneckForecast";
-import { exportScenarioBundleToLocalFolder } from "../lib/exportScenarioBundle";
 import {
-  buildOperationalDiagnosis,
-  formatOperationalDiagnosisMarkdown
+  buildOperationalDiagnosis
 } from "../lib/operationalDiagnosis";
 import {
   buildThroughputAnalysis,
@@ -29,11 +28,14 @@ import vsmGraphJson from "../../models/active/vsm_graph.json";
 import dashboardConfigJson from "../../models/dashboard_config.json";
 import {
   bindParameterGroupsToForecast,
+  buildResolvedStepScenario,
+  buildScenarioLibraryStepColumns,
   buildInspectorValues,
   getDefaultScenario,
   type ScenarioState
 } from "./scenarioState";
 import { getExportBundleData, getStartupScenarioOverride } from "./runtimeData";
+import { useScenarioLibrary } from "./useScenarioLibrary";
 import { useScenarioSession } from "./useScenarioSession";
 import "./simulator.css";
 
@@ -82,6 +84,7 @@ function downloadTextFile(fileName: string, contents: string, mimeType = "text/p
 }
 
 export default function SimulatorApp() {
+  const libraryFileInputRef = useRef<HTMLInputElement | null>(null);
   const exportBundleData = useMemo(() => getExportBundleData(), []);
 
   const dashboardConfig = (exportBundleData?.dashboardConfig ?? dashboardConfigJson) as DashboardConfig;
@@ -105,6 +108,10 @@ export default function SimulatorApp() {
     }),
     [boundParameterGroups, forecastModel, startupScenarioOverride]
   );
+  const scenarioLibraryColumns = useMemo(
+    () => buildScenarioLibraryStepColumns(forecastModel.stepModels),
+    [forecastModel.stepModels]
+  );
 
   const {
     committedScenario,
@@ -119,14 +126,33 @@ export default function SimulatorApp() {
     updateScenarioValue,
     updateStepField,
     discardStepOverrides,
+    loadScenario,
     toggleStartPause,
     resetSimulation
   } = useScenarioSession({ baselineScenario });
   const [inspectorStepId, setInspectorStepId] = useState<string | null>(null);
   const [inspectorAnchor, setInspectorAnchor] = useState<{ x: number; y: number } | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportNotice, setExportNotice] = useState<ExportNotice | null>(null);
+  const [appNotice, setAppNotice] = useState<ExportNotice | null>(null);
   const [resultsMode, setResultsMode] = useState<"flow" | "diagnosis" | "throughput">("flow");
+  const [isScenarioLibraryOpen, setIsScenarioLibraryOpen] = useState(false);
+  const {
+    libraryEntries,
+    selectedScenarioId,
+    currentScenarioId,
+    libraryName,
+    lastLoadedAt,
+    issues: libraryIssues,
+    openLibrary,
+    importLibraryFile,
+    saveCurrentScenario,
+    loadScenarioEntry,
+    clearCurrentScenario,
+    setSelectedScenarioId
+  } = useScenarioLibrary({
+    scenarioColumns: scenarioLibraryColumns,
+    appTitle: dashboardConfig.appTitle,
+    modelName: forecastModel.metadata.name
+  });
 
   const output = useMemo(
     () => createBottleneckForecastOutput(forecastModel, committedScenario, simElapsedHours),
@@ -145,8 +171,18 @@ export default function SimulatorApp() {
     () => forecastModel.stepModels.find((step) => step.stepId === inspectorStepId) ?? null,
     [forecastModel, inspectorStepId]
   );
-  const processingByStepId = useMemo(
-    () => new Map((masterData.processing ?? []).map((row) => [row.stepId, row])),
+  const inspectorDefaultsByStepId = useMemo(
+    () =>
+      new Map(
+        (masterData.processing ?? []).map((row) => [
+          row.stepId,
+          {
+            materialCostPerUnit: row.materialCostPerUnit ?? null,
+            laborRatePerHour: row.laborRatePerHour ?? null,
+            equipmentRatePerHour: row.equipmentRatePerHour ?? null
+          }
+        ])
+      ),
     [masterData]
   );
 
@@ -163,54 +199,25 @@ export default function SimulatorApp() {
 
   const resetSimulationView = () => {
     resetSimulation();
+    clearCurrentScenario();
     setInspectorStepId(null);
     setInspectorAnchor(null);
   };
 
-  const exportCommittedScenario = async () => {
-    const defaultName = "Tablet_Manufacturing";
-    const promptedName = window.prompt("Scenario export name (optional)", defaultName);
-    if (promptedName === null) {
-      return;
-    }
-
-    setIsExporting(true);
-    try {
-      const result = await exportScenarioBundleToLocalFolder({
-        name: promptedName.trim().length > 0 ? promptedName : defaultName,
-        includeMetrics: true,
-        dashboardConfig,
-        vsmGraph,
-        masterData,
-        compiledForecastModel: forecastModel,
-        scenarioCommitted: committedScenario,
-        resultMetrics: {
-          globalMetrics: output.globalMetrics,
-          nodeMetrics: output.nodeMetrics as Record<string, unknown>
-        },
-        operationalDiagnosis,
-        operationalDiagnosisMarkdown: formatOperationalDiagnosisMarkdown(operationalDiagnosis)
-      });
-      setExportNotice({
-        tone: "success",
-        text: `Exported bundle: ${result.exportPath}`
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown export error";
-      setExportNotice({
-        tone: "error",
-        text: `Export failed: ${message}`
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
   const inspectorValues = useMemo(
     () =>
-      buildInspectorValues(inspectorStep, activeScenario, inspectorStep ? processingByStepId.get(inspectorStep.stepId) : undefined),
-    [activeScenario, inspectorStep, processingByStepId]
+      buildInspectorValues(
+        inspectorStep,
+        activeScenario,
+        inspectorStep ? inspectorDefaultsByStepId.get(inspectorStep.stepId) : undefined
+      ),
+    [activeScenario, inspectorDefaultsByStepId, inspectorStep]
   );
   const activeKpis = resultsMode === "throughput" ? throughputKpis : dashboardConfig.kpis;
+  const resolvedStepScenario = useMemo(
+    () => buildResolvedStepScenario(forecastModel.stepModels, committedScenario, inspectorDefaultsByStepId),
+    [committedScenario, forecastModel.stepModels, inspectorDefaultsByStepId]
+  );
   const activeMetrics = useMemo(() => {
     if (resultsMode !== "throughput") {
       return output.globalMetrics;
@@ -225,6 +232,84 @@ export default function SimulatorApp() {
     };
   }, [output.globalMetrics, resultsMode, throughputAnalysis.summary]);
 
+  const openScenarioLibraryCsv = async () => {
+    try {
+      const result = await openLibrary();
+      if (result === "fallback") {
+        libraryFileInputRef.current?.click();
+        return;
+      }
+      if (result === "opened") {
+        setAppNotice({
+          tone: "success",
+          text: `Loaded scenario library${libraryName ? `: ${libraryName}` : "."}`
+        });
+        setIsScenarioLibraryOpen(true);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Scenario library could not be opened.";
+      setAppNotice({
+        tone: "error",
+        text: `Library open failed: ${message}`
+      });
+    }
+  };
+
+  const saveCommittedScenarioToLibrary = async () => {
+    const defaultName = `Scenario ${new Date().toLocaleString()}`;
+    const promptedName = window.prompt("Scenario name", defaultName);
+    if (promptedName === null) {
+      return;
+    }
+
+    try {
+      const result = await saveCurrentScenario(resolvedStepScenario, promptedName);
+      if (result.mode === "cancelled") {
+        return;
+      }
+      if (result.mode === "download" && result.csvText && result.fileName) {
+        downloadTextFile(result.fileName, result.csvText, "text/csv;charset=utf-8");
+      }
+      setAppNotice({
+        tone: "success",
+        text:
+          result.mode === "download"
+            ? `Scenario saved. Downloaded library CSV: ${result.fileName}`
+            : `Scenario saved to library${libraryName ? `: ${libraryName}` : "."}`
+      });
+      setIsScenarioLibraryOpen(true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Scenario library save failed.";
+      setAppNotice({
+        tone: "error",
+        text: `Library save failed: ${message}`
+      });
+    }
+  };
+
+  const loadScenarioFromLibrary = (scenarioId: string) => {
+    const scenario = loadScenarioEntry(scenarioId);
+    if (!scenario) {
+      setAppNotice({
+        tone: "error",
+        text: "Selected scenario could not be loaded."
+      });
+      return;
+    }
+    loadScenario({
+      ...baselineScenario,
+      ...scenario
+    });
+    setInspectorStepId(null);
+    setInspectorAnchor(null);
+    setIsScenarioLibraryOpen(false);
+    const entry = libraryEntries.find((item) => item.scenarioId === scenarioId);
+    setAppNotice({
+      tone: "success",
+      text: `Loaded scenario: ${entry?.scenarioName ?? scenarioId}`
+    });
+  };
+
   return (
     <div className="simulator-page">
       <div className="app-shell">
@@ -234,15 +319,17 @@ export default function SimulatorApp() {
           resultsMode={resultsMode}
           isPaused={isPaused}
           hasStagedChanges={hasStagedChanges}
-          isExporting={isExporting}
           simElapsedHours={simElapsedHours}
           simHorizonHours={simHorizonHours}
+          scenarioCount={libraryEntries.length}
           speedMultiplier={speedMultiplier}
           onResultsModeChange={setResultsMode}
           onSpeedChange={(speed) => setSpeedMultiplier(speed)}
           onStartPause={startPauseWithInspectorReset}
           onReset={resetSimulationView}
-          onExport={exportCommittedScenario}
+          onOpenLibraryCsv={openScenarioLibraryCsv}
+          onSaveCurrentScenario={saveCommittedScenarioToLibrary}
+          onToggleScenarioLibrary={() => setIsScenarioLibraryOpen(true)}
         />
 
         {isPaused && hasStagedChanges ? (
@@ -251,9 +338,9 @@ export default function SimulatorApp() {
           </div>
         ) : null}
 
-        {exportNotice ? (
-          <div className={`export-banner ${exportNotice.tone === "error" ? "is-error" : "is-success"}`}>
-            {exportNotice.text}
+        {appNotice ? (
+          <div className={`export-banner ${appNotice.tone === "error" ? "is-error" : "is-success"}`}>
+            {appNotice.text}
           </div>
         ) : null}
 
@@ -348,6 +435,49 @@ export default function SimulatorApp() {
           onClose={() => {
             setInspectorStepId(null);
             setInspectorAnchor(null);
+          }}
+        />
+
+        <ScenarioLibraryPanel
+          isOpen={isScenarioLibraryOpen}
+          libraryName={libraryName}
+          lastLoadedAt={lastLoadedAt}
+          entries={libraryEntries}
+          issues={libraryIssues}
+          currentScenarioId={currentScenarioId}
+          selectedScenarioId={selectedScenarioId}
+          onSelectScenario={setSelectedScenarioId}
+          onOpenCsv={openScenarioLibraryCsv}
+          onSaveCurrent={saveCommittedScenarioToLibrary}
+          onLoadScenario={loadScenarioFromLibrary}
+          onClose={() => setIsScenarioLibraryOpen(false)}
+        />
+
+        <input
+          ref={libraryFileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          hidden
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            event.currentTarget.value = "";
+            if (!file) {
+              return;
+            }
+            try {
+              await importLibraryFile(file);
+              setAppNotice({
+                tone: "success",
+                text: `Loaded scenario library: ${file.name}`
+              });
+              setIsScenarioLibraryOpen(true);
+            } catch (error) {
+              const message = error instanceof Error ? error.message : "Scenario library could not be read.";
+              setAppNotice({
+                tone: "error",
+                text: `Library open failed: ${message}`
+              });
+            }
           }}
         />
       </div>

@@ -1,5 +1,12 @@
 import { createConstraintForecast } from "./bottleneckForecast";
-import { stepScenarioKey, toNumber, type ScenarioState } from "../simulator/scenarioState";
+import {
+  DEFAULT_STEP_EQUIPMENT_RATE_PER_HOUR,
+  DEFAULT_STEP_LABOR_RATE_PER_HOUR,
+  DEFAULT_STEP_MATERIAL_COST_PER_UNIT,
+  stepScenarioKey,
+  toNumber,
+  type ScenarioState
+} from "../simulator/scenarioState";
 import type {
   CompiledForecastModel,
   MasterData,
@@ -19,6 +26,16 @@ const HIGH_EFFICIENCY_MAX_GAIN_RATIO = 0.1;
 const MEDIUM_EFFICIENCY_MAX_GAIN_RATIO = 0.25;
 
 type StepInputField = "materialCostPerUnit" | "laborRatePerHour" | "equipmentRatePerHour";
+
+function defaultStepInputValue(field: StepInputField): number {
+  if (field === "materialCostPerUnit") {
+    return DEFAULT_STEP_MATERIAL_COST_PER_UNIT;
+  }
+  if (field === "laborRatePerHour") {
+    return DEFAULT_STEP_LABOR_RATE_PER_HOUR;
+  }
+  return DEFAULT_STEP_EQUIPMENT_RATE_PER_HOUR;
+}
 
 function num(value: number | string | null | undefined, fallback: number): number {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -125,7 +142,7 @@ function resolveInputValue(
     return Math.max(0, rawDefault);
   }
 
-  return null;
+  return defaultStepInputValue(field);
 }
 
 function stepTimeHoursPerUnit(effectiveCtMinutes: number | null, effectiveUnits: number | null): number | null {

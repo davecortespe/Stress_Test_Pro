@@ -37,6 +37,69 @@ function scaledUpperBound(value: number, minimumMax: number, multiplier: number)
 
 const COST_INPUT_MAX = 100000;
 
+function getStepPrecision(step: number): number {
+  if (!Number.isFinite(step) || step <= 0) {
+    return 0;
+  }
+  const normalized = step.toString().toLowerCase();
+  if (normalized.includes("e-")) {
+    const [, exponent = "0"] = normalized.split("e-");
+    return Number(exponent);
+  }
+  const decimal = normalized.split(".")[1];
+  return decimal ? decimal.length : 0;
+}
+
+function formatNumberForInput(value: number, step: number): string {
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+  const precision = getStepPrecision(step);
+  return precision > 0 ? value.toFixed(precision) : Math.round(value).toString();
+}
+
+function useEditableNumberInput(
+  value: number,
+  min: number,
+  max: number,
+  step: number,
+  onCommit: (next: number) => void
+) {
+  const [draft, setDraft] = useState(() => formatNumberForInput(value, step));
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraft(formatNumberForInput(value, step));
+    }
+  }, [isEditing, step, value]);
+
+  const commitDraft = () => {
+    const parsed = Number(draft);
+    setIsEditing(false);
+    if (!Number.isFinite(parsed)) {
+      setDraft(formatNumberForInput(value, step));
+      return;
+    }
+    const normalized = clamp(parsed, min, max);
+    onCommit(normalized);
+    setDraft(formatNumberForInput(normalized, step));
+  };
+
+  const revertDraft = () => {
+    setIsEditing(false);
+    setDraft(formatNumberForInput(value, step));
+  };
+
+  return {
+    draft,
+    setDraft,
+    setIsEditing,
+    commitDraft,
+    revertDraft
+  };
+}
+
 function NumberField({
   id,
   label,
@@ -57,6 +120,13 @@ function NumberField({
   onChange: (next: number) => void;
 }) {
   const rounded = Number(value.toFixed(step < 1 ? 2 : 0));
+  const { draft, setDraft, setIsEditing, commitDraft, revertDraft } = useEditableNumberInput(
+    rounded,
+    min,
+    max,
+    step,
+    onChange
+  );
   return (
     <div className="inspector-field">
       <label htmlFor={id}>{label}</label>
@@ -74,8 +144,19 @@ function NumberField({
           min={min}
           max={max}
           step={step}
-          value={rounded}
-          onChange={(event) => onChange(clamp(Number(event.target.value), min, max))}
+          value={draft}
+          onFocus={() => setIsEditing(true)}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commitDraft}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.currentTarget.blur();
+            }
+            if (event.key === "Escape") {
+              revertDraft();
+              event.currentTarget.blur();
+            }
+          }}
         />
         <button
           type="button"
@@ -132,6 +213,20 @@ export function StepInspector({
   const equipmentCostMax = useMemo(
     () => scaledUpperBound(values.equipmentRatePerHour, COST_INPUT_MAX, 4),
     [values.equipmentRatePerHour]
+  );
+  const ctMultiplierInput = useEditableNumberInput(
+    Number(values.ctMultiplier.toFixed(2)),
+    0.1,
+    ctMultiplierMax,
+    0.01,
+    (next) => onChange("ctMultiplier", next)
+  );
+  const downtimeInput = useEditableNumberInput(
+    Number(values.downtimePct.toFixed(1)),
+    0,
+    95,
+    0.1,
+    (next) => onChange("downtimePct", next)
   );
 
   useEffect(() => {
@@ -239,10 +334,19 @@ export function StepInspector({
               min={0.1}
               max={ctMultiplierMax}
               step={0.01}
-              value={Number(values.ctMultiplier.toFixed(2))}
-              onChange={(event) =>
-                onChange("ctMultiplier", clamp(Number(event.target.value), 0.1, ctMultiplierMax))
-              }
+              value={ctMultiplierInput.draft}
+              onFocus={() => ctMultiplierInput.setIsEditing(true)}
+              onChange={(event) => ctMultiplierInput.setDraft(event.target.value)}
+              onBlur={ctMultiplierInput.commitDraft}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                }
+                if (event.key === "Escape") {
+                  ctMultiplierInput.revertDraft();
+                  event.currentTarget.blur();
+                }
+              }}
             />
             <button
               type="button"
@@ -288,10 +392,19 @@ export function StepInspector({
               min={0}
               max={95}
               step={0.1}
-              value={Number(values.downtimePct.toFixed(1))}
-              onChange={(event) =>
-                onChange("downtimePct", clamp(Number(event.target.value), 0, 95))
-              }
+              value={downtimeInput.draft}
+              onFocus={() => downtimeInput.setIsEditing(true)}
+              onChange={(event) => downtimeInput.setDraft(event.target.value)}
+              onBlur={downtimeInput.commitDraft}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                }
+                if (event.key === "Escape") {
+                  downtimeInput.revertDraft();
+                  event.currentTarget.blur();
+                }
+              }}
             />
             <span className="unit-pill">%</span>
           </div>

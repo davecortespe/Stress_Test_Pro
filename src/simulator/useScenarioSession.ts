@@ -29,6 +29,7 @@ interface UseScenarioSessionResult {
   updateScenarioValue: (key: string, value: number | string) => void;
   updateStepField: (stepId: string, field: StepField, value: number) => void;
   discardStepOverrides: (stepId: string) => void;
+  loadScenario: (scenario: ScenarioState) => void;
   toggleStartPause: () => void;
   resetSimulation: () => void;
 }
@@ -132,6 +133,15 @@ export function useScenarioSession({
     });
   };
 
+  const loadScenario = (scenario: ScenarioState) => {
+    const nextScenario = cloneScenario(scenario);
+    setCommittedScenario(nextScenario);
+    setStagedScenario(cloneScenario(nextScenario));
+    setIsPaused(true);
+    setSimElapsedHours(0);
+    setResetViewSignal((current) => current + 1);
+  };
+
   const toggleStartPause = () => {
     if (isPaused) {
       setCommittedScenario(cloneScenario(stagedScenario));
@@ -169,6 +179,7 @@ export function useScenarioSession({
     updateScenarioValue,
     updateStepField,
     discardStepOverrides,
+    loadScenario,
     toggleStartPause,
     resetSimulation
   };

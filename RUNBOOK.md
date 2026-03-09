@@ -81,6 +81,10 @@ Use this only when you want a stable deployment target for Replit. It keeps the 
 
 `npm run export:replit`
 
+Preferred agent request:
+
+`Export the current committed scenario to a Replit bundle named "<bundle-name>" and tell me the output path.`
+
 Optional inputs:
 
 - `npm run export:replit -- --name sterile-brr-replit`

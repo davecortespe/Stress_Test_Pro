@@ -4,15 +4,17 @@ interface DashboardHeaderProps {
   resultsMode: "flow" | "diagnosis" | "throughput";
   isPaused: boolean;
   hasStagedChanges: boolean;
-  isExporting: boolean;
   simElapsedHours: number;
   simHorizonHours: number;
+  scenarioCount: number;
   speedMultiplier: 1 | 2 | 5 | 10 | 50 | 200;
   onResultsModeChange: (mode: "flow" | "diagnosis" | "throughput") => void;
   onSpeedChange: (speed: 1 | 2 | 5 | 10 | 50 | 200) => void;
   onStartPause: () => void;
   onReset: () => void;
-  onExport: () => void;
+  onOpenLibraryCsv: () => void;
+  onSaveCurrentScenario: () => void;
+  onToggleScenarioLibrary: () => void;
 }
 
 export function DashboardHeader({
@@ -21,15 +23,17 @@ export function DashboardHeader({
   resultsMode,
   isPaused,
   hasStagedChanges,
-  isExporting,
   simElapsedHours,
   simHorizonHours,
+  scenarioCount,
   speedMultiplier,
   onResultsModeChange,
   onSpeedChange,
   onStartPause,
   onReset,
-  onExport
+  onOpenLibraryCsv,
+  onSaveCurrentScenario,
+  onToggleScenarioLibrary
 }: DashboardHeaderProps) {
   return (
     <header className="header-shell">
@@ -43,8 +47,11 @@ export function DashboardHeader({
           <button className="secondary" onClick={onReset}>
             Reset
           </button>
-          <button className="secondary save-scenario-btn" onClick={onExport} disabled={isExporting}>
-            {isExporting ? "Exporting..." : "Export Scenario"}
+          <button type="button" className="secondary" onClick={onOpenLibraryCsv}>
+            Open Library CSV
+          </button>
+          <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
+            Save Current Scenario
           </button>
           <div className="results-mode-group" role="group" aria-label="results panel mode">
             {[
@@ -96,9 +103,9 @@ export function DashboardHeader({
               </button>
             ))}
           </div>
-          <div className="status-chip">
-            <span className="status-chip-value">Scenarios 0</span>
-          </div>
+          <button type="button" className="status-chip scenario-chip-button" onClick={onToggleScenarioLibrary}>
+            <span className="status-chip-value">Scenarios {scenarioCount}</span>
+          </button>
         </div>
       </div>
     </header>

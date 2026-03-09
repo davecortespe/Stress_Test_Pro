@@ -14,6 +14,9 @@ export type SpeedMultiplier = 1 | 2 | 5 | 10 | 50 | 200;
 
 export const BASE_SIM_HOURS_PER_SECOND = 0.1;
 export const DEFAULT_SPEED_MULTIPLIER: SpeedMultiplier = 1;
+export const DEFAULT_STEP_MATERIAL_COST_PER_UNIT = 0;
+export const DEFAULT_STEP_LABOR_RATE_PER_HOUR = 30;
+export const DEFAULT_STEP_EQUIPMENT_RATE_PER_HOUR = 20;
 export const STEP_FIELDS: StepField[] = [
   "capacityUnits",
   "ctBaseline",
@@ -34,6 +37,12 @@ export interface InspectorValues {
   materialCostPerUnit: number;
   laborRatePerHour: number;
   equipmentRatePerHour: number;
+}
+
+export interface InspectorDefaults {
+  materialCostPerUnit?: number | null;
+  laborRatePerHour?: number | null;
+  equipmentRatePerHour?: number | null;
 }
 
 export function bindParameterGroupsToForecast(
@@ -106,14 +115,32 @@ export function getSimulationHorizonHours(scenario: ScenarioState): number {
   return Math.max(8, Math.min(720, Math.round(toNumber(scenario.simulationHorizonHours, 8))));
 }
 
+export function buildScenarioLibraryStepColumns(stepModels: ForecastStepModel[]): string[] {
+  return stepModels.flatMap((step) => STEP_FIELDS.map((field) => stepScenarioKey(step.stepId, field)));
+}
+
+export function buildResolvedStepScenario(
+  stepModels: ForecastStepModel[],
+  scenario: ScenarioState,
+  defaultsByStepId?: Map<string, InspectorDefaults | undefined>
+): ScenarioState {
+  const next: ScenarioState = {};
+  stepModels.forEach((step) => {
+    const values = buildInspectorValues(step, scenario, defaultsByStepId?.get(step.stepId));
+    if (!values) {
+      return;
+    }
+    STEP_FIELDS.forEach((field) => {
+      next[stepScenarioKey(step.stepId, field)] = values[field];
+    });
+  });
+  return next;
+}
+
 export function buildInspectorValues(
   step: ForecastStepModel | null,
   scenario: ScenarioState,
-  defaults?: {
-    materialCostPerUnit?: number | null;
-    laborRatePerHour?: number | null;
-    equipmentRatePerHour?: number | null;
-  }
+  defaults?: InspectorDefaults
 ): InspectorValues | null {
   if (!step) {
     return null;
@@ -152,21 +179,21 @@ export function buildInspectorValues(
       0,
       toNumber(
         scenario[stepScenarioKey(step.stepId, "materialCostPerUnit")],
-        defaults?.materialCostPerUnit ?? 0
+        defaults?.materialCostPerUnit ?? DEFAULT_STEP_MATERIAL_COST_PER_UNIT
       )
     ),
     laborRatePerHour: Math.max(
       0,
       toNumber(
         scenario[stepScenarioKey(step.stepId, "laborRatePerHour")],
-        defaults?.laborRatePerHour ?? 0
+        defaults?.laborRatePerHour ?? DEFAULT_STEP_LABOR_RATE_PER_HOUR
       )
     ),
     equipmentRatePerHour: Math.max(
       0,
       toNumber(
         scenario[stepScenarioKey(step.stepId, "equipmentRatePerHour")],
-        defaults?.equipmentRatePerHour ?? 0
+        defaults?.equipmentRatePerHour ?? DEFAULT_STEP_EQUIPMENT_RATE_PER_HOUR
       )
     )
   };

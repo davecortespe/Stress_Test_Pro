@@ -6,7 +6,9 @@ import ts from "typescript";
 const repoRoot = process.cwd();
 const tempDir = path.join(repoRoot, ".tmp-tests");
 const filesToTranspile = [
+  path.join("tests", "scenarioCsv.test.ts"),
   path.join("tests", "throughputAnalysis.test.ts"),
+  path.join("src", "lib", "scenarioCsv.ts"),
   path.join("src", "lib", "throughputAnalysis.ts"),
   path.join("src", "lib", "bottleneckForecast.ts"),
   path.join("src", "simulator", "scenarioState.ts"),
@@ -49,4 +51,5 @@ for (const relativeFilePath of filesToTranspile) {
   fs.writeFileSync(outputPath, rewriteRelativeImports(transpiled.outputText), "utf8");
 }
 
+await import(pathToFileURL(toOutputPath(path.join("tests", "scenarioCsv.test.ts"))).href);
 await import(pathToFileURL(toOutputPath(path.join("tests", "throughputAnalysis.test.ts"))).href);

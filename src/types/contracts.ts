@@ -352,3 +352,30 @@ export interface ThroughputAnalysisResult {
   profitLossRows: ThroughputProfitLossRow[];
   insights: ThroughputInsight[];
 }
+
+export interface ScenarioLibraryEntry {
+  scenarioId: string;
+  scenarioName: string;
+  savedAt: string;
+  scenario: Record<string, number | string>;
+}
+
+export interface ScenarioLibraryFileContext {
+  schemaVersion: string;
+  appTitle: string;
+  modelName: string;
+}
+
+export interface ScenarioLibraryIssue {
+  severity: "error" | "warning";
+  message: string;
+  rowNumber?: number;
+  column?: string;
+}
+
+export interface ScenarioLibraryParseResult {
+  entries: ScenarioLibraryEntry[];
+  issues: ScenarioLibraryIssue[];
+  discoveredColumns: string[];
+  context: ScenarioLibraryFileContext | null;
+}
