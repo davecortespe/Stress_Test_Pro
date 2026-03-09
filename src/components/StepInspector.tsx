@@ -25,6 +25,13 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function scaledUpperBound(value: number, minimumMax: number, multiplier: number): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    return minimumMax;
+  }
+  return Math.max(minimumMax, Math.ceil(value * multiplier));
+}
+
 function NumberField({
   id,
   label,
@@ -93,6 +100,22 @@ export function StepInspector({
   const panelRef = useRef<HTMLElement | null>(null);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [panelSize, setPanelSize] = useState({ width: 360, height: 420 });
+  const capacityMax = useMemo(
+    () => scaledUpperBound(values.capacityUnits, 48, 4),
+    [values.capacityUnits]
+  );
+  const ctBaselineMax = useMemo(
+    () => scaledUpperBound(values.ctBaseline, 120, 4),
+    [values.ctBaseline]
+  );
+  const ctMultiplierMax = useMemo(
+    () => Math.max(4, Number((values.ctMultiplier * 2).toFixed(2))),
+    [values.ctMultiplier]
+  );
+  const leadTimeMax = useMemo(
+    () => scaledUpperBound(values.leadTimeMinutes, 120960, 4),
+    [values.leadTimeMinutes]
+  );
 
   useEffect(() => {
     const update = () => setIsSmallScreen(window.innerWidth <= 900);
@@ -164,7 +187,7 @@ export function StepInspector({
           label="Capacity units"
           value={values.capacityUnits}
           min={1}
-          max={48}
+          max={capacityMax}
           step={1}
           unit="units"
           onChange={(next) => onChange("capacityUnits", Math.round(next))}
@@ -175,7 +198,7 @@ export function StepInspector({
           label="CT baseline"
           value={values.ctBaseline}
           min={0.01}
-          max={120}
+          max={ctBaselineMax}
           step={0.1}
           unit="min"
           onChange={(next) => onChange("ctBaseline", next)}
@@ -187,7 +210,9 @@ export function StepInspector({
             <button
               type="button"
               className="secondary mini"
-              onClick={() => onChange("ctMultiplier", clamp(values.ctMultiplier - 0.05, 0.1, 4))}
+              onClick={() =>
+                onChange("ctMultiplier", clamp(values.ctMultiplier - 0.05, 0.1, ctMultiplierMax))
+              }
             >
               -
             </button>
@@ -195,17 +220,19 @@ export function StepInspector({
               id="inspector-ctm"
               type="number"
               min={0.1}
-              max={4}
+              max={ctMultiplierMax}
               step={0.01}
               value={Number(values.ctMultiplier.toFixed(2))}
               onChange={(event) =>
-                onChange("ctMultiplier", clamp(Number(event.target.value), 0.1, 4))
+                onChange("ctMultiplier", clamp(Number(event.target.value), 0.1, ctMultiplierMax))
               }
             />
             <button
               type="button"
               className="secondary mini"
-              onClick={() => onChange("ctMultiplier", clamp(values.ctMultiplier + 0.05, 0.1, 4))}
+              onClick={() =>
+                onChange("ctMultiplier", clamp(values.ctMultiplier + 0.05, 0.1, ctMultiplierMax))
+              }
             >
               +
             </button>
@@ -258,7 +285,7 @@ export function StepInspector({
           label="Lead Time"
           value={values.leadTimeMinutes}
           min={0}
-          max={120960}
+          max={leadTimeMax}
           step={10}
           unit="min"
           onChange={(next) => onChange("leadTimeMinutes", next)}

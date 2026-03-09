@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { GraphCanvas } from "../components/GraphCanvas";
 import { KpiRow } from "../components/KpiRow";
@@ -13,119 +13,29 @@ import {
 } from "../lib/operationalDiagnosis";
 import type {
   CompiledForecastModel,
-  DashboardConfig,
-  OperationalDiagnosis,
-  ParameterGroup
+  DashboardConfig
 } from "../types/contracts";
 import compiledForecastModelJson from "../../models/active/compiled_forecast_model.json";
 import masterDataJson from "../../models/active/master_data.json";
 import vsmGraphJson from "../../models/active/vsm_graph.json";
 import dashboardConfigJson from "../../models/dashboard_config.json";
+import {
+  bindParameterGroupsToForecast,
+  buildInspectorValues,
+  getDefaultScenario,
+  type ScenarioState
+} from "./scenarioState";
+import { getExportBundleData, getStartupScenarioOverride } from "./runtimeData";
+import { useScenarioSession } from "./useScenarioSession";
 import "./simulator.css";
-
-type ScenarioState = Record<string, number | string>;
-type StepField = "capacityUnits" | "ctBaseline" | "ctMultiplier" | "downtimePct" | "leadTimeMinutes";
-type SpeedMultiplier = 1 | 2 | 5 | 10 | 50 | 200;
-const BASE_SIM_HOURS_PER_SECOND = 0.1;
-
-interface ExportBundleData {
-  dashboardConfig?: DashboardConfig;
-  compiledForecastModel?: CompiledForecastModel;
-  masterData?: unknown;
-  operationalDiagnosis?: OperationalDiagnosis;
-  vsmGraph?: unknown;
-  scenarioCommitted?: ScenarioState;
-}
-
-declare global {
-  interface Window {
-    __EXPORT_COMMITTED_SCENARIO__?: ScenarioState;
-    __EXPORT_BUNDLE_DATA__?: ExportBundleData;
-  }
-}
 
 interface ExportNotice {
   tone: "success" | "error";
   text: string;
 }
 
-function bindParameterGroupsToForecast(
-  groups: ParameterGroup[],
-  forecastModel: CompiledForecastModel
-): ParameterGroup[] {
-  const inputMap = new Map(forecastModel.inputs.map((input) => [input.key, input]));
-  return groups.map((group) => ({
-    ...group,
-    fields: group.fields.map((field) => {
-      const input = inputMap.get(field.key);
-      if (!input) {
-        return field;
-      }
-      return {
-        ...field,
-        type: input.type === "select" ? "dropdown" : field.type,
-        min: typeof input.min === "number" ? input.min : field.min,
-        max: typeof input.max === "number" ? input.max : field.max,
-        step: typeof input.step === "number" ? input.step : field.step,
-        options: input.options ?? field.options,
-        defaultValue:
-          forecastModel.inputDefaults[field.key] ?? input.defaultValue ?? field.defaultValue
-      };
-    })
-  }));
-}
-
-function getDefaultScenario(
-  groups: ParameterGroup[],
-  inputDefaults: Record<string, number | string>
-): ScenarioState {
-  const defaults: ScenarioState = {};
-  groups.forEach((group) => {
-    group.fields.forEach((field) => {
-      defaults[field.key] = inputDefaults[field.key] ?? field.defaultValue;
-    });
-  });
-  return defaults;
-}
-
-function scenarioEquals(a: ScenarioState, b: ScenarioState): boolean {
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  for (const key of keys) {
-    if (a[key] !== b[key]) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function stepScenarioKey(stepId: string, field: StepField): string {
-  return `step_${stepId}_${field}`;
-}
-
-function toNumber(value: number | string | undefined, fallback: number): number {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string" && value.trim().length > 0) {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-  return fallback;
-}
-
 export default function SimulatorApp() {
-  const exportBundleData = useMemo(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-    const raw = window.__EXPORT_BUNDLE_DATA__;
-    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-      return null;
-    }
-    return raw as ExportBundleData;
-  }, []);
+  const exportBundleData = useMemo(() => getExportBundleData(), []);
 
   const dashboardConfig = (exportBundleData?.dashboardConfig ?? dashboardConfigJson) as DashboardConfig;
   const forecastModel = (exportBundleData?.compiledForecastModel ?? compiledForecastModelJson) as CompiledForecastModel;
@@ -136,16 +46,10 @@ export default function SimulatorApp() {
     [dashboardConfig, forecastModel]
   );
 
-  const startupScenarioOverride = useMemo(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-    const raw = exportBundleData?.scenarioCommitted ?? window.__EXPORT_COMMITTED_SCENARIO__;
-    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-      return null;
-    }
-    return raw as ScenarioState;
-  }, [exportBundleData]);
+  const startupScenarioOverride = useMemo(
+    () => getStartupScenarioOverride(exportBundleData),
+    [exportBundleData]
+  );
 
   const baselineScenario = useMemo(
     () => ({
@@ -155,14 +59,24 @@ export default function SimulatorApp() {
     [boundParameterGroups, forecastModel, startupScenarioOverride]
   );
 
-  const [committedScenario, setCommittedScenario] = useState<ScenarioState>(baselineScenario);
-  const [stagedScenario, setStagedScenario] = useState<ScenarioState>(baselineScenario);
-  const [isPaused, setIsPaused] = useState(true);
-  const [speedMultiplier, setSpeedMultiplier] = useState<SpeedMultiplier>(1);
-  const [simElapsedHours, setSimElapsedHours] = useState(0);
+  const {
+    committedScenario,
+    activeScenario,
+    hasStagedChanges,
+    isPaused,
+    speedMultiplier,
+    simElapsedHours,
+    simHorizonHours,
+    resetViewSignal,
+    setSpeedMultiplier,
+    updateScenarioValue,
+    updateStepField,
+    discardStepOverrides,
+    toggleStartPause,
+    resetSimulation
+  } = useScenarioSession({ baselineScenario });
   const [inspectorStepId, setInspectorStepId] = useState<string | null>(null);
   const [inspectorAnchor, setInspectorAnchor] = useState<{ x: number; y: number } | null>(null);
-  const [resetViewSignal, setResetViewSignal] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const [exportNotice, setExportNotice] = useState<ExportNotice | null>(null);
 
@@ -177,73 +91,26 @@ export default function SimulatorApp() {
   const canToggleDiagnosis = true;
   const [isDiagnosisVisible, setIsDiagnosisVisible] = useState<boolean>(false);
 
-  const hasStagedChanges = useMemo(
-    () => !scenarioEquals(committedScenario, stagedScenario),
-    [committedScenario, stagedScenario]
-  );
-
   const inspectorStep = useMemo(
     () => forecastModel.stepModels.find((step) => step.stepId === inspectorStepId) ?? null,
     [forecastModel, inspectorStepId]
   );
 
-  const activeScenario = isPaused ? stagedScenario : committedScenario;
-  const simHorizonHours = Math.max(
-    8,
-    Math.min(720, Math.round(toNumber(activeScenario.simulationHorizonHours, 8)))
-  );
-
-  useEffect(() => {
-    if (isPaused) {
-      return;
-    }
-    let raf = 0;
-    let last = performance.now();
-    const tick = (now: number) => {
-      const deltaHours = ((now - last) / 1000) * BASE_SIM_HOURS_PER_SECOND;
-      last = now;
-      setSimElapsedHours((current) => Math.min(simHorizonHours, current + deltaHours * speedMultiplier));
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [isPaused, simHorizonHours, speedMultiplier]);
-
-  useEffect(() => {
-    if (!isPaused && simElapsedHours >= simHorizonHours - 1e-6) {
-      setIsPaused(true);
-      setStagedScenario({ ...committedScenario });
-    }
-  }, [committedScenario, isPaused, simElapsedHours, simHorizonHours]);
-
-  const toggleStartPause = () => {
-    if (isPaused) {
-      setCommittedScenario({ ...stagedScenario });
-      if (simElapsedHours >= simHorizonHours - 1e-6) {
-        setSimElapsedHours(0);
-      }
-      setIsPaused(false);
-      setInspectorStepId(null);
-      return;
-    }
-    setIsPaused(true);
-    setStagedScenario({ ...committedScenario });
-  };
-
-  const resetSimulation = () => {
-    setCommittedScenario({ ...baselineScenario });
-    setStagedScenario({ ...baselineScenario });
-    setIsPaused(true);
-    setSpeedMultiplier(1);
-    setSimElapsedHours(0);
-    setInspectorStepId(null);
-    setInspectorAnchor(null);
-    setResetViewSignal((current) => current + 1);
-  };
-
   const openStepInspector = (nodeId: string, anchor: { x: number; y: number }) => {
     setInspectorStepId(nodeId);
     setInspectorAnchor(anchor);
+  };
+
+  const startPauseWithInspectorReset = () => {
+    toggleStartPause();
+    setInspectorStepId(null);
+    setInspectorAnchor(null);
+  };
+
+  const resetSimulationView = () => {
+    resetSimulation();
+    setInspectorStepId(null);
+    setInspectorAnchor(null);
   };
 
   const exportCommittedScenario = async () => {
@@ -284,86 +151,10 @@ export default function SimulatorApp() {
       setIsExporting(false);
     }
   };
-
-  const updateInspectorField = (field: StepField, value: number) => {
-    if (!inspectorStep) {
-      return;
-    }
-    const key = stepScenarioKey(inspectorStep.stepId, field);
-    if (isPaused) {
-      setStagedScenario((current) => ({
-        ...current,
-        [key]: value
-      }));
-      return;
-    }
-    setCommittedScenario((current) => ({
-      ...current,
-      [key]: value
-    }));
-  };
-
-  const discardInspectorStep = () => {
-    if (!inspectorStep) {
-      return;
-    }
-    const stepId = inspectorStep.stepId;
-    const fields: StepField[] = [
-      "capacityUnits",
-      "ctBaseline",
-      "ctMultiplier",
-      "downtimePct",
-      "leadTimeMinutes"
-    ];
-    setStagedScenario((current) => {
-      const next = { ...current };
-      for (const field of fields) {
-        const key = stepScenarioKey(stepId, field);
-        if (key in committedScenario) {
-          next[key] = committedScenario[key];
-        } else {
-          delete next[key];
-        }
-      }
-      return next;
-    });
-  };
-
-  const inspectorValues = inspectorStep
-    ? {
-        capacityUnits: Math.max(
-          1,
-          Math.round(
-            toNumber(
-              activeScenario[stepScenarioKey(inspectorStep.stepId, "capacityUnits")],
-              Math.max(1, Math.round(inspectorStep.effectiveUnits))
-            )
-          )
-        ),
-        ctBaseline: Math.max(
-          0.01,
-          toNumber(
-            activeScenario[stepScenarioKey(inspectorStep.stepId, "ctBaseline")],
-            inspectorStep.ctMinutes ?? 1
-          )
-        ),
-        ctMultiplier: Math.max(
-          0.1,
-          toNumber(activeScenario[stepScenarioKey(inspectorStep.stepId, "ctMultiplier")], 1)
-        ),
-        downtimePct: Math.max(
-          0,
-          Math.min(95, toNumber(activeScenario[stepScenarioKey(inspectorStep.stepId, "downtimePct")], 0))
-        ),
-        leadTimeMinutes: Math.max(
-          0,
-          toNumber(
-            activeScenario[stepScenarioKey(inspectorStep.stepId, "leadTimeMinutes")],
-            inspectorStep.leadTimeMinutes ?? 0
-          )
-        )
-      }
-    : null;
+  const inspectorValues = useMemo(
+    () => buildInspectorValues(inspectorStep, activeScenario),
+    [activeScenario, inspectorStep]
+  );
 
   return (
     <div className="simulator-page">
@@ -381,8 +172,8 @@ export default function SimulatorApp() {
           speedMultiplier={speedMultiplier}
           onToggleDiagnosis={() => setIsDiagnosisVisible((current) => !current)}
           onSpeedChange={(speed) => setSpeedMultiplier(speed)}
-          onStartPause={toggleStartPause}
-          onReset={resetSimulation}
+          onStartPause={startPauseWithInspectorReset}
+          onReset={resetSimulationView}
           onExport={exportCommittedScenario}
         />
 
@@ -408,13 +199,7 @@ export default function SimulatorApp() {
               groups={boundParameterGroups}
               scenario={activeScenario}
               editable
-              onChange={(key, value) => {
-                if (isPaused) {
-                  setStagedScenario((current) => ({ ...current, [key]: value }));
-                  return;
-                }
-                setCommittedScenario((current) => ({ ...current, [key]: value }));
-              }}
+              onChange={updateScenarioValue}
             />
           </aside>
 
@@ -445,13 +230,23 @@ export default function SimulatorApp() {
               leadTimeMinutes: 0
             }
           }
-          onChange={updateInspectorField}
-          onDiscard={discardInspectorStep}
+          onChange={(field, value) => {
+            if (!inspectorStep) {
+              return;
+            }
+            updateStepField(inspectorStep.stepId, field, value);
+          }}
+          onDiscard={() => {
+            if (!inspectorStep) {
+              return;
+            }
+            discardStepOverrides(inspectorStep.stepId);
+          }}
           onStage={() => {
             setInspectorStepId(null);
             setInspectorAnchor(null);
           }}
-          onApplyResume={toggleStartPause}
+          onApplyResume={startPauseWithInspectorReset}
           onClose={() => {
             setInspectorStepId(null);
             setInspectorAnchor(null);
