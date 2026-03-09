@@ -33,7 +33,11 @@ const products = parseCsv(path.join(tablesDir, "products.csv")).map((row) => ({
   productId: row.productId,
   family: row.family,
   mixPct: asNumber(row.mixPct, 0),
-  demandRate: asNumber(row.demandRate, 0)
+  demandRate: asNumber(row.demandRate, 0),
+  sellingPricePerUnit:
+    row.sellingPricePerUnit && row.sellingPricePerUnit.length > 0
+      ? asNumber(row.sellingPricePerUnit, 0)
+      : null
 }));
 
 const equipment = parseCsv(path.join(tablesDir, "equipment.csv")).map((row) => ({
@@ -64,7 +68,23 @@ const processing = parseCsv(path.join(tablesDir, "processing.csv")).map((row) =>
       mode: asNumber(row.setupMode, 0),
       high: asNumber(row.setupHigh, 0)
     }
-  }
+  },
+  materialCostPerUnit:
+    row.materialCostPerUnit && row.materialCostPerUnit.length > 0
+      ? asNumber(row.materialCostPerUnit, 0)
+      : null,
+  laborRatePerHour:
+    row.laborRatePerHour && row.laborRatePerHour.length > 0
+      ? asNumber(row.laborRatePerHour, 0)
+      : row.laborCostPerUnit && row.laborCostPerUnit.length > 0
+        ? asNumber(row.laborCostPerUnit, 0)
+      : null,
+  equipmentRatePerHour:
+    row.equipmentRatePerHour && row.equipmentRatePerHour.length > 0
+      ? asNumber(row.equipmentRatePerHour, 0)
+      : row.equipmentCostPerUnit && row.equipmentCostPerUnit.length > 0
+        ? asNumber(row.equipmentCostPerUnit, 0)
+      : null
 }));
 
 const variabilityPath = path.join(tablesDir, "variability.csv");
@@ -80,7 +100,11 @@ const master = {
   products,
   equipment,
   processing,
-  ctVariability
+  ctVariability,
+  economicsDefaults: {
+    sellingPricePerUnit:
+      products.find((product) => typeof product.sellingPricePerUnit === "number")?.sellingPricePerUnit ?? null
+  }
 };
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });

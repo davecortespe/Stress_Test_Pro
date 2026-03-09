@@ -6,6 +6,9 @@ interface StepInspectorValues {
   ctMultiplier: number;
   downtimePct: number;
   leadTimeMinutes: number;
+  materialCostPerUnit: number;
+  laborRatePerHour: number;
+  equipmentRatePerHour: number;
 }
 
 interface StepInspectorProps {
@@ -31,6 +34,8 @@ function scaledUpperBound(value: number, minimumMax: number, multiplier: number)
   }
   return Math.max(minimumMax, Math.ceil(value * multiplier));
 }
+
+const COST_INPUT_MAX = 100000;
 
 function NumberField({
   id,
@@ -115,6 +120,18 @@ export function StepInspector({
   const leadTimeMax = useMemo(
     () => scaledUpperBound(values.leadTimeMinutes, 120960, 4),
     [values.leadTimeMinutes]
+  );
+  const materialCostMax = useMemo(
+    () => scaledUpperBound(values.materialCostPerUnit, COST_INPUT_MAX, 4),
+    [values.materialCostPerUnit]
+  );
+  const laborCostMax = useMemo(
+    () => scaledUpperBound(values.laborRatePerHour, COST_INPUT_MAX, 4),
+    [values.laborRatePerHour]
+  );
+  const equipmentCostMax = useMemo(
+    () => scaledUpperBound(values.equipmentRatePerHour, COST_INPUT_MAX, 4),
+    [values.equipmentRatePerHour]
   );
 
   useEffect(() => {
@@ -289,6 +306,39 @@ export function StepInspector({
           step={10}
           unit="min"
           onChange={(next) => onChange("leadTimeMinutes", next)}
+        />
+
+        <NumberField
+          id="inspector-material-cost"
+          label="Material cost / unit"
+          value={values.materialCostPerUnit}
+          min={0}
+          max={materialCostMax}
+          step={0.1}
+          unit="$"
+          onChange={(next) => onChange("materialCostPerUnit", next)}
+        />
+
+        <NumberField
+          id="inspector-labor-rate"
+          label="Labor rate / hr"
+          value={values.laborRatePerHour}
+          min={0}
+          max={laborCostMax}
+          step={0.1}
+          unit="$/hr"
+          onChange={(next) => onChange("laborRatePerHour", next)}
+        />
+
+        <NumberField
+          id="inspector-equipment-rate"
+          label="Equipment rate / hr"
+          value={values.equipmentRatePerHour}
+          min={0}
+          max={equipmentCostMax}
+          step={0.1}
+          unit="$/hr"
+          onChange={(next) => onChange("equipmentRatePerHour", next)}
         />
 
         <div className="inspector-actions">

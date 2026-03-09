@@ -5,15 +5,23 @@ import { KpiRow } from "../components/KpiRow";
 import { OperationalDiagnosisCard } from "../components/OperationalDiagnosisCard";
 import { ParameterSidebar } from "../components/ParameterSidebar";
 import { StepInspector } from "../components/StepInspector";
+import { ThroughputAnalysisPanel } from "../components/ThroughputAnalysisPanel";
 import { createBottleneckForecastOutput } from "../lib/bottleneckForecast";
 import { exportScenarioBundleToLocalFolder } from "../lib/exportScenarioBundle";
 import {
   buildOperationalDiagnosis,
   formatOperationalDiagnosisMarkdown
 } from "../lib/operationalDiagnosis";
+import {
+  buildThroughputAnalysis,
+  buildThroughputStepCsv,
+  buildThroughputSummaryCsv
+} from "../lib/throughputAnalysis";
 import type {
   CompiledForecastModel,
-  DashboardConfig
+  DashboardConfig,
+  KpiConfig,
+  MasterData
 } from "../types/contracts";
 import compiledForecastModelJson from "../../models/active/compiled_forecast_model.json";
 import masterDataJson from "../../models/active/master_data.json";
@@ -34,12 +42,51 @@ interface ExportNotice {
   text: string;
 }
 
+const throughputKpis: KpiConfig[] = [
+  {
+    key: "tocThroughputPerUnit",
+    label: "TOC Throughput / Unit",
+    format: "currency",
+    decimals: 2
+  },
+  {
+    key: "fullyLoadedProfitPerUnit",
+    label: "Fully Loaded Profit / Unit",
+    format: "currency",
+    decimals: 2
+  },
+  {
+    key: "tocThroughputPerBottleneckMinute",
+    label: "TOC / Bottleneck Min",
+    format: "currency",
+    decimals: 2
+  },
+  {
+    key: "estimatedGainPercent",
+    label: "Estimated Gain %",
+    format: "percent",
+    decimals: 1
+  }
+];
+
+function downloadTextFile(fileName: string, contents: string, mimeType = "text/plain;charset=utf-8"): void {
+  const blob = new Blob([contents], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export default function SimulatorApp() {
   const exportBundleData = useMemo(() => getExportBundleData(), []);
 
   const dashboardConfig = (exportBundleData?.dashboardConfig ?? dashboardConfigJson) as DashboardConfig;
   const forecastModel = (exportBundleData?.compiledForecastModel ?? compiledForecastModelJson) as CompiledForecastModel;
-  const masterData = exportBundleData?.masterData ?? masterDataJson;
+  const masterData = (exportBundleData?.masterData ?? masterDataJson) as MasterData;
   const vsmGraph = exportBundleData?.vsmGraph ?? vsmGraphJson;
   const boundParameterGroups = useMemo(
     () => bindParameterGroupsToForecast(dashboardConfig.parameterGroups, forecastModel),
@@ -79,6 +126,7 @@ export default function SimulatorApp() {
   const [inspectorAnchor, setInspectorAnchor] = useState<{ x: number; y: number } | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportNotice, setExportNotice] = useState<ExportNotice | null>(null);
+  const [resultsMode, setResultsMode] = useState<"flow" | "diagnosis" | "throughput">("flow");
 
   const output = useMemo(
     () => createBottleneckForecastOutput(forecastModel, committedScenario, simElapsedHours),
@@ -88,12 +136,18 @@ export default function SimulatorApp() {
     () => buildOperationalDiagnosis(forecastModel, output, committedScenario),
     [forecastModel, output, committedScenario]
   );
-  const canToggleDiagnosis = true;
-  const [isDiagnosisVisible, setIsDiagnosisVisible] = useState<boolean>(false);
+  const throughputAnalysis = useMemo(
+    () => buildThroughputAnalysis(forecastModel, masterData, committedScenario, output),
+    [forecastModel, masterData, committedScenario, output]
+  );
 
   const inspectorStep = useMemo(
     () => forecastModel.stepModels.find((step) => step.stepId === inspectorStepId) ?? null,
     [forecastModel, inspectorStepId]
+  );
+  const processingByStepId = useMemo(
+    () => new Map((masterData.processing ?? []).map((row) => [row.stepId, row])),
+    [masterData]
   );
 
   const openStepInspector = (nodeId: string, anchor: { x: number; y: number }) => {
@@ -152,9 +206,24 @@ export default function SimulatorApp() {
     }
   };
   const inspectorValues = useMemo(
-    () => buildInspectorValues(inspectorStep, activeScenario),
-    [activeScenario, inspectorStep]
+    () =>
+      buildInspectorValues(inspectorStep, activeScenario, inspectorStep ? processingByStepId.get(inspectorStep.stepId) : undefined),
+    [activeScenario, inspectorStep, processingByStepId]
   );
+  const activeKpis = resultsMode === "throughput" ? throughputKpis : dashboardConfig.kpis;
+  const activeMetrics = useMemo(() => {
+    if (resultsMode !== "throughput") {
+      return output.globalMetrics;
+    }
+
+    return {
+      tocThroughputPerUnit: throughputAnalysis.summary.tocThroughputPerUnit ?? "Blocked",
+      fullyLoadedProfitPerUnit: throughputAnalysis.summary.fullyLoadedProfitPerUnit ?? "Blocked",
+      tocThroughputPerBottleneckMinute:
+        throughputAnalysis.summary.tocThroughputPerBottleneckMinute ?? "Blocked",
+      estimatedGainPercent: throughputAnalysis.summary.estimatedGainPercent ?? "Blocked"
+    };
+  }, [output.globalMetrics, resultsMode, throughputAnalysis.summary]);
 
   return (
     <div className="simulator-page">
@@ -162,15 +231,14 @@ export default function SimulatorApp() {
         <DashboardHeader
           title={dashboardConfig.appTitle}
           subtitle={dashboardConfig.subtitle ?? "Fast bottleneck forecast cockpit"}
-          canToggleDiagnosis
+          resultsMode={resultsMode}
           isPaused={isPaused}
-          isDiagnosisVisible={isDiagnosisVisible}
           hasStagedChanges={hasStagedChanges}
           isExporting={isExporting}
           simElapsedHours={simElapsedHours}
           simHorizonHours={simHorizonHours}
           speedMultiplier={speedMultiplier}
-          onToggleDiagnosis={() => setIsDiagnosisVisible((current) => !current)}
+          onResultsModeChange={setResultsMode}
           onSpeedChange={(speed) => setSpeedMultiplier(speed)}
           onStartPause={startPauseWithInspectorReset}
           onReset={resetSimulationView}
@@ -189,9 +257,7 @@ export default function SimulatorApp() {
           </div>
         ) : null}
 
-        <KpiRow kpis={dashboardConfig.kpis} metrics={output.globalMetrics} />
-
-        {isDiagnosisVisible ? <OperationalDiagnosisCard diagnosis={operationalDiagnosis} /> : null}
+        <KpiRow kpis={activeKpis} metrics={activeMetrics} />
 
         <div className="content-shell">
           <aside className="left-rail">
@@ -204,15 +270,44 @@ export default function SimulatorApp() {
           </aside>
 
           <main className="center-stage">
-            <GraphCanvas
-              graph={forecastModel.graph}
-              output={output}
-              nodeCardFields={dashboardConfig.nodeCardFields}
-              showProbabilities={dashboardConfig.graphStyle?.showProbabilities ?? true}
-              animateEdges={dashboardConfig.graphStyle?.edgeAnimation !== "none" && !isPaused}
-              resetViewSignal={resetViewSignal}
-              onNodeDoubleClick={(nodeId, anchor) => openStepInspector(nodeId, anchor)}
-            />
+            {resultsMode === "flow" ? (
+              <GraphCanvas
+                graph={forecastModel.graph}
+                output={output}
+                nodeCardFields={dashboardConfig.nodeCardFields}
+                showProbabilities={dashboardConfig.graphStyle?.showProbabilities ?? true}
+                animateEdges={dashboardConfig.graphStyle?.edgeAnimation !== "none" && !isPaused}
+                resetViewSignal={resetViewSignal}
+                onNodeDoubleClick={(nodeId, anchor) => openStepInspector(nodeId, anchor)}
+              />
+            ) : null}
+
+            {resultsMode === "diagnosis" ? (
+              <OperationalDiagnosisCard diagnosis={operationalDiagnosis} />
+            ) : null}
+
+            {resultsMode === "throughput" ? (
+              <ThroughputAnalysisPanel
+                analysis={{
+                  ...throughputAnalysis,
+                  scenarioLabel: throughputAnalysis.scenarioLabel || dashboardConfig.appTitle
+                }}
+                onExportSummaryCsv={() =>
+                  downloadTextFile(
+                    "throughput-analysis-summary.csv",
+                    buildThroughputSummaryCsv(throughputAnalysis),
+                    "text/csv;charset=utf-8"
+                  )
+                }
+                onExportStepCsv={() =>
+                  downloadTextFile(
+                    "throughput-analysis-step-costs.csv",
+                    buildThroughputStepCsv(throughputAnalysis),
+                    "text/csv;charset=utf-8"
+                  )
+                }
+              />
+            ) : null}
           </main>
         </div>
 
@@ -227,7 +322,10 @@ export default function SimulatorApp() {
               ctBaseline: 1,
               ctMultiplier: 1,
               downtimePct: 0,
-              leadTimeMinutes: 0
+              leadTimeMinutes: 0,
+              materialCostPerUnit: 0,
+              laborRatePerHour: 0,
+              equipmentRatePerHour: 0
             }
           }
           onChange={(field, value) => {

@@ -1,15 +1,14 @@
 interface DashboardHeaderProps {
   title: string;
   subtitle: string;
-  canToggleDiagnosis: boolean;
+  resultsMode: "flow" | "diagnosis" | "throughput";
   isPaused: boolean;
-  isDiagnosisVisible: boolean;
   hasStagedChanges: boolean;
   isExporting: boolean;
   simElapsedHours: number;
   simHorizonHours: number;
   speedMultiplier: 1 | 2 | 5 | 10 | 50 | 200;
-  onToggleDiagnosis: () => void;
+  onResultsModeChange: (mode: "flow" | "diagnosis" | "throughput") => void;
   onSpeedChange: (speed: 1 | 2 | 5 | 10 | 50 | 200) => void;
   onStartPause: () => void;
   onReset: () => void;
@@ -19,15 +18,14 @@ interface DashboardHeaderProps {
 export function DashboardHeader({
   title,
   subtitle,
-  canToggleDiagnosis,
+  resultsMode,
   isPaused,
-  isDiagnosisVisible,
   hasStagedChanges,
   isExporting,
   simElapsedHours,
   simHorizonHours,
   speedMultiplier,
-  onToggleDiagnosis,
+  onResultsModeChange,
   onSpeedChange,
   onStartPause,
   onReset,
@@ -48,16 +46,25 @@ export function DashboardHeader({
           <button className="secondary save-scenario-btn" onClick={onExport} disabled={isExporting}>
             {isExporting ? "Exporting..." : "Export Scenario"}
           </button>
-          {canToggleDiagnosis ? (
-            <button
-              type="button"
-              className={`secondary mode-toggle-btn ${isDiagnosisVisible ? "is-active" : ""}`}
-              onClick={onToggleDiagnosis}
-              aria-pressed={isDiagnosisVisible}
-            >
-              {isDiagnosisVisible ? "HIDE DIAGNOSIS" : "SHOW DIAGNOSIS"}
-            </button>
-          ) : null}
+          <div className="results-mode-group" role="group" aria-label="results panel mode">
+            {[
+              { key: "flow", label: "FLOW MAP" },
+              { key: "diagnosis", label: "DIAGNOSIS" },
+              { key: "throughput", label: "THROUGHPUT" }
+            ].map((mode) => (
+              <button
+                key={mode.key}
+                type="button"
+                className={`secondary mode-toggle-btn ${resultsMode === mode.key ? "is-active" : ""}`}
+                onClick={() =>
+                  onResultsModeChange(mode.key as "flow" | "diagnosis" | "throughput")
+                }
+                aria-pressed={resultsMode === mode.key}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
           <div className={`live-pill ${isPaused ? "is-paused" : "is-live"}`}>
             <span className="dot" />
             {isPaused ? "Paused" : "Live"}

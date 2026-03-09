@@ -7,6 +7,17 @@
       "label": "Interventions",
       "fields": [
         {
+          "key": "sellingPricePerUnit",
+          "label": "Transfer Price / Unit",
+          "helpText": "Scenario-level transfer price used by the Throughput Analysis module. Missing or zero transfer price blocks throughput economics.",
+          "type": "number",
+          "min": 0,
+          "max": 100000,
+          "step": 0.01,
+          "unit": "$",
+          "defaultValue": 0
+        },
+        {
           "key": "simulationHorizonHours",
           "label": "Simulation Horizon",
           "helpText": "Calendar time the model will simulate. The clock keeps advancing across working and non-working hours until this horizon is reached.",

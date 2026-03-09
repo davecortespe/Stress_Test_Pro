@@ -6,7 +6,10 @@ export type StepField =
   | "ctBaseline"
   | "ctMultiplier"
   | "downtimePct"
-  | "leadTimeMinutes";
+  | "leadTimeMinutes"
+  | "materialCostPerUnit"
+  | "laborRatePerHour"
+  | "equipmentRatePerHour";
 export type SpeedMultiplier = 1 | 2 | 5 | 10 | 50 | 200;
 
 export const BASE_SIM_HOURS_PER_SECOND = 0.1;
@@ -16,7 +19,10 @@ export const STEP_FIELDS: StepField[] = [
   "ctBaseline",
   "ctMultiplier",
   "downtimePct",
-  "leadTimeMinutes"
+  "leadTimeMinutes",
+  "materialCostPerUnit",
+  "laborRatePerHour",
+  "equipmentRatePerHour"
 ];
 
 export interface InspectorValues {
@@ -25,6 +31,9 @@ export interface InspectorValues {
   ctMultiplier: number;
   downtimePct: number;
   leadTimeMinutes: number;
+  materialCostPerUnit: number;
+  laborRatePerHour: number;
+  equipmentRatePerHour: number;
 }
 
 export function bindParameterGroupsToForecast(
@@ -99,7 +108,12 @@ export function getSimulationHorizonHours(scenario: ScenarioState): number {
 
 export function buildInspectorValues(
   step: ForecastStepModel | null,
-  scenario: ScenarioState
+  scenario: ScenarioState,
+  defaults?: {
+    materialCostPerUnit?: number | null;
+    laborRatePerHour?: number | null;
+    equipmentRatePerHour?: number | null;
+  }
 ): InspectorValues | null {
   if (!step) {
     return null;
@@ -132,6 +146,27 @@ export function buildInspectorValues(
       toNumber(
         scenario[stepScenarioKey(step.stepId, "leadTimeMinutes")],
         step.leadTimeMinutes ?? 0
+      )
+    ),
+    materialCostPerUnit: Math.max(
+      0,
+      toNumber(
+        scenario[stepScenarioKey(step.stepId, "materialCostPerUnit")],
+        defaults?.materialCostPerUnit ?? 0
+      )
+    ),
+    laborRatePerHour: Math.max(
+      0,
+      toNumber(
+        scenario[stepScenarioKey(step.stepId, "laborRatePerHour")],
+        defaults?.laborRatePerHour ?? 0
+      )
+    ),
+    equipmentRatePerHour: Math.max(
+      0,
+      toNumber(
+        scenario[stepScenarioKey(step.stepId, "equipmentRatePerHour")],
+        defaults?.equipmentRatePerHour ?? 0
       )
     )
   };

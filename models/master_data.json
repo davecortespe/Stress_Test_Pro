@@ -4,13 +4,15 @@
       "productId": "A100",
       "family": "A",
       "mixPct": 0.55,
-      "demandRate": 48
+      "demandRate": 48,
+      "sellingPricePerUnit": 185
     },
     {
       "productId": "B200",
       "family": "B",
       "mixPct": 0.45,
-      "demandRate": 39
+      "demandRate": 39,
+      "sellingPricePerUnit": 210
     }
   ],
   "equipment": [
@@ -58,7 +60,10 @@
           "mode": 2.6,
           "high": 4.8
         }
-      }
+      },
+      "materialCostPerUnit": 18.5,
+      "laborRatePerHour": 6.8,
+      "equipmentRatePerHour": 4.1
     },
     {
       "stepId": "assemble",
@@ -82,7 +87,10 @@
           "mode": 3.5,
           "high": 6.1
         }
-      }
+      },
+      "materialCostPerUnit": 24.2,
+      "laborRatePerHour": 8.4,
+      "equipmentRatePerHour": 5.6
     },
     {
       "stepId": "test",
@@ -105,7 +113,10 @@
           "mode": 0,
           "high": 0
         }
-      }
+      },
+      "materialCostPerUnit": 8.4,
+      "laborRatePerHour": 7.2,
+      "equipmentRatePerHour": 6.9
     },
     {
       "stepId": "pack",
@@ -129,7 +140,10 @@
           "mode": 1.5,
           "high": 2.5
         }
-      }
+      },
+      "materialCostPerUnit": 5.6,
+      "laborRatePerHour": 3.8,
+      "equipmentRatePerHour": 2.2
     }
   ],
   "ctVariability": [
@@ -153,5 +167,8 @@
       "cv": 0.14,
       "notes": "pack variability baseline"
     }
-  ]
+  ],
+  "economicsDefaults": {
+    "sellingPricePerUnit": 185
+  }
 }

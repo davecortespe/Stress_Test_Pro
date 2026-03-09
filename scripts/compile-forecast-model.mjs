@@ -106,6 +106,21 @@ const graph = readJson(graphPath);
 const master = readJson(masterPath);
 const LOT_SIZE_ASSUMPTION = 40;
 const DEFAULT_VARIABILITY_CV = 0.18;
+const sellingPricePerUnit =
+  typeof master?.economicsDefaults?.sellingPricePerUnit === "number" &&
+  Number.isFinite(master.economicsDefaults.sellingPricePerUnit)
+    ? master.economicsDefaults.sellingPricePerUnit
+    : Array.isArray(master?.products)
+      ? Number(
+          (
+            master.products.find(
+              (product) =>
+                typeof product?.sellingPricePerUnit === "number" &&
+                Number.isFinite(product.sellingPricePerUnit)
+            )?.sellingPricePerUnit ?? 0
+          ).toFixed(2)
+        )
+      : 0;
 
 const processingByStepId = new Map((master.processing ?? []).map((row) => [row.stepId, row]));
 
@@ -383,6 +398,15 @@ const compiled = {
       min: 0,
       max: 6,
       step: 1
+    },
+    {
+      key: "sellingPricePerUnit",
+      label: "Selling Price / Unit",
+      type: "number",
+      defaultValue: sellingPricePerUnit,
+      min: 0,
+      max: 100000,
+      step: 0.01
     }
   ],
   inputDefaults: {
@@ -396,7 +420,8 @@ const compiled = {
     setupPenaltyMultiplier: 1,
     variabilityMultiplier: 1,
     simulationHorizonHours: "8",
-    bottleneckReliefUnits: 1
+    bottleneckReliefUnits: 1,
+    sellingPricePerUnit
   },
   stepModels,
   baseline: {

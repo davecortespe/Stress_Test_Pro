@@ -1,6 +1,6 @@
 import type { CompiledForecastModel, SimulationOutput, VsmEdge, VsmGraph } from "../types/contracts";
 
-interface StepEval {
+export interface ConstraintStepEval {
   demandRatePerHour: number | null;
   utilization: number | null;
   headroom: number | null;
@@ -8,6 +8,8 @@ interface StepEval {
   queueDepth: number | null;
   queueDelayMinutes: number | null;
   wipQty: number | null;
+  effectiveUnits: number | null;
+  effectiveCtMinutes: number | null;
   capacityPerHour: number | null;
   calendarCapacityPerHour: number | null;
   serviceTimeHours: number | null;
@@ -18,10 +20,10 @@ interface StepEval {
   throughputLimit: number | null;
 }
 
-interface SystemEval {
+export interface ConstraintSystemEval {
   lineDemand: number;
   throughput: number;
-  stepEvals: Record<string, StepEval>;
+  stepEvals: Record<string, ConstraintStepEval>;
   bottleneckStepId: string;
   leadTimeTopStepId: string;
   avgQueueRisk: number;
@@ -31,6 +33,13 @@ interface SystemEval {
   worstCaseTouchTime: number;
   horizonHours: number;
   sortedByBottleneck: Array<{ stepId: string; score: number }>;
+}
+
+export interface ConstraintForecastSnapshot {
+  baseline: ConstraintSystemEval;
+  relief: ConstraintSystemEval;
+  reliefUnits: number;
+  visitFactors: Record<string, number>;
 }
 
 function num(input: unknown, fallback: number): number {
@@ -208,7 +217,7 @@ function evaluateSystem(
   visitFactors: Record<string, number>,
   reliefStepId: string,
   reliefUnits: number
-): SystemEval {
+): ConstraintSystemEval {
   const baselineDemand = num(model.inputDefaults.demandRatePerHour, num(model.baseline.demandRatePerHour, 10));
   const demandMultiplier = clamp(num(scenario.demandMultiplier, 1), 0.2, 3);
   const lineDemand = Math.max(0.1, baselineDemand * demandMultiplier);
@@ -225,7 +234,7 @@ function evaluateSystem(
   const horizonSeverity = 1 + ((horizonHours - 8) / 16) * 0.22;
   const mixProfile = String(scenario.mixProfile ?? "balanced");
 
-  const stepEvals: Record<string, StepEval> = {};
+  const stepEvals: Record<string, ConstraintStepEval> = {};
   const ranked: Array<{ stepId: string; score: number }> = [];
   let lineCapacity = Number.POSITIVE_INFINITY;
   let totalWipQty = 0;
@@ -246,6 +255,8 @@ function evaluateSystem(
         queueDepth: null,
         queueDelayMinutes: null,
         wipQty: null,
+        effectiveUnits: null,
+        effectiveCtMinutes: null,
         capacityPerHour: null,
         calendarCapacityPerHour: null,
         serviceTimeHours: null,
@@ -349,6 +360,8 @@ function evaluateSystem(
       queueDepth,
       queueDelayMinutes,
       wipQty,
+      effectiveUnits,
+      effectiveCtMinutes: effectiveCt,
       capacityPerHour: capacityRate,
       calendarCapacityPerHour: calendarCapacityRate,
       serviceTimeHours,
@@ -447,7 +460,7 @@ function topologicalOrder(graph: VsmGraph): string[] {
 
 function simulateRuntimeFlow(
   model: CompiledForecastModel,
-  system: SystemEval,
+  system: ConstraintSystemEval,
   elapsedHours: number,
   scenario: Record<string, number | string>
 ): RuntimeSnapshot {
@@ -640,8 +653,8 @@ function simulateRuntimeFlow(
 
 function migrationLabel(
   model: CompiledForecastModel,
-  baseline: SystemEval,
-  relief: SystemEval
+  baseline: ConstraintSystemEval,
+  relief: ConstraintSystemEval
 ): string {
   const nodeLabel = new Map(model.graph.nodes.map((node) => [node.id, node.label]));
   const currentLabel = nodeLabel.get(baseline.bottleneckStepId) ?? baseline.bottleneckStepId;
@@ -658,20 +671,34 @@ function migrationLabel(
   return `${currentLabel} -> ${nextLabel}${confidence}`;
 }
 
+export function createConstraintForecast(
+  model: CompiledForecastModel,
+  scenario: Record<string, number | string>
+): ConstraintForecastSnapshot {
+  const visitFactors = computeVisitFactors(model.graph);
+  const baseline = evaluateSystem(model, scenario, visitFactors, "", 0);
+  const reliefUnits = Math.max(0, Math.round(num(scenario.bottleneckReliefUnits, 1)));
+  const relief =
+    baseline.bottleneckStepId && reliefUnits > 0
+      ? evaluateSystem(model, scenario, visitFactors, baseline.bottleneckStepId, reliefUnits)
+      : baseline;
+
+  return {
+    baseline,
+    relief,
+    reliefUnits,
+    visitFactors
+  };
+}
+
 export function createBottleneckForecastOutput(
   model: CompiledForecastModel,
   scenario: Record<string, number | string>,
   elapsedHours = 0
 ): SimulationOutput {
   const stepLabelById = new Map(model.stepModels.map((step) => [step.stepId, step.label]));
-  const visitFactors = computeVisitFactors(model.graph);
-  const baseline = evaluateSystem(model, scenario, visitFactors, "", 0);
+  const { baseline, relief } = createConstraintForecast(model, scenario);
   const runtime = simulateRuntimeFlow(model, baseline, elapsedHours, scenario);
-  const reliefUnits = Math.max(0, Math.round(num(scenario.bottleneckReliefUnits, 1)));
-  const relief =
-    baseline.bottleneckStepId && reliefUnits > 0
-      ? evaluateSystem(model, scenario, visitFactors, baseline.bottleneckStepId, reliefUnits)
-      : baseline;
 
   const topScore = runtime.bottleneckIndex;
   const secondScore = baseline.sortedByBottleneck[1]?.score ?? 0;

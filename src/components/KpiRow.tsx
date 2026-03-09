@@ -41,6 +41,14 @@ function formatValue(value: number | string, format?: KpiConfig["format"], decim
   if (typeof value === "string") {
     return value;
   }
+  if (format === "currency") {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    }).format(value);
+  }
   if (format === "percent") {
     return `${(value * 100).toFixed(decimals)}%`;
   }

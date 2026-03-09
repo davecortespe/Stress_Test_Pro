@@ -29,6 +29,7 @@ export interface ProductRow {
   family: string;
   mixPct?: number;
   demandRate?: number;
+  sellingPricePerUnit?: number | null;
 }
 
 export interface EquipmentRow {
@@ -74,6 +75,9 @@ export interface ProcessingRow {
   leadTimeMinutes?: number | null;
   leadTimeRaw?: string | null;
   parallelProcedures?: number | null;
+  materialCostPerUnit?: number | null;
+  laborRatePerHour?: number | null;
+  equipmentRatePerHour?: number | null;
 }
 
 export interface VariabilityRow {
@@ -87,6 +91,9 @@ export interface MasterData {
   equipment: EquipmentRow[];
   processing: ProcessingRow[];
   ctVariability?: VariabilityRow[];
+  economicsDefaults?: {
+    sellingPricePerUnit?: number | null;
+  };
 }
 
 export interface ParameterField {
@@ -111,7 +118,7 @@ export interface ParameterGroup {
 export interface KpiConfig {
   key: string;
   label: string;
-  format?: "number" | "percent" | "duration" | "delta" | "text";
+  format?: "number" | "percent" | "duration" | "delta" | "text" | "currency";
   decimals?: number;
 }
 
@@ -269,4 +276,79 @@ export interface SimulationOutput {
       status: "healthy" | "risk" | "critical" | "unknown";
     }
   >;
+}
+
+export type ThroughputEfficiencyStatus = "high" | "medium" | "low";
+
+export interface ThroughputAnalysisValidation {
+  code: string;
+  severity: "error" | "warning";
+  message: string;
+  stepId?: string;
+  metricKey?: string;
+}
+
+export interface ThroughputSummaryMetrics {
+  sellingPrice: number | null;
+  materialCostPerUnit: number | null;
+  laborCostPerUnit: number | null;
+  equipmentCostPerUnit: number | null;
+  tocThroughputPerUnit: number | null;
+  fullyLoadedProfitPerUnit: number | null;
+  primaryBottleneck: string;
+  bottleneckTimePerUnit: number | null;
+  tocThroughputPerBottleneckMinute: number | null;
+  nextBottleneck: string;
+  estimatedGainUnits: number | null;
+  estimatedGainDollars: number | null;
+  estimatedGainPercent: number | null;
+  currentThroughput: number | null;
+  improvedThroughput: number | null;
+  efficiencyStatus: ThroughputEfficiencyStatus;
+}
+
+export interface ThroughputSummaryRow {
+  key: string;
+  label: string;
+  value: number | string | null;
+  format?: "number" | "percent" | "currency" | "text" | "duration";
+  decimals?: number;
+}
+
+export interface ThroughputStepCostRow {
+  stepId: string;
+  stepName: string;
+  materialCost: number | null;
+  laborRatePerHour: number | null;
+  equipmentRatePerHour: number | null;
+  laborCostPerUnit: number | null;
+  equipmentCostPerUnit: number | null;
+  totalStepCost: number | null;
+  hasMissingCosts: boolean;
+}
+
+export interface ThroughputInsight {
+  finding: string;
+  impactEstimate: string;
+  recommendedAction: string;
+}
+
+export interface ThroughputProfitLossRow {
+  key: string;
+  label: string;
+  total: number | null;
+}
+
+export interface ThroughputAnalysisResult {
+  scenarioLabel: string;
+  productFamilyLabel: string | null;
+  efficiencyStatus: ThroughputEfficiencyStatus;
+  efficiencyLabel: "High" | "Medium" | "Low";
+  validations: ThroughputAnalysisValidation[];
+  hasBlockingErrors: boolean;
+  summary: ThroughputSummaryMetrics;
+  summaryRows: ThroughputSummaryRow[];
+  stepRows: ThroughputStepCostRow[];
+  profitLossRows: ThroughputProfitLossRow[];
+  insights: ThroughputInsight[];
 }
