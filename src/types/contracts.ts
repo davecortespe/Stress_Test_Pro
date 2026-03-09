@@ -1,0 +1,272 @@
+export type FieldType = "slider" | "number" | "dropdown";
+
+export interface SelectOption {
+  label: string;
+  value: string;
+}
+
+export interface VsmNode {
+  id: string;
+  label: string;
+  type: string;
+}
+
+export interface VsmEdge {
+  from: string;
+  to: string;
+  probability?: number;
+}
+
+export interface VsmGraph {
+  nodes: VsmNode[];
+  edges: VsmEdge[];
+  startNodes: string[];
+  endNodes: string[];
+}
+
+export interface ProductRow {
+  productId: string;
+  family: string;
+  mixPct?: number;
+  demandRate?: number;
+}
+
+export interface EquipmentRow {
+  equipmentType: string;
+  count: number;
+  availability?:
+    | number
+    | {
+        shiftHours?: number | null;
+        uptimePct?: number | null;
+      }
+    | null;
+}
+
+export interface DistributionConfig {
+  type: string;
+  params: Record<string, number>;
+}
+
+export interface SetupRuleConfig {
+  type: string;
+  by?: string;
+}
+
+export interface ProcessingRow {
+  stepId: string;
+  equipmentType: string;
+  productKey: string;
+  ct_dist?: DistributionConfig;
+  ct?: {
+    dist: string;
+    params: Record<string, number | string | null>;
+  } | null;
+  setup_rule?: SetupRuleConfig;
+  setup_dist?: DistributionConfig;
+  changeover?: {
+    rule?: string | null;
+    time?: {
+      dist: string;
+      params: Record<string, number | string | null>;
+    } | null;
+  } | null;
+  leadTimeMinutes?: number | null;
+  leadTimeRaw?: string | null;
+  parallelProcedures?: number | null;
+}
+
+export interface VariabilityRow {
+  stepId: string;
+  cv?: number;
+  notes?: string;
+}
+
+export interface MasterData {
+  products: ProductRow[];
+  equipment: EquipmentRow[];
+  processing: ProcessingRow[];
+  ctVariability?: VariabilityRow[];
+}
+
+export interface ParameterField {
+  key: string;
+  label: string;
+  helpText?: string;
+  type: FieldType;
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  options?: Array<string | SelectOption>;
+  defaultValue: number | string;
+}
+
+export interface ParameterGroup {
+  groupId: string;
+  label: string;
+  fields: ParameterField[];
+}
+
+export interface KpiConfig {
+  key: string;
+  label: string;
+  format?: "number" | "percent" | "duration" | "delta" | "text";
+  decimals?: number;
+}
+
+export type OperationalSystemStatus = "stable" | "stressed" | "brittle" | "overloaded";
+
+export interface OperationalDiagnosis {
+  status: OperationalSystemStatus;
+  statusSummary: string;
+  primaryConstraint: string;
+  constraintMechanism: string;
+  downstreamEffects: string;
+  economicInterpretation: string;
+  recommendedAction: string;
+  scenarioGuidance: string;
+  aiOpportunityLens: {
+    dataAlreadyExists: string;
+    manualPatternDecisions: string;
+    predictiveGap: string;
+    tribalKnowledge: string;
+    visibilityGap: string;
+  };
+  confidence: "high" | "medium" | "low";
+  confidenceNote: string;
+}
+
+export interface DashboardConfig {
+  appTitle: string;
+  subtitle?: string;
+  parameterGroups: ParameterGroup[];
+  kpis: KpiConfig[];
+  nodeCardFields: string[];
+  graphStyle?: {
+    edgeAnimation?: "flow" | "none";
+    showProbabilities?: boolean;
+  };
+}
+
+export interface ChecklistItem {
+  severity: "warning" | "critical";
+  code: string;
+  message: string;
+}
+
+export interface CompiledSimSpec {
+  version: string;
+  generatedAt: string;
+  graph: VsmGraph;
+  masterData: MasterData;
+  scenarioDefaults: Record<string, number | string>;
+  validationSummary: {
+    missingItemCount: number;
+    hasCritical: boolean;
+  };
+}
+
+export type ForecastInputType = "number" | "select";
+
+export interface ForecastInputDefinition {
+  key: string;
+  label: string;
+  type: ForecastInputType;
+  defaultValue: number | string;
+  min?: number;
+  max?: number;
+  step?: number;
+  options?: Array<string | SelectOption>;
+}
+
+export interface ForecastStepBaseline {
+  demandRatePerHour: number;
+  utilization: number | null;
+  headroom: number | null;
+  queueRisk: number | null;
+  bottleneckIndex: number | null;
+  status: "healthy" | "risk" | "critical" | "unknown";
+}
+
+export interface ForecastStepModel {
+  stepId: string;
+  label: string;
+  equipmentType: string | null;
+  workerCount: number;
+  parallelProcedures: number;
+  effectiveUnits: number;
+  ctMinutes: number | null;
+  changeoverMinutes: number | null;
+  changeoverPenaltyPerUnitMinutes: number | null;
+  leadTimeMinutes: number | null;
+  variabilityCv: number;
+  effectiveCtMinutes: number | null;
+  effectiveCapacityPerHour: number | null;
+  baseline: ForecastStepBaseline;
+}
+
+export interface CompiledForecastModel {
+  version: string;
+  generatedAt: string;
+  metadata: {
+    name: string;
+    units: string;
+    mode: string;
+  };
+  graph: VsmGraph;
+  inputs: ForecastInputDefinition[];
+  inputDefaults: Record<string, number | string>;
+  stepModels: ForecastStepModel[];
+  baseline: {
+    demandRatePerHour: number;
+    lineCapacityPerHour: number;
+    bottleneckStepId: string | null;
+    globalMetrics: Record<string, number | string>;
+    nodeMetrics: Record<
+      string,
+      {
+        utilization: number | null;
+        headroom: number | null;
+        queueRisk: number | null;
+        queueDepth?: number | null;
+        wipQty?: number | null;
+        completedQty?: number | null;
+        idleWaitHours?: number | null;
+        idleWaitPct?: number | null;
+        leadTimeMinutes?: number | null;
+        capacityPerHour?: number | null;
+        bottleneckIndex: number | null;
+        bottleneckFlag: boolean;
+        status: "healthy" | "risk" | "critical" | "unknown";
+      }
+    >;
+  };
+  assumptions: Array<{
+    id: string;
+    severity: "info" | "warning" | "blocker";
+    text: string;
+  }>;
+}
+
+export interface SimulationOutput {
+  globalMetrics: Record<string, number | string>;
+  nodeMetrics: Record<
+    string,
+    {
+      utilization: number | null;
+      headroom: number | null;
+      queueRisk: number | null;
+      queueDepth?: number | null;
+      wipQty?: number | null;
+      completedQty?: number | null;
+      idleWaitHours?: number | null;
+      idleWaitPct?: number | null;
+      leadTimeMinutes?: number | null;
+      capacityPerHour?: number | null;
+      bottleneckIndex: number | null;
+      bottleneckFlag: boolean;
+      status: "healthy" | "risk" | "critical" | "unknown";
+    }
+  >;
+}

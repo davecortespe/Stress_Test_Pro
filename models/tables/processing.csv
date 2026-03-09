@@ -1,0 +1,6 @@
+stepId,equipmentType,productKey,ctDistType,ctMean,ctStdDev,setupRule,setupBy,setupDistType,setupLow,setupMode,setupHigh
+prep,prep_station,all,lognormal,4.6,0.8,family-change,family,triangular,1.5,2.6,4.8
+assemble,assembly_cell,all,lognormal,6.8,1.1,family-change,family,triangular,2.0,3.5,6.1
+test,test_rig,all,normal,5.1,0.6,none,,constant,0.0,0.0,0.0
+pack,pack_bench,all,lognormal,3.4,0.7,family-change,family,triangular,0.8,1.5,2.5
+

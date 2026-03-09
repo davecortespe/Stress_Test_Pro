@@ -1,0 +1,283 @@
+{
+  "products": [],
+  "equipment": [
+    {
+      "equipmentType": "Dispatch 1",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Worker; Station=1"
+    },
+    {
+      "equipmentType": "Corrugator",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Worker; 1 mechanic; Station=1"
+    },
+    {
+      "equipmentType": "Capping",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Worker; Station=1"
+    },
+    {
+      "equipmentType": "Hub Press",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Worker; Station=1"
+    },
+    {
+      "equipmentType": "dPA test",
+      "count": 2,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "2 Workers; Station=2"
+    },
+    {
+      "equipmentType": "Packing",
+      "count": 2,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "2 Workers; Station=2"
+    },
+    {
+      "equipmentType": "Palletizing",
+      "count": 2,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers unreadable/not shown; Station=2"
+    }
+  ],
+  "processing": [
+    {
+      "stepId": "dispatch_1",
+      "equipmentType": "Dispatch 1",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 20,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": null,
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationCount": 1,
+      "sourceText": "C/T: 20 min; C/O: N/A; 1 Worker; Station=1"
+    },
+    {
+      "stepId": "corrugator",
+      "equipmentType": "Corrugator",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 10,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 120,
+            "unit": "min"
+          }
+        }
+      },
+      "wait": null,
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationCount": 1,
+      "sourceText": "C/T: 10 min; C/O: 120 min; 1 Worker; 1 mechanic; Station=1"
+    },
+    {
+      "stepId": "capping",
+      "equipmentType": "Capping",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 12,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 30,
+            "unit": "min"
+          }
+        }
+      },
+      "wait": null,
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationCount": 1,
+      "sourceText": "C/T: 12 min; C/O: 30 min; 1 Worker; Station=1"
+    },
+    {
+      "stepId": "hub_press",
+      "equipmentType": "Hub Press",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 2.95,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": null,
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationCount": 1,
+      "sourceText": "C/T: 2.95 min; C/O: - min; 1 Worker; Station=1"
+    },
+    {
+      "stepId": "dpa_test",
+      "equipmentType": "dPA test",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 3.83,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": null,
+      "parallelProcedures": null,
+      "workers": 2,
+      "stationCount": 2,
+      "sourceText": "C/T: 3.83 min; C/O: - min; 2 Workers; Station=2"
+    },
+    {
+      "stepId": "packing",
+      "equipmentType": "Packing",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 10,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 45,
+            "unit": "min"
+          }
+        }
+      },
+      "wait": null,
+      "parallelProcedures": null,
+      "workers": 2,
+      "stationCount": 2,
+      "sourceText": "C/T: 10min; C/O: 45 min; 2 Workers; Station=2"
+    },
+    {
+      "stepId": "palletizing",
+      "equipmentType": "Palletizing",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 30,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 0,
+            "unit": "min"
+          }
+        }
+      },
+      "wait": null,
+      "parallelProcedures": null,
+      "workers": null,
+      "stationCount": 2,
+      "sourceText": "C/T: 30 min; C/O: 0 min; Workers unreadable/not shown; Station=2"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "strict-001",
+      "severity": "warning",
+      "text": "Dispatch 1 C/O is shown as 'N/A'; changeover.time is set to null due ambiguity between not-applicable and zero."
+    },
+    {
+      "id": "strict-002",
+      "severity": "warning",
+      "text": "Hub Press C/O shown as '- min' is ambiguous; changeover.time is set to null."
+    },
+    {
+      "id": "strict-003",
+      "severity": "warning",
+      "text": "dPA test C/O shown as '- min' is ambiguous; changeover.time is set to null."
+    },
+    {
+      "id": "strict-004",
+      "severity": "warning",
+      "text": "Wait times are not explicitly shown for process boxes; wait is set to null for all steps."
+    },
+    {
+      "id": "strict-005",
+      "severity": "warning",
+      "text": "Palletizing worker count is unreadable/not shown; workers is set to null."
+    },
+    {
+      "id": "strict-006",
+      "severity": "blocker",
+      "text": "Demand rate, product mix, and batch size are not shown in the VSM image."
+    },
+    {
+      "id": "strict-007",
+      "severity": "blocker",
+      "text": "Shift hours and uptime/availability are not shown in the VSM image."
+    },
+    {
+      "id": "strict-008",
+      "severity": "info",
+      "text": "Information-flow icons (MRP, Work Order, Customer) were not transcribed as process steps."
+    }
+  ]
+}

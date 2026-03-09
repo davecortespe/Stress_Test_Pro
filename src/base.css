@@ -1,0 +1,67 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "IBM Plex Sans", sans-serif;
+  color: #102033;
+  background: #edf2f5;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+body.route-landing {
+  background:
+    radial-gradient(circle at top left, rgba(60, 118, 149, 0.14), transparent 30%),
+    linear-gradient(180deg, #f6f8fa 0%, #eef3f6 38%, #e4ebef 100%);
+}
+
+body.route-sim {
+  background:
+    radial-gradient(circle at 15% -10%, rgba(30, 224, 255, 0.14), transparent 35%),
+    radial-gradient(circle at 84% -8%, rgba(255, 95, 109, 0.1), transparent 32%),
+    linear-gradient(170deg, #081425, #040913);
+}
+
+body.route-sim,
+body.route-sim a {
+  color: #f4f7ff;
+}
+
+.route-loading-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.route-loading-card {
+  border-radius: 18px;
+  border: 1px solid rgba(34, 52, 71, 0.16);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 18px 24px;
+  color: #22384a;
+  box-shadow: 0 24px 80px rgba(22, 34, 47, 0.12);
+}

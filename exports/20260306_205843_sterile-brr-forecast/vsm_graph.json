@@ -1,0 +1,143 @@
+{
+  "metadata": {
+    "name": "Sterile BRR Flow",
+    "units": "days",
+    "source": "User-provided VSM image (strict transcription, 2026-03-07)"
+  },
+  "nodes": [
+    {
+      "id": "sterile_brr_mfg",
+      "label": "Sterile BRR Mfg",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "4 days",
+        "changeoverRaw": null,
+        "waitRaw": null,
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Target days: 6",
+          "Status dot: green"
+        ]
+      }
+    },
+    {
+      "id": "sterile_brr_qa",
+      "label": "Sterile BRR QA",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "8 days",
+        "changeoverRaw": null,
+        "waitRaw": null,
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Target days: 9",
+          "Status dot: green"
+        ]
+      }
+    },
+    {
+      "id": "insp_brr_mfg",
+      "label": "Insp BRR MFG",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "2 days",
+        "changeoverRaw": null,
+        "waitRaw": null,
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Target days: 5",
+          "Status dot: green"
+        ]
+      }
+    },
+    {
+      "id": "insp_brr_qa",
+      "label": "Insp BRR QA",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "7 days",
+        "changeoverRaw": null,
+        "waitRaw": null,
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Target days: 5",
+          "Status dot: red"
+        ]
+      }
+    },
+    {
+      "id": "pkg_mfg_brr",
+      "label": "PKG Mfg BRR",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "1 days",
+        "changeoverRaw": null,
+        "waitRaw": null,
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Target days: 5",
+          "Status dot: green"
+        ]
+      }
+    },
+    {
+      "id": "pkg_qa_brr",
+      "label": "PKG QA BRR",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "6 days",
+        "changeoverRaw": null,
+        "waitRaw": null,
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Target days: 5",
+          "Status dot: red"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "sterile_brr_mfg",
+      "to": "sterile_brr_qa",
+      "probability": 1,
+      "waitRaw": "5"
+    },
+    {
+      "from": "sterile_brr_qa",
+      "to": "insp_brr_mfg",
+      "probability": 1,
+      "waitRaw": null
+    },
+    {
+      "from": "insp_brr_mfg",
+      "to": "insp_brr_qa",
+      "probability": 1,
+      "waitRaw": "1"
+    },
+    {
+      "from": "insp_brr_qa",
+      "to": "pkg_mfg_brr",
+      "probability": 1,
+      "waitRaw": null
+    },
+    {
+      "from": "pkg_mfg_brr",
+      "to": "pkg_qa_brr",
+      "probability": 1,
+      "waitRaw": "1"
+    }
+  ],
+  "startNodes": [
+    "sterile_brr_mfg"
+  ],
+  "endNodes": [
+    "pkg_qa_brr"
+  ]
+}

@@ -1,0 +1,301 @@
+{
+  "products": [],
+  "equipment": [
+    {
+      "equipmentType": "Receiving",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Worker; Station=1"
+    },
+    {
+      "equipmentType": "QA",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Worker"
+    },
+    {
+      "equipmentType": "Storage",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Worker; Station=1"
+    },
+    {
+      "equipmentType": "Generate Claim",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Worker; Station=1"
+    },
+    {
+      "equipmentType": "Follow  UP",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Workers; Station=1"
+    },
+    {
+      "equipmentType": "Approval",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "1 Workers; Station=1"
+    },
+    {
+      "equipmentType": "Send",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers not shown; Station=2"
+    }
+  ],
+  "processing": [
+    {
+      "stepId": "receiving",
+      "equipmentType": "Receiving",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 20,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": null,
+      "leadTimeMinutes": null,
+      "leadTimeRaw": null,
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationRaw": "Station=1",
+      "sourceText": "C/T: 20 min; C/O: N/A; 1 Worker; Station=1"
+    },
+    {
+      "stepId": "qa",
+      "equipmentType": "QA",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 10,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": null,
+      "leadTimeMinutes": null,
+      "leadTimeRaw": null,
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationRaw": null,
+      "sourceText": "C/T: 10 min; C/O: N/A min; 1 Worker"
+    },
+    {
+      "stepId": "storage",
+      "equipmentType": "Storage",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 12,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": null,
+      "leadTimeMinutes": null,
+      "leadTimeRaw": null,
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationRaw": "Station=1",
+      "sourceText": "C/T: 12 min; C/O: N/a; 1 Worker; Station=1"
+    },
+    {
+      "stepId": "generate_claim",
+      "equipmentType": "Generate Claim",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 30,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": null,
+      "leadTimeMinutes": null,
+      "leadTimeRaw": null,
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationRaw": "Station=1",
+      "sourceText": "C/T: 30 min; C/O: - min; 1 Worker; Station=1"
+    },
+    {
+      "stepId": "follow_up",
+      "equipmentType": "Follow  UP",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 30,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": null,
+      "leadTimeMinutes": null,
+      "leadTimeRaw": null,
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationRaw": "Station=1",
+      "sourceText": "C/T: 30 min; C/O: - min; 1 Workers; Station=1"
+    },
+    {
+      "stepId": "approval",
+      "equipmentType": "Approval",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 10,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "Lead Time=30 days"
+      },
+      "leadTimeMinutes": 43200,
+      "leadTimeRaw": "Lead Time=30 days",
+      "parallelProcedures": null,
+      "workers": 1,
+      "stationRaw": "Station=1",
+      "sourceText": "C/T: 10min; Lead Time=30 days; 1 Workers; Station=1"
+    },
+    {
+      "stepId": "send",
+      "equipmentType": "Send",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 30,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 0,
+            "unit": "min"
+          }
+        }
+      },
+      "wait": null,
+      "leadTimeMinutes": null,
+      "leadTimeRaw": null,
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": "Station=2",
+      "sourceText": "C/T: 30 min; C/O: 0 min; Station=2"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "strict-001",
+      "severity": "warning",
+      "text": "Receiving C/O shown as 'N/A' is ambiguous between not-applicable and zero; changeover.time is null."
+    },
+    {
+      "id": "strict-002",
+      "severity": "warning",
+      "text": "QA C/O shown as 'N/A min' is ambiguous between not-applicable and zero; changeover.time is null."
+    },
+    {
+      "id": "strict-003",
+      "severity": "warning",
+      "text": "Storage C/O shown as 'N/a' is ambiguous between not-applicable and zero; changeover.time is null."
+    },
+    {
+      "id": "strict-004",
+      "severity": "warning",
+      "text": "Generate Claim C/O shown as '- min' is ambiguous; changeover.time is null."
+    },
+    {
+      "id": "strict-005",
+      "severity": "warning",
+      "text": "Follow  UP C/O shown as '- min' is ambiguous; changeover.time is null."
+    },
+    {
+      "id": "strict-006",
+      "severity": "warning",
+      "text": "Approval C/O is not visible in the process box; changeover.time is null."
+    },
+    {
+      "id": "strict-007",
+      "severity": "warning",
+      "text": "QA station/parallel-procedure value is not visible in the process box."
+    },
+    {
+      "id": "strict-008",
+      "severity": "warning",
+      "text": "Explicit parallel-procedure counts are not shown in any process box; parallelProcedures is null for all steps."
+    },
+    {
+      "id": "strict-009",
+      "severity": "warning",
+      "text": "Send worker count is not visible/readable in the process box; workers is null."
+    },
+    {
+      "id": "strict-010",
+      "severity": "blocker",
+      "text": "Demand rate, product mix, lot size, and shift/uptime values are not shown in the VSM image."
+    },
+    {
+      "id": "strict-011",
+      "severity": "info",
+      "text": "Information-flow icons/text (MRP, Work Order, Customer, Finished Claim arrow) are not transcribed as process steps."
+    },
+    {
+      "id": "strict-012",
+      "severity": "warning",
+      "text": "Lead Time field is explicit only for Approval (30 days); other process lead-time fields are null because they are not visible."
+    }
+  ]
+}

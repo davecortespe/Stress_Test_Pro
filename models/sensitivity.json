@@ -1,0 +1,133 @@
+{
+  "generatedAt": "2026-02-26T12:32:31.720Z",
+  "baseline": {
+    "totalLeadTimeMinutes": 44062.7252,
+    "totalWaitMinutes": 43200,
+    "waitSharePct": 0.980421,
+    "leadTimeTopContributor": "Approval",
+    "leadTimeTopStepId": "approval",
+    "stepBreakdown": [
+      {
+        "stepId": "receiving",
+        "label": "Receiving",
+        "processMinutes": 20,
+        "queueDelayMinutes": 22.274,
+        "leadTimeMinutes": 0,
+        "totalStepLeadTimeMinutes": 42.274
+      },
+      {
+        "stepId": "qa",
+        "label": "QA",
+        "processMinutes": 10,
+        "queueDelayMinutes": 1.591,
+        "leadTimeMinutes": 0,
+        "totalStepLeadTimeMinutes": 11.591
+      },
+      {
+        "stepId": "storage",
+        "label": "Storage",
+        "processMinutes": 12,
+        "queueDelayMinutes": 3.0072,
+        "leadTimeMinutes": 0,
+        "totalStepLeadTimeMinutes": 15.0072
+      },
+      {
+        "stepId": "generate_claim",
+        "label": "Generate Claim",
+        "processMinutes": 30,
+        "queueDelayMinutes": 342.714,
+        "leadTimeMinutes": 0,
+        "totalStepLeadTimeMinutes": 372.714
+      },
+      {
+        "stepId": "follow_up",
+        "label": "Follow  UP",
+        "processMinutes": 30,
+        "queueDelayMinutes": 342.714,
+        "leadTimeMinutes": 0,
+        "totalStepLeadTimeMinutes": 372.714
+      },
+      {
+        "stepId": "approval",
+        "label": "Approval",
+        "processMinutes": 10,
+        "queueDelayMinutes": 1.591,
+        "leadTimeMinutes": 43200,
+        "totalStepLeadTimeMinutes": 43211.591
+      },
+      {
+        "stepId": "send",
+        "label": "Send",
+        "processMinutes": 30,
+        "queueDelayMinutes": 6.834,
+        "leadTimeMinutes": 0,
+        "totalStepLeadTimeMinutes": 36.834
+      }
+    ]
+  },
+  "rows": [
+    {
+      "stepId": "approval",
+      "label": "Approval",
+      "baselineLeadTimeMinutes": 43200,
+      "elasticityVsTotalLeadTime": 0.98042,
+      "deltaMinutesAtMinus50Pct": -21600,
+      "deltaPctAtMinus50Pct": -0.49021,
+      "impactRankScore": 21600
+    },
+    {
+      "stepId": "receiving",
+      "label": "Receiving",
+      "baselineLeadTimeMinutes": 0,
+      "elasticityVsTotalLeadTime": 0,
+      "deltaMinutesAtMinus50Pct": 0,
+      "deltaPctAtMinus50Pct": 0,
+      "impactRankScore": 0
+    },
+    {
+      "stepId": "qa",
+      "label": "QA",
+      "baselineLeadTimeMinutes": 0,
+      "elasticityVsTotalLeadTime": 0,
+      "deltaMinutesAtMinus50Pct": 0,
+      "deltaPctAtMinus50Pct": 0,
+      "impactRankScore": 0
+    },
+    {
+      "stepId": "storage",
+      "label": "Storage",
+      "baselineLeadTimeMinutes": 0,
+      "elasticityVsTotalLeadTime": 0,
+      "deltaMinutesAtMinus50Pct": 0,
+      "deltaPctAtMinus50Pct": 0,
+      "impactRankScore": 0
+    },
+    {
+      "stepId": "generate_claim",
+      "label": "Generate Claim",
+      "baselineLeadTimeMinutes": 0,
+      "elasticityVsTotalLeadTime": 0,
+      "deltaMinutesAtMinus50Pct": 0,
+      "deltaPctAtMinus50Pct": 0,
+      "impactRankScore": 0
+    },
+    {
+      "stepId": "follow_up",
+      "label": "Follow  UP",
+      "baselineLeadTimeMinutes": 0,
+      "elasticityVsTotalLeadTime": 0,
+      "deltaMinutesAtMinus50Pct": 0,
+      "deltaPctAtMinus50Pct": 0,
+      "impactRankScore": 0
+    },
+    {
+      "stepId": "send",
+      "label": "Send",
+      "baselineLeadTimeMinutes": 0,
+      "elasticityVsTotalLeadTime": 0,
+      "deltaMinutesAtMinus50Pct": 0,
+      "deltaPctAtMinus50Pct": 0,
+      "impactRankScore": 0
+    }
+  ]
+}

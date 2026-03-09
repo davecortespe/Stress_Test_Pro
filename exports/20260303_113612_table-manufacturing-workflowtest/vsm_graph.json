@@ -1,0 +1,224 @@
+{
+  "metadata": {
+    "name": "Consumption Report VSM",
+    "units": "minutes",
+    "source": "User-provided VSM image (strict transcription refresh, 2026-03-03)"
+  },
+  "nodes": [
+    {
+      "id": "receiving",
+      "label": "Receiving",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "30 min",
+        "changeoverRaw": null,
+        "waitRaw": "8 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "D.T. (%) = n/a",
+          "Bottom timeline (process): 0.05"
+        ]
+      }
+    },
+    {
+      "id": "micro",
+      "label": "Micro",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "8 hrs",
+        "changeoverRaw": null,
+        "waitRaw": "8 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Bottom timeline (process): 1.0"
+        ]
+      }
+    },
+    {
+      "id": "granulation",
+      "label": "Granulation",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "10.55",
+        "changeoverRaw": null,
+        "waitRaw": "8 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": "# of Lines: 2",
+        "notesRaw": [
+          "D.T. (%) = 39%",
+          "OEE = 52.67%",
+          "Bottom timeline (process): 0.1"
+        ]
+      }
+    },
+    {
+      "id": "compression",
+      "label": "Compression",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "175",
+        "changeoverRaw": null,
+        "waitRaw": "8 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": "# of Lines: 3",
+        "notesRaw": [
+          "D.T. (%) = 36.72%",
+          "OEE = 49.13%",
+          "Bottom timeline (process): 0.31"
+        ]
+      }
+    },
+    {
+      "id": "coating",
+      "label": "Coating",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "204",
+        "changeoverRaw": "30",
+        "waitRaw": "8 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": "# of Lines: 2",
+        "notesRaw": [
+          "D.T. (%) = 30.40%",
+          "OEE = 49.14%",
+          "Bottom timeline (process): 0.15"
+        ]
+      }
+    },
+    {
+      "id": "printing",
+      "label": "Printing",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "150",
+        "changeoverRaw": "40",
+        "waitRaw": "8 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": "# of Lines: 2",
+        "notesRaw": [
+          "D.T. (%) = 37.90%",
+          "OEE = 48.56%",
+          "Bottom timeline (process): 0.12"
+        ]
+      }
+    },
+    {
+      "id": "analitical_lab",
+      "label": "Analitical Lab",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "16 hrs",
+        "changeoverRaw": null,
+        "waitRaw": "48 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Bottom timeline (process): 0.90"
+        ]
+      }
+    },
+    {
+      "id": "packaging",
+      "label": "Packaging",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "30",
+        "changeoverRaw": "210",
+        "waitRaw": "48 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": "# of Lines: 1.00",
+        "notesRaw": [
+          "D.T. (%) = 53.25%",
+          "OEE = 48.30%",
+          "Lot Size = 10.00",
+          "Bottom timeline (process): 1.34"
+        ]
+      }
+    },
+    {
+      "id": "docking",
+      "label": "Docking",
+      "type": "process",
+      "boxData": {
+        "ctRaw": null,
+        "changeoverRaw": null,
+        "waitRaw": "8 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Bottom timeline (process): 0.03"
+        ]
+      }
+    },
+    {
+      "id": "shipping",
+      "label": "Shipping",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "8 hrs",
+        "changeoverRaw": null,
+        "waitRaw": "8 hrs",
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Inventory triangle note: 5-7 Days"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "receiving",
+      "to": "micro",
+      "probability": 1
+    },
+    {
+      "from": "micro",
+      "to": "granulation",
+      "probability": 1
+    },
+    {
+      "from": "granulation",
+      "to": "compression",
+      "probability": 1
+    },
+    {
+      "from": "compression",
+      "to": "coating",
+      "probability": 1
+    },
+    {
+      "from": "coating",
+      "to": "printing",
+      "probability": 1
+    },
+    {
+      "from": "printing",
+      "to": "analitical_lab",
+      "probability": 1
+    },
+    {
+      "from": "analitical_lab",
+      "to": "packaging",
+      "probability": 1
+    },
+    {
+      "from": "packaging",
+      "to": "docking",
+      "probability": 1
+    },
+    {
+      "from": "docking",
+      "to": "shipping",
+      "probability": 1
+    }
+  ],
+  "startNodes": [
+    "receiving"
+  ],
+  "endNodes": [
+    "shipping"
+  ]
+}

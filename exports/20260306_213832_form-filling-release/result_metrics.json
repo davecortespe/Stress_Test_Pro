@@ -1,0 +1,97 @@
+{
+  "globalMetrics": {
+    "throughput": 0.0094,
+    "forecastThroughput": 0.0094,
+    "throughputDelta": 0,
+    "bottleneckMigration": "baseline only",
+    "bottleneckIndex": 0.6936,
+    "brittleness": 0.4201,
+    "avgQueueRisk": 0.1675,
+    "totalWipQty": 13.4867,
+    "worstCaseTouchTime": 17280,
+    "totalLeadTimeMinutes": 124954.138,
+    "leadTimeDeltaMinutes": 0,
+    "waitSharePct": 0.2766,
+    "leadTimeTopContributor": "Functional Test"
+  },
+  "nodeMetrics": {
+    "form_and_filling": {
+      "utilization": 0.4519,
+      "headroom": 0.5481,
+      "queueRisk": 0.0384,
+      "queueDepth": 0.4611,
+      "wipQty": 0.4611,
+      "completedQty": 0,
+      "leadTimeMinutes": 7090.2113,
+      "capacityPerHour": 0.0208,
+      "bottleneckIndex": 0.2349,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    },
+    "inspection": {
+      "utilization": 0.2254,
+      "headroom": 0.7746,
+      "queueRisk": 0.0068,
+      "queueDepth": 0.0812,
+      "wipQty": 0.0812,
+      "completedQty": 0,
+      "leadTimeMinutes": 4436.8093,
+      "capacityPerHour": 0.0417,
+      "bottleneckIndex": 0.1137,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    },
+    "packaging": {
+      "utilization": 0.4519,
+      "headroom": 0.5481,
+      "queueRisk": 0.0384,
+      "queueDepth": 0.4611,
+      "wipQty": 0.4611,
+      "completedQty": 0,
+      "leadTimeMinutes": 9970.2113,
+      "capacityPerHour": 0.0208,
+      "bottleneckIndex": 0.2349,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    },
+    "functional_test": {
+      "utilization": 0.9038,
+      "headroom": 0.0962,
+      "queueRisk": 0.8762,
+      "queueDepth": 11.9409,
+      "wipQty": 11.9409,
+      "completedQty": 0,
+      "leadTimeMinutes": 89049.8854,
+      "capacityPerHour": 0.0104,
+      "bottleneckIndex": 0.6936,
+      "bottleneckFlag": true,
+      "status": "critical"
+    },
+    "coa": {
+      "utilization": 0.4519,
+      "headroom": 0.5481,
+      "queueRisk": 0.0384,
+      "queueDepth": 0.4611,
+      "wipQty": 0.4611,
+      "completedQty": 0,
+      "leadTimeMinutes": 9970.2113,
+      "capacityPerHour": 0.0208,
+      "bottleneckIndex": 0.2349,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    },
+    "release": {
+      "utilization": 0.2254,
+      "headroom": 0.7746,
+      "queueRisk": 0.0068,
+      "queueDepth": 0.0812,
+      "wipQty": 0.0812,
+      "completedQty": 0,
+      "leadTimeMinutes": 4436.8093,
+      "capacityPerHour": 0.0417,
+      "bottleneckIndex": 0.1137,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    }
+  }
+}

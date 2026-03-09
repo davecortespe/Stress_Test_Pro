@@ -1,0 +1,576 @@
+{
+  "version": "0.2.0",
+  "generatedAt": "2026-03-07T02:36:49.930Z",
+  "metadata": {
+    "name": "Bottleneck Forecast Flow",
+    "units": "per-hour",
+    "mode": "constraint-forecast-non-des"
+  },
+  "graph": {
+    "metadata": {
+      "name": "Bottleneck Forecast Flow",
+      "units": "days",
+      "source": "User-provided VSM image (strict transcription, 2026-03-07)"
+    },
+    "nodes": [
+      {
+        "id": "form_and_filling",
+        "label": "Form & Filling",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "2 days",
+          "changeoverRaw": null,
+          "waitRaw": null,
+          "workersRaw": null,
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Target days: 2",
+            "Status dot: green"
+          ]
+        }
+      },
+      {
+        "id": "inspection",
+        "label": "Inspection",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "1 days",
+          "changeoverRaw": null,
+          "waitRaw": null,
+          "workersRaw": null,
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Target days: 2",
+            "Status dot: green"
+          ]
+        }
+      },
+      {
+        "id": "packaging",
+        "label": "Packaging",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "2 days",
+          "changeoverRaw": null,
+          "waitRaw": null,
+          "workersRaw": null,
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Target days: 4",
+            "Status dot: green"
+          ]
+        }
+      },
+      {
+        "id": "functional_test",
+        "label": "Functional Test",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "4 days",
+          "changeoverRaw": null,
+          "waitRaw": null,
+          "workersRaw": null,
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Target days: 10",
+            "Status dot: green"
+          ]
+        }
+      },
+      {
+        "id": "coa",
+        "label": "COA",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "2 days",
+          "changeoverRaw": null,
+          "waitRaw": null,
+          "workersRaw": null,
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Target days: 4",
+            "Status dot: green"
+          ]
+        }
+      },
+      {
+        "id": "release",
+        "label": "Release",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "1 days",
+          "changeoverRaw": null,
+          "waitRaw": "2.5 (after Release, destination not labeled)",
+          "workersRaw": null,
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Target days: 2",
+            "Status dot: green"
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "form_and_filling",
+        "to": "inspection",
+        "probability": 1,
+        "waitRaw": "5"
+      },
+      {
+        "from": "inspection",
+        "to": "packaging",
+        "probability": 1,
+        "waitRaw": "15"
+      },
+      {
+        "from": "packaging",
+        "to": "functional_test",
+        "probability": 1,
+        "waitRaw": null
+      },
+      {
+        "from": "functional_test",
+        "to": "coa",
+        "probability": 1,
+        "waitRaw": null
+      },
+      {
+        "from": "coa",
+        "to": "release",
+        "probability": 1,
+        "waitRaw": null
+      }
+    ],
+    "startNodes": [
+      "form_and_filling"
+    ],
+    "endNodes": [
+      "release"
+    ]
+  },
+  "inputs": [
+    {
+      "key": "demandMultiplier",
+      "label": "Demand Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.6,
+      "max": 1.8,
+      "step": 0.05
+    },
+    {
+      "key": "mixProfile",
+      "label": "Mix Profile",
+      "type": "select",
+      "defaultValue": "balanced",
+      "options": [
+        "balanced",
+        "station-1-heavy",
+        "final-step-heavy"
+      ]
+    },
+    {
+      "key": "staffingMultiplier",
+      "label": "Staffing Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.7,
+      "max": 1.4,
+      "step": 0.05
+    },
+    {
+      "key": "equipmentMultiplier",
+      "label": "Equipment Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.7,
+      "max": 1.4,
+      "step": 0.05
+    },
+    {
+      "key": "unplannedDowntimePct",
+      "label": "Unplanned Downtime",
+      "type": "number",
+      "defaultValue": 7,
+      "min": 0,
+      "max": 35,
+      "step": 0.5
+    },
+    {
+      "key": "ctMultiplier",
+      "label": "Cycle Time Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.75,
+      "max": 1.6,
+      "step": 0.05
+    },
+    {
+      "key": "setupPenaltyMultiplier",
+      "label": "Setup Penalty",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.5,
+      "max": 1.8,
+      "step": 0.05
+    },
+    {
+      "key": "variabilityMultiplier",
+      "label": "Variability Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.6,
+      "max": 1.8,
+      "step": 0.05
+    },
+    {
+      "key": "simulationHorizonHours",
+      "label": "Simulation Horizon",
+      "type": "select",
+      "defaultValue": "24",
+      "options": [
+        {
+          "label": "8 hrs",
+          "value": "8"
+        },
+        {
+          "label": "16 hrs",
+          "value": "16"
+        },
+        {
+          "label": "24 hrs",
+          "value": "24"
+        },
+        {
+          "label": "1 week",
+          "value": "168"
+        },
+        {
+          "label": "1 month",
+          "value": "720"
+        }
+      ]
+    },
+    {
+      "key": "activeShiftCount",
+      "label": "Operating Shifts",
+      "type": "select",
+      "defaultValue": "3",
+      "options": [
+        {
+          "label": "1 shift",
+          "value": "1"
+        },
+        {
+          "label": "2 shifts",
+          "value": "2"
+        },
+        {
+          "label": "3 shifts",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "key": "bottleneckReliefUnits",
+      "label": "Bottleneck Relief (+units)",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0,
+      "max": 6,
+      "step": 1
+    }
+  ],
+  "inputDefaults": {
+    "demandRatePerHour": 0.0094,
+    "demandMultiplier": 1,
+    "mixProfile": "balanced",
+    "staffingMultiplier": 1,
+    "equipmentMultiplier": 1,
+    "unplannedDowntimePct": 7,
+    "ctMultiplier": 1,
+    "setupPenaltyMultiplier": 1,
+    "variabilityMultiplier": 1,
+    "simulationHorizonHours": "24",
+    "activeShiftCount": "3",
+    "bottleneckReliefUnits": 1
+  },
+  "stepModels": [
+    {
+      "stepId": "form_and_filling",
+      "label": "Form & Filling",
+      "equipmentType": "Form & Filling",
+      "workerCount": 0,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 2880,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 2880,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 2880,
+      "effectiveCapacityPerHour": 0.0208,
+      "baseline": {
+        "demandRatePerHour": 0.0094,
+        "utilization": 0.4519,
+        "headroom": 0.5481,
+        "queueRisk": 0.0384,
+        "bottleneckIndex": 0.2349,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "inspection",
+      "label": "Inspection",
+      "equipmentType": "Inspection",
+      "workerCount": 0,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 1440,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 2880,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 1440,
+      "effectiveCapacityPerHour": 0.0417,
+      "baseline": {
+        "demandRatePerHour": 0.0094,
+        "utilization": 0.2254,
+        "headroom": 0.7746,
+        "queueRisk": 0.0068,
+        "bottleneckIndex": 0.1137,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "packaging",
+      "label": "Packaging",
+      "equipmentType": "Packaging",
+      "workerCount": 0,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 2880,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 5760,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 2880,
+      "effectiveCapacityPerHour": 0.0208,
+      "baseline": {
+        "demandRatePerHour": 0.0094,
+        "utilization": 0.4519,
+        "headroom": 0.5481,
+        "queueRisk": 0.0384,
+        "bottleneckIndex": 0.2349,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "functional_test",
+      "label": "Functional Test",
+      "equipmentType": "Functional Test",
+      "workerCount": 0,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 5760,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 14400,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 5760,
+      "effectiveCapacityPerHour": 0.0104,
+      "baseline": {
+        "demandRatePerHour": 0.0094,
+        "utilization": 0.9038,
+        "headroom": 0.0962,
+        "queueRisk": 0.8762,
+        "bottleneckIndex": 0.6936,
+        "status": "risk"
+      }
+    },
+    {
+      "stepId": "coa",
+      "label": "COA",
+      "equipmentType": "COA",
+      "workerCount": 0,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 2880,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 5760,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 2880,
+      "effectiveCapacityPerHour": 0.0208,
+      "baseline": {
+        "demandRatePerHour": 0.0094,
+        "utilization": 0.4519,
+        "headroom": 0.5481,
+        "queueRisk": 0.0384,
+        "bottleneckIndex": 0.2349,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "release",
+      "label": "Release",
+      "equipmentType": "Release",
+      "workerCount": 0,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 1440,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 2880,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 1440,
+      "effectiveCapacityPerHour": 0.0417,
+      "baseline": {
+        "demandRatePerHour": 0.0094,
+        "utilization": 0.2254,
+        "headroom": 0.7746,
+        "queueRisk": 0.0068,
+        "bottleneckIndex": 0.1137,
+        "status": "healthy"
+      }
+    }
+  ],
+  "baseline": {
+    "demandRatePerHour": 0.0094,
+    "lineCapacityPerHour": 0.0104,
+    "bottleneckStepId": "functional_test",
+    "globalMetrics": {
+      "throughput": 0.0094,
+      "forecastThroughput": 0.0094,
+      "throughputDelta": 0,
+      "bottleneckMigration": "baseline only",
+      "bottleneckIndex": 0.6936,
+      "brittleness": 0.4201,
+      "avgQueueRisk": 0.1675,
+      "totalWipQty": 13.4867,
+      "worstCaseTouchTime": 17280,
+      "totalLeadTimeMinutes": 124954.138,
+      "leadTimeDeltaMinutes": 0,
+      "waitSharePct": 0.2766,
+      "leadTimeTopContributor": "Functional Test"
+    },
+    "nodeMetrics": {
+      "form_and_filling": {
+        "utilization": 0.4519,
+        "headroom": 0.5481,
+        "queueRisk": 0.0384,
+        "queueDepth": 0.4611,
+        "wipQty": 0.4611,
+        "completedQty": 0,
+        "leadTimeMinutes": 7090.2113,
+        "capacityPerHour": 0.0208,
+        "bottleneckIndex": 0.2349,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "inspection": {
+        "utilization": 0.2254,
+        "headroom": 0.7746,
+        "queueRisk": 0.0068,
+        "queueDepth": 0.0812,
+        "wipQty": 0.0812,
+        "completedQty": 0,
+        "leadTimeMinutes": 4436.8093,
+        "capacityPerHour": 0.0417,
+        "bottleneckIndex": 0.1137,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "packaging": {
+        "utilization": 0.4519,
+        "headroom": 0.5481,
+        "queueRisk": 0.0384,
+        "queueDepth": 0.4611,
+        "wipQty": 0.4611,
+        "completedQty": 0,
+        "leadTimeMinutes": 9970.2113,
+        "capacityPerHour": 0.0208,
+        "bottleneckIndex": 0.2349,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "functional_test": {
+        "utilization": 0.9038,
+        "headroom": 0.0962,
+        "queueRisk": 0.8762,
+        "queueDepth": 11.9409,
+        "wipQty": 11.9409,
+        "completedQty": 0,
+        "leadTimeMinutes": 89049.8854,
+        "capacityPerHour": 0.0104,
+        "bottleneckIndex": 0.6936,
+        "bottleneckFlag": true,
+        "status": "critical"
+      },
+      "coa": {
+        "utilization": 0.4519,
+        "headroom": 0.5481,
+        "queueRisk": 0.0384,
+        "queueDepth": 0.4611,
+        "wipQty": 0.4611,
+        "completedQty": 0,
+        "leadTimeMinutes": 9970.2113,
+        "capacityPerHour": 0.0208,
+        "bottleneckIndex": 0.2349,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "release": {
+        "utilization": 0.2254,
+        "headroom": 0.7746,
+        "queueRisk": 0.0068,
+        "queueDepth": 0.0812,
+        "wipQty": 0.0812,
+        "completedQty": 0,
+        "leadTimeMinutes": 4436.8093,
+        "capacityPerHour": 0.0417,
+        "bottleneckIndex": 0.1137,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      }
+    }
+  },
+  "assumptions": [
+    {
+      "id": "compile-001",
+      "severity": "warning",
+      "text": "Demand rate is not shown in the VSM image; baseline demandRatePerHour is set to 90% of computed line capacity."
+    },
+    {
+      "id": "compile-002",
+      "severity": "warning",
+      "text": "Station=n text is interpreted as effective parallel units during forecast compilation."
+    },
+    {
+      "id": "compile-003",
+      "severity": "warning",
+      "text": "A lot-size assumption of 40 units is used to convert visible C/O minutes into per-unit setup penalty."
+    },
+    {
+      "id": "compile-004",
+      "severity": "warning",
+      "text": "Where C/O is null or ambiguous in strict transcription, setup penalty contribution is set to zero in forecast equations."
+    },
+    {
+      "id": "compile-005",
+      "severity": "warning",
+      "text": "Default variability CV is set to 0.18 for all steps because step-level variability is not shown in the image."
+    },
+    {
+      "id": "compile-006",
+      "severity": "warning",
+      "text": "Step lead time values not visible in the image are stored as null in master data and treated as 0 minutes in aggregate lead-time calculations."
+    },
+    {
+      "id": "compile-007",
+      "severity": "info",
+      "text": "Queue risk, bottleneck index, brittleness, and migration outputs are deterministic non-DES heuristics for rapid forecast recompute."
+    }
+  ]
+}

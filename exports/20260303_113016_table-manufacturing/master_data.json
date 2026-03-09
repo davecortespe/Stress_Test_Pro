@@ -1,0 +1,432 @@
+{
+  "products": [],
+  "equipment": [
+    {
+      "equipmentType": "Receiving",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Worker/equipment count not visible."
+    },
+    {
+      "equipmentType": "Micro",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Worker/equipment count not visible."
+    },
+    {
+      "equipmentType": "Granulation",
+      "count": 2,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "# of Lines = 2"
+    },
+    {
+      "equipmentType": "Compression",
+      "count": 3,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "# of Lines = 3"
+    },
+    {
+      "equipmentType": "Coating",
+      "count": 2,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "# of Lines = 2"
+    },
+    {
+      "equipmentType": "Printing",
+      "count": 2,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "# of Lines = 2"
+    },
+    {
+      "equipmentType": "Analitical Lab",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Worker/equipment count not visible."
+    },
+    {
+      "equipmentType": "Packaging",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "# of Lines = 1.00"
+    },
+    {
+      "equipmentType": "Docking",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Worker/equipment count not visible."
+    },
+    {
+      "equipmentType": "Shipping",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Worker/equipment count not visible."
+    }
+  ],
+  "processing": [
+    {
+      "stepId": "receiving",
+      "equipmentType": "Receiving",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 30,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "8 hrs"
+      },
+      "leadTimeMinutes": 480,
+      "leadTimeRaw": "8 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "C.T.(m): 30 min; Lead Time: 8 hrs; D.T.(%): n/a"
+    },
+    {
+      "stepId": "micro",
+      "equipmentType": "Micro",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 480,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "8 hrs"
+      },
+      "leadTimeMinutes": 480,
+      "leadTimeRaw": "8 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "C.T.(m): 8 hrs; Lead Time: 8 hrs"
+    },
+    {
+      "stepId": "granulation",
+      "equipmentType": "Granulation",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 10.55,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "8 hrs"
+      },
+      "leadTimeMinutes": 480,
+      "leadTimeRaw": "8 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": "Station=2",
+      "sourceText": "C.T.(m): 10.55; D.T.(%): 39%; Lead Time: 8 hrs; # of Lines: 2; OEE: 52.67%"
+    },
+    {
+      "stepId": "compression",
+      "equipmentType": "Compression",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 175,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "8 hrs"
+      },
+      "leadTimeMinutes": 480,
+      "leadTimeRaw": "8 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": "Station=3",
+      "sourceText": "C.T.(m): 175; D.T.(%): 36.72%; Lead Time: 8 hrs; # of Lines: 3; OEE: 49.13%"
+    },
+    {
+      "stepId": "coating",
+      "equipmentType": "Coating",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 204,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 30,
+            "unit": "min"
+          }
+        }
+      },
+      "wait": {
+        "raw": "8 hrs"
+      },
+      "leadTimeMinutes": 480,
+      "leadTimeRaw": "8 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": "Station=2",
+      "sourceText": "C.T.(m): 204; D.T.(%): 30.40%; Lead Time: 8 hrs; C/O[M]: 30; # of Lines: 2; OEE: 49.14%"
+    },
+    {
+      "stepId": "printing",
+      "equipmentType": "Printing",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 150,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 40,
+            "unit": "min"
+          }
+        }
+      },
+      "wait": {
+        "raw": "8 hrs"
+      },
+      "leadTimeMinutes": 480,
+      "leadTimeRaw": "8 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": "Station=2",
+      "sourceText": "C.T.(m): 150; D.T.(%): 37.90%; Lead Time: 8 hrs; C/O[M]: 40; # of Lines: 2; OEE: 48.56%"
+    },
+    {
+      "stepId": "analitical_lab",
+      "equipmentType": "Analitical Lab",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 960,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "48 hrs"
+      },
+      "leadTimeMinutes": 2880,
+      "leadTimeRaw": "48 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "C.T.(m): 16 hrs; Lead Time: 48 hrs"
+    },
+    {
+      "stepId": "packaging",
+      "equipmentType": "Packaging",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 30,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 210,
+            "unit": "min"
+          }
+        }
+      },
+      "wait": {
+        "raw": "48 hrs"
+      },
+      "leadTimeMinutes": 2880,
+      "leadTimeRaw": "48 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": "Station=1",
+      "sourceText": "C.T.(m): 30; D.T.(%): 53.25%; Lead Time: 48 hrs; C/O[M]: 210; # of Lines: 1.00; OEE: 48.30%; Lot Size: 10.00"
+    },
+    {
+      "stepId": "docking",
+      "equipmentType": "Docking",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": null,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "8 hrs"
+      },
+      "leadTimeMinutes": 480,
+      "leadTimeRaw": "8 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "C.T.(m): not readable; Lead Time: 8 hrs"
+    },
+    {
+      "stepId": "shipping",
+      "equipmentType": "Shipping",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 480,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "8 hrs"
+      },
+      "leadTimeMinutes": 480,
+      "leadTimeRaw": "8 hrs",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "C.T.(m): 8 hrs; Lead Time: 8 hrs"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "strict-001",
+      "severity": "warning",
+      "text": "Receiving C/O is not readable from the image; changeover.time is null."
+    },
+    {
+      "id": "strict-002",
+      "severity": "warning",
+      "text": "Micro C/O and D.T.(%) are not readable from the image; changeover.time is null."
+    },
+    {
+      "id": "strict-003",
+      "severity": "warning",
+      "text": "Granulation C/O field is not readable; changeover.time is null."
+    },
+    {
+      "id": "strict-004",
+      "severity": "warning",
+      "text": "Compression C/O field is not readable; changeover.time is null."
+    },
+    {
+      "id": "strict-005",
+      "severity": "info",
+      "text": "Coating lead-time is transcribed as 8 hrs from this image pass; visible setup C/O is 30 min."
+    },
+    {
+      "id": "strict-006",
+      "severity": "warning",
+      "text": "Analitical Lab D.T.(%) and C/O fields are not readable; changeover.time is null."
+    },
+    {
+      "id": "strict-007",
+      "severity": "warning",
+      "text": "Docking C.T.(m), D.T.(%), and C/O fields are not readable; ct.value and changeover.time are null."
+    },
+    {
+      "id": "strict-008",
+      "severity": "warning",
+      "text": "Shipping D.T.(%) and C/O fields are not readable from the image; changeover.time is null."
+    },
+    {
+      "id": "strict-009",
+      "severity": "warning",
+      "text": "Worker counts are not visible in process boxes; workers is null for all steps."
+    },
+    {
+      "id": "strict-010",
+      "severity": "warning",
+      "text": "Station=n fields in processing are inferred from visible '# of Lines' values where present."
+    },
+    {
+      "id": "strict-011",
+      "severity": "warning",
+      "text": "The red badge 'LEAD TIME FROM CUSTOMER STAND POINT = 7.3' does not show explicit units; it is not normalized into step lead-time fields."
+    },
+    {
+      "id": "strict-012",
+      "severity": "warning",
+      "text": "Inventory triangle labels '7 Days' and '5-7 Days' are not process boxes and are preserved only as notes."
+    },
+    {
+      "id": "strict-013",
+      "severity": "blocker",
+      "text": "Demand rate, product mix, lot size policy, and shift/uptime are not fully specified in the image."
+    }
+  ]
+}

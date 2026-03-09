@@ -1,0 +1,447 @@
+{
+  "products": [],
+  "equipment": [
+    {
+      "equipmentType": "Form & Filling",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "Inspection",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "Packaging",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "Functional Test",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "COA",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "Release",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "Sterile BRR Mfg",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "Sterile BRR QA",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "Insp BRR MFG",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "Insp BRR QA",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "PKG Mfg BRR",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    },
+    {
+      "equipmentType": "PKG QA BRR",
+      "count": null,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      },
+      "sourceText": "Workers/equipment count not visible."
+    }
+  ],
+  "processing": [
+    {
+      "stepId": "form_filling",
+      "equipmentType": "Form & Filling",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 2880,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "5 (between Form & Filling and Inspection)"
+      },
+      "leadTimeMinutes": 2880,
+      "leadTimeRaw": "Target days: 2",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 2; C.T. (Median): 2 days"
+    },
+    {
+      "stepId": "inspection",
+      "equipmentType": "Inspection",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 1440,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "15 (between Inspection and Packaging)"
+      },
+      "leadTimeMinutes": 2880,
+      "leadTimeRaw": "Target days: 2",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 2; C.T. (Median): 1 days"
+    },
+    {
+      "stepId": "packaging",
+      "equipmentType": "Packaging",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 2880,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": null
+      },
+      "leadTimeMinutes": 5760,
+      "leadTimeRaw": "Target days: 4",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 4; C.T. (Median): 2 days"
+    },
+    {
+      "stepId": "functional_test",
+      "equipmentType": "Functional Test",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 5760,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": null
+      },
+      "leadTimeMinutes": 14400,
+      "leadTimeRaw": "Target days: 10",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 10; C.T. (Median): 4 days"
+    },
+    {
+      "stepId": "coa",
+      "equipmentType": "COA",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 2880,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": null
+      },
+      "leadTimeMinutes": 5760,
+      "leadTimeRaw": "Target days: 4",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 4; C.T. (Median): 2 days"
+    },
+    {
+      "stepId": "release",
+      "equipmentType": "Release",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 1440,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "2.5 (between Release and Sterile BRR Mfg)"
+      },
+      "leadTimeMinutes": 2880,
+      "leadTimeRaw": "Target days: 2",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 2; C.T. (Median): 1 days"
+    },
+    {
+      "stepId": "sterile_brr_mfg",
+      "equipmentType": "Sterile BRR Mfg",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 5760,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "5 (between Sterile BRR Mfg and Sterile BRR QA)"
+      },
+      "leadTimeMinutes": 8640,
+      "leadTimeRaw": "Target days: 6",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 6; C.T. (Median): 4 days"
+    },
+    {
+      "stepId": "sterile_brr_qa",
+      "equipmentType": "Sterile BRR QA",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 11520,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": null
+      },
+      "leadTimeMinutes": 12960,
+      "leadTimeRaw": "Target days: 9",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 9; C.T. (Median): 8 days"
+    },
+    {
+      "stepId": "insp_brr_mfg",
+      "equipmentType": "Insp BRR MFG",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 2880,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "1 (between Insp BRR MFG and Insp BRR QA)"
+      },
+      "leadTimeMinutes": 7200,
+      "leadTimeRaw": "Target days: 5",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 5; C.T. (Median): 2 days"
+    },
+    {
+      "stepId": "insp_brr_qa",
+      "equipmentType": "Insp BRR QA",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 10080,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": null
+      },
+      "leadTimeMinutes": 7200,
+      "leadTimeRaw": "Target days: 5",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 5; C.T. (Median): 7 days"
+    },
+    {
+      "stepId": "pkg_mfg_brr",
+      "equipmentType": "PKG Mfg BRR",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 1440,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "1 (between PKG Mfg BRR and PKG QA BRR)"
+      },
+      "leadTimeMinutes": 7200,
+      "leadTimeRaw": "Target days: 5",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 5; C.T. (Median): 1 days"
+    },
+    {
+      "stepId": "pkg_qa_brr",
+      "equipmentType": "PKG QA BRR",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 8640,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": null
+      },
+      "leadTimeMinutes": 7200,
+      "leadTimeRaw": "Target days: 5",
+      "parallelProcedures": null,
+      "workers": null,
+      "stationRaw": null,
+      "sourceText": "Target days: 5; C.T. (Median): 6 days"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "strict-001",
+      "severity": "warning",
+      "text": "All worker and equipment counts are not visible in the image; equipment.count and workers are null."
+    },
+    {
+      "id": "strict-002",
+      "severity": "warning",
+      "text": "No per-step changeover fields are visible in the image; changeover.time is null for all steps."
+    },
+    {
+      "id": "strict-003",
+      "severity": "warning",
+      "text": "Parallel procedure counts are not visible in process boxes; parallelProcedures is null for all steps."
+    },
+    {
+      "id": "strict-004",
+      "severity": "warning",
+      "text": "Inter-step triangle values are visible but units are not shown; stored as raw wait text only."
+    },
+    {
+      "id": "strict-005",
+      "severity": "warning",
+      "text": "Day-based values are normalized to minutes using 1 day = 1440 minutes for forecast math."
+    },
+    {
+      "id": "strict-006",
+      "severity": "blocker",
+      "text": "Demand rate, product mix, lot-size policy, shift hours, and uptime are not visible in the image."
+    }
+  ]
+}

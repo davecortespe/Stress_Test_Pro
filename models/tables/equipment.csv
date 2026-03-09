@@ -1,0 +1,6 @@
+equipmentType,count,availability
+prep_station,2,0.96
+assembly_cell,3,0.93
+test_rig,2,0.91
+pack_bench,2,0.95
+

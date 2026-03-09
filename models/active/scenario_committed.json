@@ -1,0 +1,14 @@
+{
+  "demandRatePerHour": 0.0094,
+  "demandMultiplier": 1,
+  "mixProfile": "balanced",
+  "staffingMultiplier": 1,
+  "equipmentMultiplier": 1,
+  "unplannedDowntimePct": 7,
+  "ctMultiplier": 1,
+  "setupPenaltyMultiplier": 1,
+  "variabilityMultiplier": 1,
+  "simulationHorizonHours": "24",
+  "activeShiftCount": "3",
+  "bottleneckReliefUnits": 1
+}

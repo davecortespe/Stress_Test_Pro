@@ -1,0 +1,35 @@
+{
+  "name": "vsm-visual-simulator-starter",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "bootstrap": "node scripts/bootstrap-project.mjs",
+    "import:vsm": "node scripts/import-vsm.mjs",
+    "build:master": "node scripts/build-master-data.mjs",
+    "compile:spec": "node scripts/compile-sim-spec.mjs",
+    "compile:forecast": "node scripts/compile-forecast-model.mjs",
+    "workflow:vsm:image": "powershell -ExecutionPolicy Bypass -File scripts/run-vsm-image-workflow.ps1",
+    "analyze:lead-time": "node scripts/analyze-lead-time-impact.mjs",
+    "export:bundle": "node scripts/export-scenario-bundle.mjs",
+    "export:replit": "node scripts/export-replit-bundle.mjs",
+    "validate:models": "node scripts/validate-models.mjs",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "start:sim": "npm run bootstrap && npm run dev",
+    "start:replit-bundle": "node deploy/replit/server.mjs --root deploy/replit/app"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.13.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

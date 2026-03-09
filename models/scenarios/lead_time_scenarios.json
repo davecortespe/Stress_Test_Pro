@@ -1,0 +1,226 @@
+[
+  {
+    "scenarioId": "lead_receiving_0_5x",
+    "type": "lead-time-override",
+    "stepId": "receiving",
+    "label": "Receiving",
+    "factor": 0.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_receiving_0_75x",
+    "type": "lead-time-override",
+    "stepId": "receiving",
+    "label": "Receiving",
+    "factor": 0.75,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_receiving_1_25x",
+    "type": "lead-time-override",
+    "stepId": "receiving",
+    "label": "Receiving",
+    "factor": 1.25,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_receiving_1_5x",
+    "type": "lead-time-override",
+    "stepId": "receiving",
+    "label": "Receiving",
+    "factor": 1.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_qa_0_5x",
+    "type": "lead-time-override",
+    "stepId": "qa",
+    "label": "QA",
+    "factor": 0.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_qa_0_75x",
+    "type": "lead-time-override",
+    "stepId": "qa",
+    "label": "QA",
+    "factor": 0.75,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_qa_1_25x",
+    "type": "lead-time-override",
+    "stepId": "qa",
+    "label": "QA",
+    "factor": 1.25,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_qa_1_5x",
+    "type": "lead-time-override",
+    "stepId": "qa",
+    "label": "QA",
+    "factor": 1.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_storage_0_5x",
+    "type": "lead-time-override",
+    "stepId": "storage",
+    "label": "Storage",
+    "factor": 0.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_storage_0_75x",
+    "type": "lead-time-override",
+    "stepId": "storage",
+    "label": "Storage",
+    "factor": 0.75,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_storage_1_25x",
+    "type": "lead-time-override",
+    "stepId": "storage",
+    "label": "Storage",
+    "factor": 1.25,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_storage_1_5x",
+    "type": "lead-time-override",
+    "stepId": "storage",
+    "label": "Storage",
+    "factor": 1.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_generate_claim_0_5x",
+    "type": "lead-time-override",
+    "stepId": "generate_claim",
+    "label": "Generate Claim",
+    "factor": 0.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_generate_claim_0_75x",
+    "type": "lead-time-override",
+    "stepId": "generate_claim",
+    "label": "Generate Claim",
+    "factor": 0.75,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_generate_claim_1_25x",
+    "type": "lead-time-override",
+    "stepId": "generate_claim",
+    "label": "Generate Claim",
+    "factor": 1.25,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_generate_claim_1_5x",
+    "type": "lead-time-override",
+    "stepId": "generate_claim",
+    "label": "Generate Claim",
+    "factor": 1.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_follow_up_0_5x",
+    "type": "lead-time-override",
+    "stepId": "follow_up",
+    "label": "Follow  UP",
+    "factor": 0.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_follow_up_0_75x",
+    "type": "lead-time-override",
+    "stepId": "follow_up",
+    "label": "Follow  UP",
+    "factor": 0.75,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_follow_up_1_25x",
+    "type": "lead-time-override",
+    "stepId": "follow_up",
+    "label": "Follow  UP",
+    "factor": 1.25,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_follow_up_1_5x",
+    "type": "lead-time-override",
+    "stepId": "follow_up",
+    "label": "Follow  UP",
+    "factor": 1.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_approval_0_5x",
+    "type": "lead-time-override",
+    "stepId": "approval",
+    "label": "Approval",
+    "factor": 0.5,
+    "leadTimeMinutes": 21600
+  },
+  {
+    "scenarioId": "lead_approval_0_75x",
+    "type": "lead-time-override",
+    "stepId": "approval",
+    "label": "Approval",
+    "factor": 0.75,
+    "leadTimeMinutes": 32400
+  },
+  {
+    "scenarioId": "lead_approval_1_25x",
+    "type": "lead-time-override",
+    "stepId": "approval",
+    "label": "Approval",
+    "factor": 1.25,
+    "leadTimeMinutes": 54000
+  },
+  {
+    "scenarioId": "lead_approval_1_5x",
+    "type": "lead-time-override",
+    "stepId": "approval",
+    "label": "Approval",
+    "factor": 1.5,
+    "leadTimeMinutes": 64800
+  },
+  {
+    "scenarioId": "lead_send_0_5x",
+    "type": "lead-time-override",
+    "stepId": "send",
+    "label": "Send",
+    "factor": 0.5,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_send_0_75x",
+    "type": "lead-time-override",
+    "stepId": "send",
+    "label": "Send",
+    "factor": 0.75,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_send_1_25x",
+    "type": "lead-time-override",
+    "stepId": "send",
+    "label": "Send",
+    "factor": 1.25,
+    "leadTimeMinutes": 0
+  },
+  {
+    "scenarioId": "lead_send_1_5x",
+    "type": "lead-time-override",
+    "stepId": "send",
+    "label": "Send",
+    "factor": 1.5,
+    "leadTimeMinutes": 0
+  }
+]

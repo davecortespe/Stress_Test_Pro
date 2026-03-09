@@ -1,0 +1,153 @@
+{
+  "metadata": {
+    "name": "NOV 2026 VSM",
+    "units": "minutes",
+    "source": "User-provided VSM image"
+  },
+  "nodes": [
+    {
+      "id": "dispatch_1",
+      "label": "Dispatch 1",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "20 min",
+        "changeoverRaw": "N/A",
+        "waitRaw": null,
+        "workersRaw": "1 Worker",
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Station=1"
+        ]
+      }
+    },
+    {
+      "id": "corrugator",
+      "label": "Corrugator",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "10 min",
+        "changeoverRaw": "120 min",
+        "waitRaw": null,
+        "workersRaw": "1 Worker",
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "1 mechanic",
+          "Station=1"
+        ]
+      }
+    },
+    {
+      "id": "capping",
+      "label": "Capping",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "12 min",
+        "changeoverRaw": "30 min",
+        "waitRaw": null,
+        "workersRaw": "1 Worker",
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Station=1"
+        ]
+      }
+    },
+    {
+      "id": "hub_press",
+      "label": "Hub Press",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "2.95 min",
+        "changeoverRaw": "- min",
+        "waitRaw": null,
+        "workersRaw": "1 Worker",
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Station=1"
+        ]
+      }
+    },
+    {
+      "id": "dpa_test",
+      "label": "dPA test",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "3.83 min",
+        "changeoverRaw": "- min",
+        "waitRaw": null,
+        "workersRaw": "2 Workers",
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Station=2"
+        ]
+      }
+    },
+    {
+      "id": "packing",
+      "label": "Packing",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "10min",
+        "changeoverRaw": "45 min",
+        "waitRaw": null,
+        "workersRaw": "2 Workers",
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Station=2"
+        ]
+      }
+    },
+    {
+      "id": "palletizing",
+      "label": "Palletizing",
+      "type": "process",
+      "boxData": {
+        "ctRaw": "30 min",
+        "changeoverRaw": "0 min",
+        "waitRaw": null,
+        "workersRaw": null,
+        "parallelProceduresRaw": null,
+        "notesRaw": [
+          "Station=2"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "dispatch_1",
+      "to": "corrugator",
+      "probability": 1
+    },
+    {
+      "from": "corrugator",
+      "to": "capping",
+      "probability": 1
+    },
+    {
+      "from": "capping",
+      "to": "hub_press",
+      "probability": 1
+    },
+    {
+      "from": "hub_press",
+      "to": "dpa_test",
+      "probability": 1
+    },
+    {
+      "from": "dpa_test",
+      "to": "packing",
+      "probability": 1
+    },
+    {
+      "from": "packing",
+      "to": "palletizing",
+      "probability": 1
+    }
+  ],
+  "startNodes": [
+    "dispatch_1"
+  ],
+  "endNodes": [
+    "palletizing"
+  ]
+}

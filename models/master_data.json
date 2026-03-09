@@ -1,0 +1,157 @@
+{
+  "products": [
+    {
+      "productId": "A100",
+      "family": "A",
+      "mixPct": 0.55,
+      "demandRate": 48
+    },
+    {
+      "productId": "B200",
+      "family": "B",
+      "mixPct": 0.45,
+      "demandRate": 39
+    }
+  ],
+  "equipment": [
+    {
+      "equipmentType": "prep_station",
+      "count": 2,
+      "availability": 0.96
+    },
+    {
+      "equipmentType": "assembly_cell",
+      "count": 3,
+      "availability": 0.93
+    },
+    {
+      "equipmentType": "test_rig",
+      "count": 2,
+      "availability": 0.91
+    },
+    {
+      "equipmentType": "pack_bench",
+      "count": 2,
+      "availability": 0.95
+    }
+  ],
+  "processing": [
+    {
+      "stepId": "prep",
+      "equipmentType": "prep_station",
+      "productKey": "all",
+      "ct_dist": {
+        "type": "lognormal",
+        "params": {
+          "mean": 4.6,
+          "stdDev": 0.8
+        }
+      },
+      "setup_rule": {
+        "type": "family-change",
+        "by": "family"
+      },
+      "setup_dist": {
+        "type": "triangular",
+        "params": {
+          "low": 1.5,
+          "mode": 2.6,
+          "high": 4.8
+        }
+      }
+    },
+    {
+      "stepId": "assemble",
+      "equipmentType": "assembly_cell",
+      "productKey": "all",
+      "ct_dist": {
+        "type": "lognormal",
+        "params": {
+          "mean": 6.8,
+          "stdDev": 1.1
+        }
+      },
+      "setup_rule": {
+        "type": "family-change",
+        "by": "family"
+      },
+      "setup_dist": {
+        "type": "triangular",
+        "params": {
+          "low": 2,
+          "mode": 3.5,
+          "high": 6.1
+        }
+      }
+    },
+    {
+      "stepId": "test",
+      "equipmentType": "test_rig",
+      "productKey": "all",
+      "ct_dist": {
+        "type": "normal",
+        "params": {
+          "mean": 5.1,
+          "stdDev": 0.6
+        }
+      },
+      "setup_rule": {
+        "type": "none"
+      },
+      "setup_dist": {
+        "type": "constant",
+        "params": {
+          "low": 0,
+          "mode": 0,
+          "high": 0
+        }
+      }
+    },
+    {
+      "stepId": "pack",
+      "equipmentType": "pack_bench",
+      "productKey": "all",
+      "ct_dist": {
+        "type": "lognormal",
+        "params": {
+          "mean": 3.4,
+          "stdDev": 0.7
+        }
+      },
+      "setup_rule": {
+        "type": "family-change",
+        "by": "family"
+      },
+      "setup_dist": {
+        "type": "triangular",
+        "params": {
+          "low": 0.8,
+          "mode": 1.5,
+          "high": 2.5
+        }
+      }
+    }
+  ],
+  "ctVariability": [
+    {
+      "stepId": "prep",
+      "cv": 0.17,
+      "notes": "prep variability baseline"
+    },
+    {
+      "stepId": "assemble",
+      "cv": 0.19,
+      "notes": "assembly variability baseline"
+    },
+    {
+      "stepId": "test",
+      "cv": 0.11,
+      "notes": "test variability baseline"
+    },
+    {
+      "stepId": "pack",
+      "cv": 0.14,
+      "notes": "pack variability baseline"
+    }
+  ]
+}

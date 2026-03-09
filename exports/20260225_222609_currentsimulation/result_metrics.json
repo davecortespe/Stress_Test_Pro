@@ -1,0 +1,68 @@
+{
+  "globalMetrics": {
+    "forecastThroughput": 2.76,
+    "throughputDelta": 0,
+    "bottleneckMigration": "baseline only",
+    "bottleneckIndex": 0.7416,
+    "brittleness": 0.3033,
+    "avgQueueRisk": 0.1897
+  },
+  "nodeMetrics": {
+    "dispatch_1": {
+      "utilization": 0.92,
+      "headroom": 0.08,
+      "queueRisk": 1,
+      "bottleneckIndex": 0.7416,
+      "bottleneckFlag": true,
+      "status": "critical"
+    },
+    "corrugator": {
+      "utilization": 0.598,
+      "headroom": 0.402,
+      "queueRisk": 0.0865,
+      "bottleneckIndex": 0.313,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    },
+    "capping": {
+      "utilization": 0.5865,
+      "headroom": 0.4135,
+      "queueRisk": 0.0809,
+      "bottleneckIndex": 0.3058,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    },
+    "hub_press": {
+      "utilization": 0.1357,
+      "headroom": 0.8643,
+      "queueRisk": 0.0021,
+      "bottleneckIndex": 0.0658,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    },
+    "dpa_test": {
+      "utilization": 0.0881,
+      "headroom": 0.9119,
+      "queueRisk": 0.0008,
+      "bottleneckIndex": 0.0425,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    },
+    "packing": {
+      "utilization": 0.2559,
+      "headroom": 0.7441,
+      "queueRisk": 0.0086,
+      "bottleneckIndex": 0.1254,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    },
+    "palletizing": {
+      "utilization": 0.69,
+      "headroom": 0.31,
+      "queueRisk": 0.1493,
+      "bottleneckIndex": 0.376,
+      "bottleneckFlag": false,
+      "status": "healthy"
+    }
+  }
+}

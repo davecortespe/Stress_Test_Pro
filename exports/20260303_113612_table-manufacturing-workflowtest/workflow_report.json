@@ -1,0 +1,11 @@
+﻿{
+    "sourceImagePath":  "C:\\Users\\webda\\CODEX_FILES\\Simulator_Final_R0\\models\\missing_data_report.md",
+    "includeFullApp":  true,
+    "includeMetrics":  true,
+    "completedAt":  "2026-03-03T16:36:12.8711060Z",
+    "workflowVersion":  "1.0.0",
+    "compiledForecastPath":  "C:\\Users\\webda\\CODEX_FILES\\Simulator_Final_R0\\models\\active\\compiled_forecast_model.json",
+    "activeDir":  "C:\\Users\\webda\\CODEX_FILES\\Simulator_Final_R0\\models\\active",
+    "exportedBundlePath":  "C:\\Users\\webda\\CODEX_FILES\\Simulator_Final_R0\\exports\\20260303_113612_table-manufacturing-workflowtest",
+    "buildApp":  false
+}

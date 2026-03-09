@@ -1,0 +1,6 @@
+{
+  "name": "sterile-brr-replit",
+  "target": "deploy/replit",
+  "generatedAt": "2026-03-07T02:13:45.243Z",
+  "runCommand": "npm run start:replit-bundle"
+}

@@ -1,0 +1,13 @@
+window.__EXPORT_COMMITTED_SCENARIO__ = {
+  "demandRatePerHour": 1.8,
+  "demandMultiplier": 1,
+  "mixProfile": "balanced",
+  "staffingMultiplier": 1,
+  "equipmentMultiplier": 1,
+  "unplannedDowntimePct": 7,
+  "ctMultiplier": 1,
+  "setupPenaltyMultiplier": 1,
+  "variabilityMultiplier": 1,
+  "simulationHorizonHours": "8",
+  "bottleneckReliefUnits": 1
+};

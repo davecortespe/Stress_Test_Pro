@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    { "id": "receive", "label": "Receive", "type": "source" },
+    { "id": "prep", "label": "Prep", "type": "process" },
+    { "id": "assemble", "label": "Assemble", "type": "process" },
+    { "id": "test", "label": "Test", "type": "process" },
+    { "id": "pack", "label": "Pack", "type": "process" },
+    { "id": "ship", "label": "Ship", "type": "sink" }
+  ],
+  "edges": [
+    { "from": "receive", "to": "prep", "probability": 1.0 },
+    { "from": "prep", "to": "assemble", "probability": 1.0 },
+    { "from": "assemble", "to": "test", "probability": 1.0 },
+    { "from": "test", "to": "assemble", "probability": 0.08 },
+    { "from": "test", "to": "pack", "probability": 0.92 },
+    { "from": "pack", "to": "ship", "probability": 1.0 }
+  ],
+  "startNodes": ["receive"],
+  "endNodes": ["ship"]
+}
+

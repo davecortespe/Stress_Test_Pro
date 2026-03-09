@@ -1,0 +1,518 @@
+{
+  "version": "0.2.0",
+  "generatedAt": "2026-02-26T03:10:01.098Z",
+  "metadata": {
+    "name": "NOV 2026 VSM",
+    "units": "per-hour",
+    "mode": "constraint-forecast-non-des"
+  },
+  "graph": {
+    "metadata": {
+      "name": "NOV 2026 VSM",
+      "units": "minutes",
+      "source": "User-provided VSM image"
+    },
+    "nodes": [
+      {
+        "id": "dispatch_1",
+        "label": "Dispatch 1",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "20 min",
+          "changeoverRaw": "N/A",
+          "waitRaw": null,
+          "workersRaw": "1 Worker",
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Station=1"
+          ]
+        }
+      },
+      {
+        "id": "corrugator",
+        "label": "Corrugator",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "10 min",
+          "changeoverRaw": "120 min",
+          "waitRaw": null,
+          "workersRaw": "1 Worker",
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "1 mechanic",
+            "Station=1"
+          ]
+        }
+      },
+      {
+        "id": "capping",
+        "label": "Capping",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "12 min",
+          "changeoverRaw": "30 min",
+          "waitRaw": null,
+          "workersRaw": "1 Worker",
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Station=1"
+          ]
+        }
+      },
+      {
+        "id": "hub_press",
+        "label": "Hub Press",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "2.95 min",
+          "changeoverRaw": "- min",
+          "waitRaw": null,
+          "workersRaw": "1 Worker",
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Station=1"
+          ]
+        }
+      },
+      {
+        "id": "dpa_test",
+        "label": "dPA test",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "3.83 min",
+          "changeoverRaw": "- min",
+          "waitRaw": null,
+          "workersRaw": "2 Workers",
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Station=2"
+          ]
+        }
+      },
+      {
+        "id": "packing",
+        "label": "Packing",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "10min",
+          "changeoverRaw": "45 min",
+          "waitRaw": null,
+          "workersRaw": "2 Workers",
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Station=2"
+          ]
+        }
+      },
+      {
+        "id": "palletizing",
+        "label": "Palletizing",
+        "type": "process",
+        "boxData": {
+          "ctRaw": "30 min",
+          "changeoverRaw": "0 min",
+          "waitRaw": null,
+          "workersRaw": null,
+          "parallelProceduresRaw": null,
+          "notesRaw": [
+            "Station=2"
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "dispatch_1",
+        "to": "corrugator",
+        "probability": 1
+      },
+      {
+        "from": "corrugator",
+        "to": "capping",
+        "probability": 1
+      },
+      {
+        "from": "capping",
+        "to": "hub_press",
+        "probability": 1
+      },
+      {
+        "from": "hub_press",
+        "to": "dpa_test",
+        "probability": 1
+      },
+      {
+        "from": "dpa_test",
+        "to": "packing",
+        "probability": 1
+      },
+      {
+        "from": "packing",
+        "to": "palletizing",
+        "probability": 1
+      }
+    ],
+    "startNodes": [
+      "dispatch_1"
+    ],
+    "endNodes": [
+      "palletizing"
+    ]
+  },
+  "inputs": [
+    {
+      "key": "demandMultiplier",
+      "label": "Demand Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.6,
+      "max": 1.8,
+      "step": 0.05
+    },
+    {
+      "key": "mixProfile",
+      "label": "Mix Profile",
+      "type": "select",
+      "defaultValue": "balanced",
+      "options": [
+        "balanced",
+        "station-1-heavy",
+        "final-step-heavy"
+      ]
+    },
+    {
+      "key": "staffingMultiplier",
+      "label": "Staffing Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.7,
+      "max": 1.4,
+      "step": 0.05
+    },
+    {
+      "key": "equipmentMultiplier",
+      "label": "Equipment Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.7,
+      "max": 1.4,
+      "step": 0.05
+    },
+    {
+      "key": "unplannedDowntimePct",
+      "label": "Unplanned Downtime",
+      "type": "number",
+      "defaultValue": 7,
+      "min": 0,
+      "max": 35,
+      "step": 0.5
+    },
+    {
+      "key": "ctMultiplier",
+      "label": "Cycle Time Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.75,
+      "max": 1.6,
+      "step": 0.05
+    },
+    {
+      "key": "setupPenaltyMultiplier",
+      "label": "Setup Penalty",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.5,
+      "max": 1.8,
+      "step": 0.05
+    },
+    {
+      "key": "variabilityMultiplier",
+      "label": "Variability Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.6,
+      "max": 1.8,
+      "step": 0.05
+    },
+    {
+      "key": "bottleneckReliefUnits",
+      "label": "Bottleneck Relief (+units)",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0,
+      "max": 6,
+      "step": 1
+    }
+  ],
+  "inputDefaults": {
+    "demandRatePerHour": 2.76,
+    "demandMultiplier": 1,
+    "mixProfile": "balanced",
+    "staffingMultiplier": 1,
+    "equipmentMultiplier": 1,
+    "unplannedDowntimePct": 7,
+    "ctMultiplier": 1,
+    "setupPenaltyMultiplier": 1,
+    "variabilityMultiplier": 1,
+    "bottleneckReliefUnits": 1
+  },
+  "stepModels": [
+    {
+      "stepId": "dispatch_1",
+      "label": "Dispatch 1",
+      "equipmentType": "Dispatch 1",
+      "workerCount": 1,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 20,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 20,
+      "effectiveCapacityPerHour": 3,
+      "baseline": {
+        "demandRatePerHour": 2.76,
+        "utilization": 0.92,
+        "headroom": 0.08,
+        "queueRisk": 1,
+        "bottleneckIndex": 0.7416,
+        "status": "risk"
+      }
+    },
+    {
+      "stepId": "corrugator",
+      "label": "Corrugator",
+      "equipmentType": "Corrugator",
+      "workerCount": 1,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 10,
+      "changeoverMinutes": 120,
+      "changeoverPenaltyPerUnitMinutes": 3,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 13,
+      "effectiveCapacityPerHour": 4.615,
+      "baseline": {
+        "demandRatePerHour": 2.76,
+        "utilization": 0.598,
+        "headroom": 0.402,
+        "queueRisk": 0.0865,
+        "bottleneckIndex": 0.313,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "capping",
+      "label": "Capping",
+      "equipmentType": "Capping",
+      "workerCount": 1,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 12,
+      "changeoverMinutes": 30,
+      "changeoverPenaltyPerUnitMinutes": 0.75,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 12.75,
+      "effectiveCapacityPerHour": 4.706,
+      "baseline": {
+        "demandRatePerHour": 2.76,
+        "utilization": 0.5865,
+        "headroom": 0.4135,
+        "queueRisk": 0.0809,
+        "bottleneckIndex": 0.3058,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "hub_press",
+      "label": "Hub Press",
+      "equipmentType": "Hub Press",
+      "workerCount": 1,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 2.95,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 2.95,
+      "effectiveCapacityPerHour": 20.339,
+      "baseline": {
+        "demandRatePerHour": 2.76,
+        "utilization": 0.1357,
+        "headroom": 0.8643,
+        "queueRisk": 0.0021,
+        "bottleneckIndex": 0.0658,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "dpa_test",
+      "label": "dPA test",
+      "equipmentType": "dPA test",
+      "workerCount": 2,
+      "parallelProcedures": 2,
+      "effectiveUnits": 2,
+      "ctMinutes": 3.83,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 3.83,
+      "effectiveCapacityPerHour": 31.332,
+      "baseline": {
+        "demandRatePerHour": 2.76,
+        "utilization": 0.0881,
+        "headroom": 0.9119,
+        "queueRisk": 0.0008,
+        "bottleneckIndex": 0.0425,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "packing",
+      "label": "Packing",
+      "equipmentType": "Packing",
+      "workerCount": 2,
+      "parallelProcedures": 2,
+      "effectiveUnits": 2,
+      "ctMinutes": 10,
+      "changeoverMinutes": 45,
+      "changeoverPenaltyPerUnitMinutes": 1.125,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 11.125,
+      "effectiveCapacityPerHour": 10.787,
+      "baseline": {
+        "demandRatePerHour": 2.76,
+        "utilization": 0.2559,
+        "headroom": 0.7441,
+        "queueRisk": 0.0086,
+        "bottleneckIndex": 0.1254,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "palletizing",
+      "label": "Palletizing",
+      "equipmentType": "Palletizing",
+      "workerCount": 0,
+      "parallelProcedures": 2,
+      "effectiveUnits": 2,
+      "ctMinutes": 30,
+      "changeoverMinutes": 0,
+      "changeoverPenaltyPerUnitMinutes": 0,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 30,
+      "effectiveCapacityPerHour": 4,
+      "baseline": {
+        "demandRatePerHour": 2.76,
+        "utilization": 0.69,
+        "headroom": 0.31,
+        "queueRisk": 0.1493,
+        "bottleneckIndex": 0.376,
+        "status": "healthy"
+      }
+    }
+  ],
+  "baseline": {
+    "demandRatePerHour": 2.76,
+    "lineCapacityPerHour": 3,
+    "bottleneckStepId": "dispatch_1",
+    "globalMetrics": {
+      "forecastThroughput": 2.76,
+      "throughputDelta": 0,
+      "bottleneckMigration": "baseline only",
+      "bottleneckIndex": 0.7416,
+      "brittleness": 0.3033,
+      "avgQueueRisk": 0.1897
+    },
+    "nodeMetrics": {
+      "dispatch_1": {
+        "utilization": 0.92,
+        "headroom": 0.08,
+        "queueRisk": 1,
+        "bottleneckIndex": 0.7416,
+        "bottleneckFlag": true,
+        "status": "critical"
+      },
+      "corrugator": {
+        "utilization": 0.598,
+        "headroom": 0.402,
+        "queueRisk": 0.0865,
+        "bottleneckIndex": 0.313,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "capping": {
+        "utilization": 0.5865,
+        "headroom": 0.4135,
+        "queueRisk": 0.0809,
+        "bottleneckIndex": 0.3058,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "hub_press": {
+        "utilization": 0.1357,
+        "headroom": 0.8643,
+        "queueRisk": 0.0021,
+        "bottleneckIndex": 0.0658,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "dpa_test": {
+        "utilization": 0.0881,
+        "headroom": 0.9119,
+        "queueRisk": 0.0008,
+        "bottleneckIndex": 0.0425,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "packing": {
+        "utilization": 0.2559,
+        "headroom": 0.7441,
+        "queueRisk": 0.0086,
+        "bottleneckIndex": 0.1254,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "palletizing": {
+        "utilization": 0.69,
+        "headroom": 0.31,
+        "queueRisk": 0.1493,
+        "bottleneckIndex": 0.376,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      }
+    }
+  },
+  "assumptions": [
+    {
+      "id": "compile-001",
+      "severity": "warning",
+      "text": "Demand rate is not shown in the VSM. Baseline demandRatePerHour is set to 92% of the minimum computed step capacity."
+    },
+    {
+      "id": "compile-002",
+      "severity": "warning",
+      "text": "Station=n text was interpreted as n parallel effective units for forecast capacity calculations."
+    },
+    {
+      "id": "compile-003",
+      "severity": "warning",
+      "text": "An assumed lot size of 40 units is used to convert visible changeover minutes into changeover penalty per unit where C/O is numeric."
+    },
+    {
+      "id": "compile-004",
+      "severity": "warning",
+      "text": "Dispatch 1 C/O 'N/A' and '- min' changeovers were treated as null and contribute no setup penalty."
+    },
+    {
+      "id": "compile-005",
+      "severity": "warning",
+      "text": "Palletizing worker count is unknown; workerCount is kept at 0 in step model while effective units come from visible Station=2."
+    },
+    {
+      "id": "compile-006",
+      "severity": "info",
+      "text": "Queue risk, bottleneck index, brittleness, and bottleneck migration are deterministic non-DES heuristic metrics for fast forecasting."
+    }
+  ]
+}

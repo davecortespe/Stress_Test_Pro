@@ -1,0 +1,4 @@
+interface:
+  display_name: "Operational Diagnosis"
+  short_description: "Turn sim outputs into operator diagnoses"
+  default_prompt: "Use $operational-diagnosis to interpret these simulation outputs for operations leaders."
