@@ -1,29 +1,36 @@
 # Missing Data Report (Strict VSM Transcription)
 
-Source image: attached VSM beginning `Form & Filling` and ending `Release`.
+Source image: attached VSM named `Filter Making Line`.
 
 This report lists unresolved or ambiguous fields extracted from the provided image.
 
 | Step | Field | Extracted value | Resolution | Reason |
 | --- | --- | --- | --- | --- |
-| Form & Filling | C/O | not visible | `null` | No C/O value shown in the process box. |
-| Inspection | C/O | not visible | `null` | No C/O value shown in the process box. |
-| Packaging | C/O | not visible | `null` | No C/O value shown in the process box. |
-| Functional Test | C/O | not visible | `null` | No C/O value shown in the process box. |
-| COA | C/O | not visible | `null` | No C/O value shown in the process box. |
-| Release | C/O | not visible | `null` | No C/O value shown in the process box. |
-| All process steps | Workers | not visible | `null` | Worker counts are not shown in the image. |
-| All process steps | Parallel procedures | not visible | `null` | Parallel line/procedure counts are not shown in the image. |
-| Triangle between Form & Filling -> Inspection | Wait units | `5` | unresolved | Numeric value is visible but no explicit unit label is shown. |
-| Triangle between Inspection -> Packaging | Wait units | `15` | unresolved | Numeric value is visible but no explicit unit label is shown. |
-| Triangle after Release | Wait destination + units | `2.5` | unresolved | Value is visible, but no destination step or explicit unit label is shown. |
-| Whole VSM | Demand/product mix/shift/uptime | not visible | unresolved | Required planning and capacity policy inputs are absent from the image. |
+| Receiving | Workers | not visible | `null` | Worker count is not shown in the process box. |
+| Stocking | Workers | not visible | `null` | Worker count is not shown in the process box. |
+| Pleating | Workers | not visible | `null` | Worker count is not shown in the process box. |
+| Forming | Workers | not visible | `null` | Worker count is not shown in the process box. |
+| Capping | Workers | not visible | `null` | Worker count is not shown in the process box. |
+| Testing | Workers | not visible | `null` | Worker count is not shown in the process box. |
+| Packaging | Workers | not visible | `null` | Worker count is not shown in the process box. |
+| Palletizing | Workers | not visible | `null` | Worker count is not shown in the process box. |
+| Shipping | Workers | not visible | `null` | Worker count is not shown in the process box. |
+| Palletizing | C/O (M) | `--` | `null` | C/O is visible as non-numeric (`--`). |
+| Shipping | C/O (M) | `--` | `null` | C/O is visible as non-numeric (`--`). |
+| Receiving -> Stocking | Wait duration | `FIFO` | unresolved | FIFO marker is visible but numeric wait and units are not shown. |
+| Stocking -> Pleating | Wait duration | `FIFO` | unresolved | FIFO marker is visible but numeric wait and units are not shown. |
+| Pleating -> Forming | Wait duration | `FIFO` | unresolved | FIFO marker is visible but numeric wait and units are not shown. |
+| Testing -> Packaging | Wait duration | `FIFO` | unresolved | FIFO marker is visible but numeric wait and units are not shown. |
+| Palletizing -> Shipping | Wait duration | `Inventory triangle (I)` | unresolved | Inventory marker is visible but numeric wait and units are not shown. |
+| Pre-Receiving inbound | Inventory/wait | `Inventory triangle (I)` | unresolved | Upstream marker is visible but no quantity/time unit is shown. |
+| Whole VSM | Demand/product mix/uptime policy | not visible | unresolved | Required forecasting policy inputs are absent from the image. |
+| Whole VSM | Shift-hour calendar | partially visible (`# Shifts`) | unresolved | Shift count is visible but shift length/calendar rule is not shown in the image. |
 
 ## Strictly captured visible values
 - Process sequence transcribed exactly:
-  `Form & Filling -> Inspection -> Packaging -> Functional Test -> COA -> Release`
-- Process box values captured from image:
-  - `Target days`: `2, 2, 4, 10, 4, 2`
-  - `C.T. (Median)`: `2 days, 1 days, 2 days, 4 days, 2 days, 1 days`
-- Status dots visible:
-  - green: `Form & Filling`, `Inspection`, `Packaging`, `Functional Test`, `COA`, `Release`
+  `Receiving -> Stocking -> Pleating -> Forming -> Capping -> Testing -> Packaging -> Palletizing -> Shipping`
+- Process-box numeric values captured as shown (minutes where labeled `m`):
+  - `C.T. (m)`: `10, 5.00, 20.00, 3.00, 1.00, 3.00, 3.00, 5.00, 5.00`
+  - `Lead Time (m)`: `6, 10.00, 180.00, 1.00, 2.00, 4.00, 10.00, 10.00, 10.00`
+  - `C/O (M)`: `0, 0, 30.00, 30.00, 30.00, 20.00, 30.00, --, --`
+  - `# of Lines/Shifts/Lot Size` values captured per process box as visible.

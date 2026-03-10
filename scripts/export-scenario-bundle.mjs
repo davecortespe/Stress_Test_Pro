@@ -255,7 +255,7 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
   const ctMultiplier = clamp(num(scenario.ctMultiplier, 1), 0.25, 3);
   const setupPenaltyMultiplier = clamp(num(scenario.setupPenaltyMultiplier, 1), 0, 3);
   const variabilityMultiplier = clamp(num(scenario.variabilityMultiplier, 1), 0.2, 3);
-  const horizonHours = clamp(num(scenario.simulationHorizonHours, 8), 8, 24);
+  const horizonHours = clamp(num(scenario.simulationHorizonHours, 8), 8, 720);
   const horizonSeverity = 1 + ((horizonHours - 8) / 16) * 0.22;
   const mixProfile = String(scenario.mixProfile ?? "balanced");
 
@@ -1031,6 +1031,8 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
           <button data-speed="1" class="active">x1</button>
           <button data-speed="2">x2</button>
           <button data-speed="5">x5</button>
+          <button data-speed="50">x50</button>
+          <button data-speed="200">x200</button>
         </span>
       </div>
     </section>
@@ -1155,7 +1157,7 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
         const ctMultiplier = clamp(num(scenario.ctMultiplier, 1), 0.25, 3);
         const setupPenaltyMultiplier = clamp(num(scenario.setupPenaltyMultiplier, 1), 0, 3);
         const variabilityMultiplier = clamp(num(scenario.variabilityMultiplier, 1), 0.2, 3);
-        const horizonHours = clamp(num(scenario.simulationHorizonHours, 8), 8, 24);
+        const horizonHours = clamp(num(scenario.simulationHorizonHours, 8), 8, 720);
         const horizonSeverity = 1 + ((horizonHours - 8) / 16) * 0.22;
         const mixProfile = String(scenario.mixProfile || "balanced");
 
@@ -1218,7 +1220,7 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
         const knownIds = Object.keys(baseline.stepEvals).filter(function (id) { return baseline.stepEvals[id].utilization !== null; });
         const nearSat = knownIds.filter(function (id) { return (baseline.stepEvals[id].utilization || 0) >= 0.9; }).length;
         const cascadePressure = knownIds.length > 0 ? nearSat / knownIds.length : 0;
-        const wipScale = clamp(num(scenario.simulationHorizonHours, 8), 8, 24) * Math.max(1, model.stepModels.length) * 10;
+        const wipScale = clamp(num(scenario.simulationHorizonHours, 8), 8, 720) * Math.max(1, model.stepModels.length) * 10;
         const baselineTotalWip = knownIds.reduce(function (sum, id) { return sum + (baseline.stepEvals[id].wipQty || 0); }, 0);
         const progress = clamp(elapsedHours / Math.max(0.01, baseline.horizonHours), 0, 1);
         const ramp = 0.2 + 0.8 * progress;
@@ -1328,7 +1330,7 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
       const startPauseEl = document.getElementById("startPause");
 
       function horizonHours() {
-        return clamp(Math.round(num(scenario.simulationHorizonHours, 8)), 8, 24);
+        return clamp(Math.round(num(scenario.simulationHorizonHours, 8)), 8, 720);
       }
 
       function renderParams() {

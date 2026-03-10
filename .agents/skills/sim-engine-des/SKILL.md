@@ -43,7 +43,8 @@ Non-DES required behavior:
 - Runtime elapsed-hours integration for live behavior:
   - WIP starts at zero at simulation start
   - WIP/queue/completed output evolve with elapsed time
-  - speed multipliers (x1/x2/x5) scale elapsed progression deterministically
+  - speed multipliers (x1/x2/x5/x50/x200) scale elapsed progression deterministically
+  - simulation horizon supports 8/16/24/168/720 hours (8 hrs, 16 hrs, 24 hrs, 1 week, 1 month)
 
 UI contract expectations:
 - Node metrics include `utilization`, `wipQty`, `completedQty`, `status`

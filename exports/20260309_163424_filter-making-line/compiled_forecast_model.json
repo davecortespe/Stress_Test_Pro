@@ -1,6 +1,6 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-03-09T20:40:02.414Z",
+  "generatedAt": "2026-03-09T20:32:52.205Z",
   "metadata": {
     "name": "Filter Making Line",
     "units": "per-hour",
@@ -314,26 +314,9 @@
       "type": "select",
       "defaultValue": "8",
       "options": [
-        {
-          "label": "8 hrs",
-          "value": "8"
-        },
-        {
-          "label": "16 hrs",
-          "value": "16"
-        },
-        {
-          "label": "24 hrs",
-          "value": "24"
-        },
-        {
-          "label": "1 week",
-          "value": "168"
-        },
-        {
-          "label": "1 month",
-          "value": "720"
-        }
+        "8",
+        "16",
+        "24"
       ]
     },
     {

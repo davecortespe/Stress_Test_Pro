@@ -77,7 +77,8 @@ Rules:
 
 ## UX Contract (template baseline)
 - Header left: `Start/Pause`, `Reset`, live indicator.
-- Header right: large simulation timer + speed chips (`x1/x2/x5`) + scenarios chip.
+- Header right: large simulation timer + speed chips (`x1/x2/x5/x50/x200`) + scenarios chip.
+- Left parameters include `Simulation Horizon` presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
 - Node cards: `util`, `lot/wip`, `Completed Lot`, `status` + WIP fill strip.
 - Step edit: double-click node opens near-node popover on desktop (modal on small screens).
 

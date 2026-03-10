@@ -85,13 +85,14 @@ Apply this profile when building the same style of cockpit achieved in this repo
   - live indicator + staged chip (when paused with staged edits)
 - Right cluster:
   - large `Sim Time {elapsed} / {horizon} h` chip
-  - speed chips `x1`, `x2`, `x5`
+  - speed chips `x1`, `x2`, `x5`, `x50`, `x200`
   - `Scenarios` chip placeholder
 
 ### Simulation controls UX
 - Speed chips are direct toggles (no dropdown).
 - `Start/Pause` is the primary control (single toggle).
 - `Reset` restores baseline scenario and view/time state.
+- `Simulation Horizon` remains in the left parameter panel with presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
 
 ### Node card contract
 - Must show at least:
@@ -267,7 +268,8 @@ The app must render a working dashboard immediately.
 - [ ] Sidebar renders parameter groups from config with proper controls and value badges
 - [ ] Header uses Start/Pause + Reset with live/staged indicators
 - [ ] Large timer chip is on the right side of header
-- [ ] Speed chips x1/x2/x5 are visible and selectable
+- [ ] Speed chips x1/x2/x5/x50/x200 are visible and selectable
+- [ ] Simulation Horizon control includes 8 hrs, 16 hrs, 24 hrs, 1 week, and 1 month presets
 - [ ] KPI row renders cards from config and formats values
 - [ ] KPI row has glass/dark panels, glow accents, and clear hierarchy
 - [ ] Graph canvas renders nodes/edges from graph JSON

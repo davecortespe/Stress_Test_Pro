@@ -388,7 +388,13 @@ const compiled = {
       label: "Simulation Horizon",
       type: "select",
       defaultValue: "8",
-      options: ["8", "16", "24"]
+      options: [
+        { label: "8 hrs", value: "8" },
+        { label: "16 hrs", value: "16" },
+        { label: "24 hrs", value: "24" },
+        { label: "1 week", value: "168" },
+        { label: "1 month", value: "720" }
+      ]
     },
     {
       key: "bottleneckReliefUnits",

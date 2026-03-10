@@ -23,11 +23,26 @@
           "helpText": "Calendar time the model will simulate. The clock keeps advancing across working and non-working hours until this horizon is reached.",
           "type": "dropdown",
           "options": [
-            { "label": "8 hrs", "value": "8" },
-            { "label": "16 hrs", "value": "16" },
-            { "label": "24 hrs", "value": "24" },
-            { "label": "1 week", "value": "168" },
-            { "label": "1 month", "value": "720" }
+            {
+              "label": "8 hrs",
+              "value": "8"
+            },
+            {
+              "label": "16 hrs",
+              "value": "16"
+            },
+            {
+              "label": "24 hrs",
+              "value": "24"
+            },
+            {
+              "label": "1 week",
+              "value": "168"
+            },
+            {
+              "label": "1 month",
+              "value": "720"
+            }
           ],
           "unit": "hr",
           "defaultValue": "24"
@@ -38,9 +53,18 @@
           "helpText": "Defines how many 8-hour shifts the operation runs each day. One shift runs 8 hours then stops for 16; two shifts run 16 then stop for 8; three shifts run continuously.",
           "type": "dropdown",
           "options": [
-            { "label": "1 shift", "value": "1" },
-            { "label": "2 shifts", "value": "2" },
-            { "label": "3 shifts", "value": "3" }
+            {
+              "label": "1 shift",
+              "value": "1"
+            },
+            {
+              "label": "2 shifts",
+              "value": "2"
+            },
+            {
+              "label": "3 shifts",
+              "value": "3"
+            }
           ],
           "defaultValue": "3"
         },
@@ -76,7 +100,11 @@
           "label": "Mix Profile",
           "helpText": "Shifts the product or work mix toward earlier or later steps to see how changing mix moves the constraint.",
           "type": "dropdown",
-          "options": ["balanced", "family-A-heavy", "family-B-heavy"],
+          "options": [
+            "balanced",
+            "family-A-heavy",
+            "family-B-heavy"
+          ],
           "defaultValue": "balanced"
         }
       ]
@@ -203,7 +231,12 @@
       "decimals": 0
     }
   ],
-  "nodeCardFields": ["utilization", "wipQty", "completedQty", "status"],
+  "nodeCardFields": [
+    "utilization",
+    "wipQty",
+    "completedQty",
+    "status"
+  ],
   "graphStyle": {
     "edgeAnimation": "flow",
     "showProbabilities": true

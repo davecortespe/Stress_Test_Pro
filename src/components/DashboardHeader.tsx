@@ -7,9 +7,9 @@ interface DashboardHeaderProps {
   simElapsedHours: number;
   simHorizonHours: number;
   scenarioCount: number;
-  speedMultiplier: 1 | 2 | 5 | 10 | 50 | 200;
+  speedMultiplier: 1 | 2 | 5 | 50 | 200;
   onResultsModeChange: (mode: "flow" | "diagnosis" | "throughput") => void;
-  onSpeedChange: (speed: 1 | 2 | 5 | 10 | 50 | 200) => void;
+  onSpeedChange: (speed: 1 | 2 | 5 | 50 | 200) => void;
   onStartPause: () => void;
   onReset: () => void;
   onOpenLibraryCsv: () => void;
@@ -92,12 +92,12 @@ export function DashboardHeader({
             </span>
           </div>
           <div className="speed-group" role="group" aria-label="simulation speed">
-            {[1, 2, 5, 10, 50, 200].map((speed) => (
+            {[1, 2, 5, 50, 200].map((speed) => (
               <button
                 key={speed}
                 type="button"
                 className={`speed-pill ${speedMultiplier === speed ? "is-active" : ""}`}
-                onClick={() => onSpeedChange(speed as 1 | 2 | 5 | 10 | 50 | 200)}
+                onClick={() => onSpeedChange(speed as 1 | 2 | 5 | 50 | 200)}
               >
                 x{speed}
               </button>
