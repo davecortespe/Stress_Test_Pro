@@ -18,6 +18,7 @@ interface DashboardHeaderProps {
   hasStagedChanges: boolean;
   simElapsedHours: number;
   simHorizonHours: number;
+  simProgressPct: number;
   scenarioCount: number;
   speedMultiplier: SpeedMultiplier;
   onResultsModeChange: (mode: SimulatorResultsMode) => void;
@@ -37,6 +38,7 @@ export function DashboardHeader({
   hasStagedChanges,
   simElapsedHours,
   simHorizonHours,
+  simProgressPct,
   scenarioCount,
   speedMultiplier,
   onResultsModeChange,
@@ -120,6 +122,15 @@ export function DashboardHeader({
               <span className="status-chip-value">
                 {simElapsedHours.toFixed(2)} / {simHorizonHours} h
               </span>
+            </div>
+            <div className="sim-progress" aria-label="simulation progress">
+              <div className="sim-progress-meta">
+                <span>Progress</span>
+                <strong>{simProgressPct.toFixed(1)}%</strong>
+              </div>
+              <div className="sim-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={simProgressPct}>
+                <span className="sim-progress-fill" style={{ width: `${simProgressPct}%` }} />
+              </div>
             </div>
           </div>
           <div className="status-block speed-block">

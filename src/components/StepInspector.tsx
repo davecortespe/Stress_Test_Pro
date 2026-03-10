@@ -81,6 +81,13 @@ function formatNumberForInput(value: number, step: number): string {
   return precision > 0 ? value.toFixed(precision) : Math.round(value).toString();
 }
 
+function formatMetric(value: number, decimals = 1): string {
+  if (!Number.isFinite(value)) {
+    return "n/a";
+  }
+  return value.toFixed(decimals);
+}
+
 function useEditableNumberInput(
   value: number,
   min: number,
@@ -189,7 +196,7 @@ function NumberField({
           </div>
         ) : null}
       </div>
-      <div className="step-input-row">
+      <div className="step-input-row step-input-row-number">
         <button
           type="button"
           className="secondary mini"
@@ -273,6 +280,22 @@ export function StepInspector({
   const equipmentCostMax = useMemo(
     () => scaledUpperBound(values.equipmentRatePerHour, COST_INPUT_MAX, 4),
     [values.equipmentRatePerHour]
+  );
+  const effectiveCtMinutes = useMemo(
+    () => Math.max(0.01, values.ctBaseline * values.ctMultiplier),
+    [values.ctBaseline, values.ctMultiplier]
+  );
+  const grossRatePerHour = useMemo(
+    () => (values.capacityUnits * 60) / effectiveCtMinutes,
+    [effectiveCtMinutes, values.capacityUnits]
+  );
+  const netRatePerHour = useMemo(
+    () => grossRatePerHour * (1 - clamp(values.downtimePct, 0, 100) / 100),
+    [grossRatePerHour, values.downtimePct]
+  );
+  const impliedTouchMinutes = useMemo(
+    () => (netRatePerHour > 0 ? 60 / netRatePerHour : Number.POSITIVE_INFINITY),
+    [netRatePerHour]
   );
   const ctMultiplierInput = useEditableNumberInput(
     Number(values.ctMultiplier.toFixed(2)),
@@ -360,6 +383,26 @@ export function StepInspector({
               {stepLabel}
             </div>
           </div>
+          <div className="inspector-live-grid" aria-live="polite">
+            <article className="inspector-live-card">
+              <p>Effective CT</p>
+              <strong>{formatMetric(effectiveCtMinutes, 2)} min</strong>
+            </article>
+            <article className="inspector-live-card">
+              <p>Gross Capacity</p>
+              <strong>{formatMetric(grossRatePerHour, 2)} /hr</strong>
+            </article>
+            <article className="inspector-live-card">
+              <p>Net Capacity</p>
+              <strong>{formatMetric(netRatePerHour, 2)} /hr</strong>
+            </article>
+            <article className="inspector-live-card">
+              <p>Implied Touch Time</p>
+              <strong>
+                {Number.isFinite(impliedTouchMinutes) ? `${formatMetric(impliedTouchMinutes, 2)} min` : "blocked"}
+              </strong>
+            </article>
+          </div>
 
           <NumberField
             id="inspector-capacity"
@@ -419,7 +462,7 @@ export function StepInspector({
                 </div>
               </div>
             </div>
-            <div className="step-input-row">
+            <div className="step-input-row step-input-row-number">
               <button
                 type="button"
                 className="secondary mini"
@@ -500,7 +543,7 @@ export function StepInspector({
                 </div>
               </div>
             </div>
-            <div className="step-input-row">
+            <div className="step-input-row step-input-row-range">
               <input
                 id="inspector-dt"
                 className="inspector-range"

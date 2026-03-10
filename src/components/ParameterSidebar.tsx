@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ParameterGroup, SelectOption } from "../types/contracts";
 
 interface ParameterSidebarProps {
@@ -26,9 +26,29 @@ function getOptionLabel(option: string | SelectOption): string {
 export function ParameterSidebar({ groups, scenario, onChange, editable }: ParameterSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [openHelpKey, setOpenHelpKey] = useState<string | null>(null);
+  const [isCompact, setIsCompact] = useState(false);
+  const compactModeRef = useRef(false);
+
+  useEffect(() => {
+    const updateLayout = () => {
+      const compact = window.innerWidth <= 1220;
+      setIsCompact(compact);
+      if (compact && !compactModeRef.current) {
+        setCollapsed(true);
+      }
+      if (!compact && compactModeRef.current) {
+        setCollapsed(false);
+      }
+      compactModeRef.current = compact;
+    };
+
+    updateLayout();
+    window.addEventListener("resize", updateLayout);
+    return () => window.removeEventListener("resize", updateLayout);
+  }, []);
 
   return (
-    <div className="parameter-sidebar">
+    <div className={`parameter-sidebar ${isCompact ? "is-compact" : ""}`}>
       <div className="panel-toolbar">
         <h2>Parameters</h2>
         <button

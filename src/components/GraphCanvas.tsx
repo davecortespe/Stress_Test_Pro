@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { computeNodeLayout } from "../lib/layoutGraph";
 import type { SimulationOutput, VsmGraph } from "../types/contracts";
 
@@ -10,6 +10,15 @@ interface GraphCanvasProps {
   animateEdges: boolean;
   onNodeDoubleClick?: (nodeId: string, anchor: { x: number; y: number }) => void;
   resetViewSignal?: number;
+}
+
+const VIEWBOX_WIDTH = 1280;
+const VIEWBOX_HEIGHT = 720;
+const ZOOM_MIN = 0.45;
+const ZOOM_MAX = 2.6;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function metricLabel(key: string): string {
@@ -176,24 +185,104 @@ export function GraphCanvas({
 }: GraphCanvasProps) {
   const positions = useMemo(() => computeNodeLayout(graph), [graph]);
   const nodeCardHeight = 140;
+  const nodeCardWidth = 170;
   const nodeMetricSpacing = 12;
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [dragState, setDragState] = useState<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startOffsetX: number;
+    startOffsetY: number;
+    pxToVbX: number;
+    pxToVbY: number;
+  } | null>(null);
+  const graphBounds = useMemo(() => {
+    const values = graph.nodes
+      .map((node) => positions[node.id])
+      .filter((value): value is { x: number; y: number } => Boolean(value));
+
+    if (values.length === 0) {
+      return {
+        left: 0,
+        top: 0,
+        right: VIEWBOX_WIDTH,
+        bottom: VIEWBOX_HEIGHT,
+        width: VIEWBOX_WIDTH,
+        height: VIEWBOX_HEIGHT
+      };
+    }
+
+    let left = Number.POSITIVE_INFINITY;
+    let top = Number.POSITIVE_INFINITY;
+    let right = Number.NEGATIVE_INFINITY;
+    let bottom = Number.NEGATIVE_INFINITY;
+    for (const point of values) {
+      left = Math.min(left, point.x);
+      top = Math.min(top, point.y);
+      right = Math.max(right, point.x + nodeCardWidth);
+      bottom = Math.max(bottom, point.y + nodeCardHeight);
+    }
+
+    return {
+      left,
+      top,
+      right,
+      bottom,
+      width: Math.max(1, right - left),
+      height: Math.max(1, bottom - top)
+    };
+  }, [graph.nodes, positions]);
+
+  const fitToGraph = useCallback(() => {
+    const padding = 56;
+    const nextZoom = clamp(
+      Math.min(
+        (VIEWBOX_WIDTH - padding * 2) / Math.max(1, graphBounds.width),
+        (VIEWBOX_HEIGHT - padding * 2) / Math.max(1, graphBounds.height)
+      ),
+      ZOOM_MIN,
+      ZOOM_MAX
+    );
+    const graphCenterX = (graphBounds.left + graphBounds.right) / 2;
+    const graphCenterY = (graphBounds.top + graphBounds.bottom) / 2;
+    setZoom(nextZoom);
+    setOffset({
+      x: VIEWBOX_WIDTH / 2 - graphCenterX * nextZoom,
+      y: VIEWBOX_HEIGHT / 2 - graphCenterY * nextZoom
+    });
+  }, [graphBounds]);
+
+  const zoomAround = useCallback(
+    (nextZoomRaw: number, focalPoint = { x: VIEWBOX_WIDTH / 2, y: VIEWBOX_HEIGHT / 2 }) => {
+      const nextZoom = clamp(nextZoomRaw, ZOOM_MIN, ZOOM_MAX);
+      const worldX = (focalPoint.x - offset.x) / zoom;
+      const worldY = (focalPoint.y - offset.y) / zoom;
+      setZoom(nextZoom);
+      setOffset({
+        x: focalPoint.x - worldX * nextZoom,
+        y: focalPoint.y - worldY * nextZoom
+      });
+    },
+    [offset.x, offset.y, zoom]
+  );
 
   useEffect(() => {
-    setZoom(1);
-    setOffset({ x: 0, y: 0 });
-  }, [resetViewSignal]);
+    fitToGraph();
+  }, [fitToGraph, graph.nodes.length, graph.edges.length, resetViewSignal]);
 
   return (
     <section className="graph-stage">
       <div className="graph-toolbar">
-        <button type="button" onClick={() => setZoom((z) => Math.min(2.6, z + 0.12))}>
+        <button type="button" onClick={() => zoomAround(zoom + 0.12)}>
           +
         </button>
-        <button type="button" onClick={() => setZoom((z) => Math.max(0.45, z - 0.12))}>
+        <button type="button" onClick={() => zoomAround(zoom - 0.12)}>
           -
+        </button>
+        <button type="button" onClick={fitToGraph}>
+          Fit
         </button>
         <button
           type="button"
@@ -204,28 +293,63 @@ export function GraphCanvas({
         >
           Reset
         </button>
+        <div className="graph-zoom-readout">{Math.round(zoom * 100)}%</div>
       </div>
       <svg
-        viewBox="0 0 1280 720"
+        viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
         onWheel={(event) => {
           event.preventDefault();
           const factor = event.deltaY < 0 ? 1.08 : 0.92;
-          setZoom((z) => Math.max(0.45, Math.min(2.6, z * factor)));
+          const rect = event.currentTarget.getBoundingClientRect();
+          const focalPoint = {
+            x: ((event.clientX - rect.left) / rect.width) * VIEWBOX_WIDTH,
+            y: ((event.clientY - rect.top) / rect.height) * VIEWBOX_HEIGHT
+          };
+          zoomAround(zoom * factor, focalPoint);
         }}
-        onMouseDown={(event) =>
-          setDragStart({ x: event.clientX - offset.x, y: event.clientY - offset.y })
-        }
-        onMouseMove={(event) => {
-          if (!dragStart) {
+        onPointerDown={(event) => {
+          if (event.button !== 0) {
             return;
           }
-          setOffset({
-            x: event.clientX - dragStart.x,
-            y: event.clientY - dragStart.y
+          const isInteractiveNode = (event.target as Element).closest(".node-card-interactive");
+          if (isInteractiveNode) {
+            return;
+          }
+          const rect = event.currentTarget.getBoundingClientRect();
+          event.currentTarget.setPointerCapture(event.pointerId);
+          setDragState({
+            pointerId: event.pointerId,
+            startClientX: event.clientX,
+            startClientY: event.clientY,
+            startOffsetX: offset.x,
+            startOffsetY: offset.y,
+            pxToVbX: rect.width > 0 ? VIEWBOX_WIDTH / rect.width : 1,
+            pxToVbY: rect.height > 0 ? VIEWBOX_HEIGHT / rect.height : 1
           });
         }}
-        onMouseUp={() => setDragStart(null)}
-        onMouseLeave={() => setDragStart(null)}
+        onPointerMove={(event) => {
+          if (!dragState || dragState.pointerId !== event.pointerId) {
+            return;
+          }
+          const deltaX = (event.clientX - dragState.startClientX) * dragState.pxToVbX;
+          const deltaY = (event.clientY - dragState.startClientY) * dragState.pxToVbY;
+          setOffset({
+            x: dragState.startOffsetX + deltaX,
+            y: dragState.startOffsetY + deltaY
+          });
+        }}
+        onPointerUp={(event) => {
+          if (dragState?.pointerId === event.pointerId) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+            setDragState(null);
+          }
+        }}
+        onPointerCancel={(event) => {
+          if (dragState?.pointerId === event.pointerId) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+            setDragState(null);
+          }
+        }}
       >
         <defs>
           <marker id="edgeArrow" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
@@ -233,7 +357,7 @@ export function GraphCanvas({
           </marker>
         </defs>
 
-        <g transform={`translate(${offset.x}, ${offset.y}) scale(${zoom})`}>
+        <g transform={`matrix(${zoom} 0 0 ${zoom} ${offset.x} ${offset.y})`}>
           {graph.edges.map((edge) => {
             const source = positions[edge.from];
             const target = positions[edge.to];

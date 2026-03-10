@@ -217,6 +217,52 @@
   letter-spacing: 0.01em;
 }
 
+.sim-progress {
+  display: grid;
+  gap: 6px;
+}
+
+.sim-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #9ab3d5;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sim-progress-meta strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.86rem;
+  color: #e9f7ff;
+}
+
+.sim-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(95, 132, 171, 0.58);
+  background: rgba(7, 22, 40, 0.86);
+  overflow: hidden;
+}
+
+.sim-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(30, 224, 255, 0.95), rgba(71, 180, 201, 0.92)),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.24) 0 6px,
+      rgba(255, 255, 255, 0) 6px 12px
+    );
+  box-shadow: 0 0 12px rgba(30, 224, 255, 0.3);
+  transition: width 180ms linear;
+}
+
 .speed-group {
   display: inline-flex;
   align-items: center;
@@ -259,11 +305,20 @@
   padding: 10px 14px;
   font-family: inherit;
   cursor: pointer;
+  transition:
+    transform 140ms ease,
+    border-color 180ms ease,
+    box-shadow 200ms ease,
+    background 200ms ease;
 }
 
 .simulator-page button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.simulator-page button:not(:disabled):hover {
+  transform: translateY(-1px);
 }
 
 .simulator-page button.primary {
@@ -670,7 +725,12 @@
   padding: 12px;
   max-height: calc(100vh - 170px);
   overflow: auto;
+  scrollbar-gutter: stable;
   backdrop-filter: blur(8px);
+}
+
+.parameter-sidebar.is-compact {
+  max-height: 280px;
 }
 
 .parameter-sidebar::after {
@@ -726,6 +786,12 @@
   border: 1px solid rgba(65, 103, 149, 0.52);
   display: grid;
   gap: 8px;
+  transition: border-color 180ms ease, box-shadow 200ms ease;
+}
+
+.input-row:focus-within {
+  border-color: rgba(30, 224, 255, 0.54);
+  box-shadow: 0 0 0 1px rgba(30, 224, 255, 0.2);
 }
 
 .input-row-header {
@@ -1050,6 +1116,20 @@
   width: 100%;
   margin-top: 12px;
   border-collapse: collapse;
+  min-width: 640px;
+}
+
+.throughput-table-scroll {
+  overflow: auto;
+  margin-top: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(65, 103, 149, 0.26);
+  scrollbar-gutter: stable both-edges;
+  background: rgba(5, 16, 29, 0.45);
+}
+
+.throughput-table-scroll .throughput-table {
+  margin-top: 0;
 }
 
 .throughput-table th,
@@ -1065,6 +1145,14 @@
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.throughput-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(10, 24, 42, 0.96);
+  backdrop-filter: blur(4px);
 }
 
 .throughput-table td,
@@ -1103,11 +1191,14 @@
   top: 10px;
   left: 10px;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   z-index: 2;
+  max-width: calc(100% - 20px);
 }
 
 .graph-toolbar button {
+  min-height: 32px;
   padding: 6px 10px;
   border-radius: 8px;
   background: rgba(9, 20, 34, 0.95);
@@ -1116,11 +1207,28 @@
   box-shadow: 0 8px 14px rgba(2, 8, 15, 0.35);
 }
 
+.graph-zoom-readout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  min-height: 32px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(65, 103, 149, 0.52);
+  background: rgba(8, 20, 36, 0.9);
+  color: #d8e8ff;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  box-shadow: 0 8px 14px rgba(2, 8, 15, 0.35);
+}
+
 .simulator-page svg {
   width: 100%;
   height: 100%;
   display: block;
   cursor: grab;
+  touch-action: none;
 }
 
 .simulator-page svg:active {
@@ -1334,7 +1442,8 @@
 }
 
 .inspector-panel {
-  width: min(380px, 92vw);
+  width: clamp(330px, 34vw, 430px);
+  max-width: calc(100vw - 20px);
   background: linear-gradient(165deg, rgba(16, 35, 56, 0.96), rgba(8, 20, 33, 0.95));
   border: 1px solid rgba(114, 167, 194, 0.38);
   border-radius: 12px;
@@ -1377,15 +1486,21 @@
 
 .inspector-content {
   flex: 1 1 auto;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 12px 14px;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .inspector-field {
   display: grid;
   gap: 6px;
   margin-bottom: 10px;
+}
+
+.inspector-field:focus-within .inspector-label-row label {
+  color: #cfe9ff;
 }
 
 .inspector-label-row {
@@ -1410,25 +1525,34 @@
 }
 
 .step-input-row {
-  display: flex;
+  display: grid;
   align-items: center;
   gap: 6px;
 }
 
-.step-input-row input[type="number"] {
-  min-width: 88px;
-  flex: 1;
+.step-input-row > * {
+  min-width: 0;
 }
 
-.step-input-row input[type="range"] {
-  flex: 1;
+.step-input-row-number {
+  grid-template-columns: 30px minmax(0, 1fr) 30px auto;
+}
+
+.step-input-row-range {
+  grid-template-columns: minmax(0, 1fr) 30px 30px minmax(76px, 88px) auto;
+}
+
+.step-input-row input[type="number"] {
+  min-width: 0;
+  width: 100%;
 }
 
 .inspector-range {
   -webkit-appearance: none;
   appearance: none;
+  width: 100%;
   height: 30px;
-  min-width: 120px;
+  min-width: 0;
   cursor: pointer;
   background: transparent;
   accent-color: #1ee0ff;
@@ -1490,13 +1614,13 @@
 }
 
 .downtime-value-input {
-  min-width: 78px !important;
+  min-width: 0 !important;
   max-width: 88px;
 }
 
 .simulator-page button.mini {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   font-weight: 700;
 }
@@ -1519,11 +1643,45 @@
   margin-top: 6px;
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .preset-btn {
   padding: 6px 8px;
   font-size: 0.76rem;
+}
+
+.inspector-live-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+.inspector-live-card {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(65, 103, 149, 0.46);
+  background:
+    linear-gradient(170deg, rgba(10, 24, 41, 0.9), rgba(6, 18, 33, 0.93)),
+    radial-gradient(circle at 100% 0, rgba(30, 224, 255, 0.1), transparent 38%);
+}
+
+.inspector-live-card p {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #95accf;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.inspector-live-card strong {
+  display: block;
+  margin-top: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.92rem;
+  color: #f4f9ff;
 }
 
 .readonly-value {
@@ -1691,7 +1849,9 @@
   .kpi-card,
   .node-card,
   .kpi-card h2,
-  .field-help-tooltip {
+  .field-help-tooltip,
+  .simulator-page button,
+  .sim-progress-fill {
     transition: none;
   }
 }
@@ -1730,6 +1890,14 @@
   .throughput-summary-shell {
     grid-template-columns: 1fr;
   }
+
+  .throughput-toolbar {
+    flex-direction: column;
+  }
+
+  .throughput-toolbar-actions {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1760,6 +1928,14 @@
   .timer-chip .status-chip-value {
     font-size: 1.3rem;
   }
+
+  .sim-progress-meta {
+    font-size: 0.72rem;
+  }
+
+  .throughput-table {
+    min-width: 560px;
+  }
 }
 
 @media (max-width: 900px) {
@@ -1777,17 +1953,53 @@
 }
 
 @media (max-width: 520px) {
+  .graph-toolbar {
+    gap: 4px;
+  }
+
+  .graph-toolbar button {
+    min-height: 30px;
+    padding: 4px 8px;
+  }
+
+  .graph-zoom-readout {
+    min-height: 30px;
+    min-width: 52px;
+  }
+
+  .throughput-table {
+    min-width: 460px;
+  }
+
   .inspector-panel {
     width: calc(100% - 16px);
     border-radius: 10px;
   }
 
   .step-input-row {
-    flex-wrap: wrap;
+    grid-auto-flow: row;
   }
 
-  .step-input-row input[type="number"] {
-    min-width: 0;
+  .step-input-row-number {
+    grid-template-columns: 30px minmax(0, 1fr) 30px;
+  }
+
+  .step-input-row-number .unit-pill {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+
+  .step-input-row-range {
+    grid-template-columns: minmax(0, 1fr) 30px 30px;
+  }
+
+  .step-input-row-range .downtime-value-input {
+    grid-column: 1 / span 2;
+  }
+
+  .step-input-row-range .unit-pill {
+    grid-column: 3 / span 1;
+    justify-self: end;
   }
 
   .downtime-value-input {
@@ -1799,5 +2011,9 @@
   .unit-pill {
     min-width: 30px;
     padding: 0 6px;
+  }
+
+  .inspector-live-grid {
+    grid-template-columns: 1fr;
   }
 }

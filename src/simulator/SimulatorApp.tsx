@@ -280,6 +280,13 @@ export default function SimulatorApp() {
       : resultsMode === "waste"
         ? wasteKpis
         : dashboardConfig.kpis;
+  const simProgressPct = useMemo(() => {
+    if (!Number.isFinite(simHorizonHours) || simHorizonHours <= 0) {
+      return 0;
+    }
+    const ratio = simElapsedHours / simHorizonHours;
+    return Math.max(0, Math.min(100, ratio * 100));
+  }, [simElapsedHours, simHorizonHours]);
   const resolvedStepScenario = useMemo(
     () => buildResolvedStepScenario(forecastModel.stepModels, committedScenario, inspectorDefaultsByStepId),
     [committedScenario, forecastModel.stepModels, inspectorDefaultsByStepId]
@@ -397,6 +404,7 @@ export default function SimulatorApp() {
           hasStagedChanges={hasStagedChanges}
           simElapsedHours={simElapsedHours}
           simHorizonHours={simHorizonHours}
+          simProgressPct={simProgressPct}
           scenarioCount={libraryEntries.length}
           speedMultiplier={speedMultiplier}
           onResultsModeChange={setResultsMode}

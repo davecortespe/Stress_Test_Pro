@@ -135,50 +135,54 @@ export function WasteAnalysisPanel({
       <div className="throughput-table-grid">
         <article className="throughput-table-card">
           <h3>Summary Analysis</h3>
-          <table className="throughput-table">
-            <tbody>
-              {analysis.summaryRows.map((row) => (
-                <tr key={row.key}>
-                  <th>{row.label}</th>
-                  <td>{formatValue(row)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="throughput-table-scroll">
+            <table className="throughput-table">
+              <tbody>
+                {analysis.summaryRows.map((row) => (
+                  <tr key={row.key}>
+                    <th>{row.label}</th>
+                    <td>{formatValue(row)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </article>
 
         <article className="throughput-table-card">
           <h3>Step-Level Waste Breakdown</h3>
-          <table className="throughput-table throughput-steps-table">
-            <thead>
-              <tr>
-                <th>Step name</th>
-                <th>LT</th>
-                <th>CT</th>
-                <th>Waste</th>
-                <th>Waste %</th>
-                <th>Value-add %</th>
-                <th>Route weight</th>
-                <th>Weighted waste</th>
-                <th>Flags</th>
-              </tr>
-            </thead>
-            <tbody>
-              {analysis.stepRows.map((row) => (
-                <tr key={row.stepId}>
-                  <th>{row.stepName}</th>
-                  <td>{formatValue({ key: `${row.stepId}-lt`, label: "", value: row.comparisonLtMinutes, format: "duration" })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-ct`, label: "", value: row.comparisonCtMinutes, format: "duration" })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-waste`, label: "", value: row.wasteMinutes, format: "duration" })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-waste-pct`, label: "", value: row.wastePct, format: "percent", decimals: 1 })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-va-pct`, label: "", value: row.valueAddPct, format: "percent", decimals: 1 })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-weight`, label: "", value: row.routeWeight, format: "number", decimals: 3 })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-weighted-waste`, label: "", value: row.weightedWasteMinutes, format: "duration" })}</td>
-                  <td>{formatFlags(row)}</td>
+          <div className="throughput-table-scroll">
+            <table className="throughput-table throughput-steps-table">
+              <thead>
+                <tr>
+                  <th>Step name</th>
+                  <th>LT</th>
+                  <th>CT</th>
+                  <th>Waste</th>
+                  <th>Waste %</th>
+                  <th>Value-add %</th>
+                  <th>Route weight</th>
+                  <th>Weighted waste</th>
+                  <th>Flags</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {analysis.stepRows.map((row) => (
+                  <tr key={row.stepId}>
+                    <th>{row.stepName}</th>
+                    <td>{formatValue({ key: `${row.stepId}-lt`, label: "", value: row.comparisonLtMinutes, format: "duration" })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-ct`, label: "", value: row.comparisonCtMinutes, format: "duration" })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-waste`, label: "", value: row.wasteMinutes, format: "duration" })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-waste-pct`, label: "", value: row.wastePct, format: "percent", decimals: 1 })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-va-pct`, label: "", value: row.valueAddPct, format: "percent", decimals: 1 })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-weight`, label: "", value: row.routeWeight, format: "number", decimals: 3 })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-weighted-waste`, label: "", value: row.weightedWasteMinutes, format: "duration" })}</td>
+                    <td>{formatFlags(row)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </article>
       </div>
     </section>

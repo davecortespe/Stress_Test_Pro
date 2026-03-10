@@ -133,75 +133,81 @@ export function ThroughputAnalysisPanel({
       <div className="throughput-table-grid">
         <article className="throughput-table-card">
           <h3>Summary Analysis</h3>
-          <table className="throughput-table">
-            <tbody>
-              {analysis.summaryRows.map((row) => (
-                <tr key={row.key}>
-                  <th>{row.label}</th>
-                  <td>{formatValue(row)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="throughput-table-scroll">
+            <table className="throughput-table">
+              <tbody>
+                {analysis.summaryRows.map((row) => (
+                  <tr key={row.key}>
+                    <th>{row.label}</th>
+                    <td>{formatValue(row)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </article>
 
         <article className="throughput-table-card">
           <h3>Step-Level Cost Breakdown</h3>
-          <table className="throughput-table throughput-steps-table">
-            <thead>
-              <tr>
-                <th>Step name</th>
-                <th>Material cost / unit</th>
-                <th>Labor rate / hr</th>
-                <th>Labor cost / unit</th>
-                <th>Equipment rate / hr</th>
-                <th>Equipment cost / unit</th>
-                <th>Total step cost / unit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {analysis.stepRows.map((row) => (
-                <tr key={row.stepId}>
-                  <th>{row.stepName}</th>
-                  <td>{formatValue({ key: `${row.stepId}-material`, label: "", value: row.materialCost, format: "currency" })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-labor-rate`, label: "", value: row.laborRatePerHour, format: "currency" })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-labor-unit`, label: "", value: row.laborCostPerUnit, format: "currency" })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-equipment-rate`, label: "", value: row.equipmentRatePerHour, format: "currency" })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-equipment-unit`, label: "", value: row.equipmentCostPerUnit, format: "currency" })}</td>
-                  <td>{formatValue({ key: `${row.stepId}-total`, label: "", value: row.totalStepCost, format: "currency" })}</td>
+          <div className="throughput-table-scroll">
+            <table className="throughput-table throughput-steps-table">
+              <thead>
+                <tr>
+                  <th>Step name</th>
+                  <th>Material cost / unit</th>
+                  <th>Labor rate / hr</th>
+                  <th>Labor cost / unit</th>
+                  <th>Equipment rate / hr</th>
+                  <th>Equipment cost / unit</th>
+                  <th>Total step cost / unit</th>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <th>Total</th>
-                <td colSpan={6}>
-                  {formatValue({ key: "grand-total", label: "", value: grandTotal, format: "currency" })}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+              </thead>
+              <tbody>
+                {analysis.stepRows.map((row) => (
+                  <tr key={row.stepId}>
+                    <th>{row.stepName}</th>
+                    <td>{formatValue({ key: `${row.stepId}-material`, label: "", value: row.materialCost, format: "currency" })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-labor-rate`, label: "", value: row.laborRatePerHour, format: "currency" })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-labor-unit`, label: "", value: row.laborCostPerUnit, format: "currency" })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-equipment-rate`, label: "", value: row.equipmentRatePerHour, format: "currency" })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-equipment-unit`, label: "", value: row.equipmentCostPerUnit, format: "currency" })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-total`, label: "", value: row.totalStepCost, format: "currency" })}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th>Total</th>
+                  <td colSpan={6}>
+                    {formatValue({ key: "grand-total", label: "", value: grandTotal, format: "currency" })}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </article>
       </div>
 
       <article className="throughput-table-card">
         <h3>P&amp;L Report</h3>
-        <table className="throughput-table">
-          <thead>
-            <tr>
-              <th>Line item</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {analysis.profitLossRows.map((row) => (
-              <tr key={row.key}>
-                <th>{row.label}</th>
-                <td>{formatCurrency(row.total)}</td>
+        <div className="throughput-table-scroll">
+          <table className="throughput-table">
+            <thead>
+              <tr>
+                <th>Line item</th>
+                <th>Total</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {analysis.profitLossRows.map((row) => (
+                <tr key={row.key}>
+                  <th>{row.label}</th>
+                  <td>{formatCurrency(row.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </article>
     </section>
   );
