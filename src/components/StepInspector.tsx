@@ -11,6 +11,8 @@ interface StepInspectorValues {
   equipmentRatePerHour: number;
 }
 
+type StepInspectorFieldKey = keyof StepInspectorValues;
+
 interface StepInspectorProps {
   isOpen: boolean;
   isPaused: boolean;
@@ -36,6 +38,27 @@ function scaledUpperBound(value: number, minimumMax: number, multiplier: number)
 }
 
 const COST_INPUT_MAX = 100000;
+const DOWNTIME_STEP = 0.5;
+const DOWNTIME_PRESETS = [0, 5, 10, 15, 20, 30];
+
+const STEP_FIELD_HELP: Record<StepInspectorFieldKey, string> = {
+  capacityUnits:
+    "Parallel units at this step (for example lines/stations). More units increase step capacity.",
+  ctBaseline:
+    "Base cycle time per unit before scenario multipliers. Lower CT increases processing capacity.",
+  ctMultiplier:
+    "Scenario factor on CT baseline. Values above 1 slow the step, below 1 speed it up.",
+  downtimePct:
+    "Percent of time this step is unavailable from interruptions, failures, or unplanned stops.",
+  leadTimeMinutes:
+    "Explicit delay at this step for lead-time reporting. This does not directly increase service capacity.",
+  materialCostPerUnit:
+    "Material consumed per produced unit at this step for throughput economics.",
+  laborRatePerHour:
+    "Loaded labor rate for this step used in per-unit and P&L calculations.",
+  equipmentRatePerHour:
+    "Loaded equipment rate for this step used in per-unit and P&L calculations."
+};
 
 function getStepPrecision(step: number): number {
   if (!Number.isFinite(step) || step <= 0) {
@@ -103,6 +126,11 @@ function useEditableNumberInput(
 function NumberField({
   id,
   label,
+  helpKey,
+  helpText,
+  openHelpKey,
+  onToggleHelp,
+  onCloseHelp,
   value,
   min,
   max,
@@ -112,6 +140,11 @@ function NumberField({
 }: {
   id: string;
   label: string;
+  helpKey: string;
+  helpText?: string;
+  openHelpKey: string | null;
+  onToggleHelp: (key: string) => void;
+  onCloseHelp: (key: string) => void;
   value: number;
   min: number;
   max: number;
@@ -127,9 +160,35 @@ function NumberField({
     step,
     onChange
   );
+  const tooltipId = `${id}-help`;
+  const isHelpOpen = openHelpKey === helpKey;
   return (
     <div className="inspector-field">
-      <label htmlFor={id}>{label}</label>
+      <div className="inspector-label-row">
+        <label htmlFor={id}>{label}</label>
+        {helpText ? (
+          <div className={`field-help ${isHelpOpen ? "is-open" : ""}`}>
+            <button
+              type="button"
+              className="field-help-trigger"
+              aria-label={`About ${label}`}
+              aria-expanded={isHelpOpen}
+              aria-describedby={tooltipId}
+              onClick={() => onToggleHelp(helpKey)}
+              onBlur={(event) => {
+                if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)) {
+                  onCloseHelp(helpKey);
+                }
+              }}
+            >
+              i
+            </button>
+            <div id={tooltipId} role="tooltip" className="field-help-tooltip">
+              {helpText}
+            </div>
+          </div>
+        ) : null}
+      </div>
       <div className="step-input-row">
         <button
           type="button"
@@ -185,6 +244,7 @@ export function StepInspector({
 }: StepInspectorProps) {
   const panelRef = useRef<HTMLElement | null>(null);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [openHelpKey, setOpenHelpKey] = useState<string | null>(null);
   const [panelSize, setPanelSize] = useState({ width: 360, height: 420 });
   const capacityMax = useMemo(
     () => scaledUpperBound(values.capacityUnits, 48, 4),
@@ -237,6 +297,12 @@ export function StepInspector({
   }, []);
 
   useEffect(() => {
+    if (!isOpen) {
+      setOpenHelpKey(null);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen || !panelRef.current) {
       return;
     }
@@ -287,172 +353,284 @@ export function StepInspector({
           </button>
         </div>
 
-        <div className="inspector-field">
-          <label>Step name</label>
-          <div className="readonly-value" title={stepLabel}>
-            {stepLabel}
+        <div className="inspector-content">
+          <div className="inspector-field">
+            <label>Step name</label>
+            <div className="readonly-value" title={stepLabel}>
+              {stepLabel}
+            </div>
           </div>
-        </div>
 
-        <NumberField
-          id="inspector-capacity"
-          label="Capacity units"
-          value={values.capacityUnits}
-          min={1}
-          max={capacityMax}
-          step={1}
-          unit="units"
-          onChange={(next) => onChange("capacityUnits", Math.round(next))}
-        />
+          <NumberField
+            id="inspector-capacity"
+            label="Capacity units"
+            helpKey="capacityUnits"
+            helpText={STEP_FIELD_HELP.capacityUnits}
+            openHelpKey={openHelpKey}
+            onToggleHelp={(key) => setOpenHelpKey((current) => (current === key ? null : key))}
+            onCloseHelp={(key) => setOpenHelpKey((current) => (current === key ? null : current))}
+            value={values.capacityUnits}
+            min={1}
+            max={capacityMax}
+            step={1}
+            unit="units"
+            onChange={(next) => onChange("capacityUnits", Math.round(next))}
+          />
 
-        <NumberField
-          id="inspector-ct"
-          label="CT baseline"
-          value={values.ctBaseline}
-          min={0.01}
-          max={ctBaselineMax}
-          step={0.1}
-          unit="min"
-          onChange={(next) => onChange("ctBaseline", next)}
-        />
+          <NumberField
+            id="inspector-ct"
+            label="CT baseline"
+            helpKey="ctBaseline"
+            helpText={STEP_FIELD_HELP.ctBaseline}
+            openHelpKey={openHelpKey}
+            onToggleHelp={(key) => setOpenHelpKey((current) => (current === key ? null : key))}
+            onCloseHelp={(key) => setOpenHelpKey((current) => (current === key ? null : current))}
+            value={values.ctBaseline}
+            min={0.01}
+            max={ctBaselineMax}
+            step={0.1}
+            unit="min"
+            onChange={(next) => onChange("ctBaseline", next)}
+          />
 
-        <div className="inspector-field">
-          <label htmlFor="inspector-ctm">CT multiplier</label>
-          <div className="step-input-row">
-            <button
-              type="button"
-              className="secondary mini"
-              onClick={() =>
-                onChange("ctMultiplier", clamp(values.ctMultiplier - 0.05, 0.1, ctMultiplierMax))
-              }
-            >
-              -
-            </button>
-            <input
-              id="inspector-ctm"
-              type="number"
-              min={0.1}
-              max={ctMultiplierMax}
-              step={0.01}
-              value={ctMultiplierInput.draft}
-              onFocus={() => ctMultiplierInput.setIsEditing(true)}
-              onChange={(event) => ctMultiplierInput.setDraft(event.target.value)}
-              onBlur={ctMultiplierInput.commitDraft}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.currentTarget.blur();
-                }
-                if (event.key === "Escape") {
-                  ctMultiplierInput.revertDraft();
-                  event.currentTarget.blur();
-                }
-              }}
-            />
-            <button
-              type="button"
-              className="secondary mini"
-              onClick={() =>
-                onChange("ctMultiplier", clamp(values.ctMultiplier + 0.05, 0.1, ctMultiplierMax))
-              }
-            >
-              +
-            </button>
-            <span className="unit-pill">x</span>
-          </div>
-          <div className="preset-row">
-            {[0.85, 1, 1.15].map((preset) => (
+          <div className="inspector-field">
+            <div className="inspector-label-row">
+              <label htmlFor="inspector-ctm">CT multiplier</label>
+              <div className={`field-help ${openHelpKey === "ctMultiplier" ? "is-open" : ""}`}>
+                <button
+                  type="button"
+                  className="field-help-trigger"
+                  aria-label="About CT multiplier"
+                  aria-expanded={openHelpKey === "ctMultiplier"}
+                  aria-describedby="inspector-ctm-help"
+                  onClick={() =>
+                    setOpenHelpKey((current) => (current === "ctMultiplier" ? null : "ctMultiplier"))
+                  }
+                  onBlur={(event) => {
+                    if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)) {
+                      setOpenHelpKey((current) => (current === "ctMultiplier" ? null : current));
+                    }
+                  }}
+                >
+                  i
+                </button>
+                <div id="inspector-ctm-help" role="tooltip" className="field-help-tooltip">
+                  {STEP_FIELD_HELP.ctMultiplier}
+                </div>
+              </div>
+            </div>
+            <div className="step-input-row">
               <button
-                key={preset}
                 type="button"
-                className="secondary preset-btn"
-                onClick={() => onChange("ctMultiplier", preset)}
+                className="secondary mini"
+                onClick={() =>
+                  onChange("ctMultiplier", clamp(values.ctMultiplier - 0.05, 0.1, ctMultiplierMax))
+                }
               >
-                {preset.toFixed(2)}x
+                -
               </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="inspector-field">
-          <label htmlFor="inspector-dt">Downtime</label>
-          <div className="step-input-row">
-            <input
-              id="inspector-dt"
-              type="range"
-              min={0}
-              max={95}
-              step={0.5}
-              value={values.downtimePct}
-              onChange={(event) =>
-                onChange("downtimePct", clamp(Number(event.target.value), 0, 95))
-              }
-            />
-            <input
-              type="number"
-              min={0}
-              max={95}
-              step={0.1}
-              value={downtimeInput.draft}
-              onFocus={() => downtimeInput.setIsEditing(true)}
-              onChange={(event) => downtimeInput.setDraft(event.target.value)}
-              onBlur={downtimeInput.commitDraft}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.currentTarget.blur();
+              <input
+                id="inspector-ctm"
+                type="number"
+                min={0.1}
+                max={ctMultiplierMax}
+                step={0.01}
+                value={ctMultiplierInput.draft}
+                onFocus={() => ctMultiplierInput.setIsEditing(true)}
+                onChange={(event) => ctMultiplierInput.setDraft(event.target.value)}
+                onBlur={ctMultiplierInput.commitDraft}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.currentTarget.blur();
+                  }
+                  if (event.key === "Escape") {
+                    ctMultiplierInput.revertDraft();
+                    event.currentTarget.blur();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="secondary mini"
+                onClick={() =>
+                  onChange("ctMultiplier", clamp(values.ctMultiplier + 0.05, 0.1, ctMultiplierMax))
                 }
-                if (event.key === "Escape") {
-                  downtimeInput.revertDraft();
-                  event.currentTarget.blur();
-                }
-              }}
-            />
-            <span className="unit-pill">%</span>
+              >
+                +
+              </button>
+              <span className="unit-pill">x</span>
+            </div>
+            <div className="preset-row">
+              {[0.85, 1, 1.15].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  className="secondary preset-btn"
+                  onClick={() => onChange("ctMultiplier", preset)}
+                >
+                  {preset.toFixed(2)}x
+                </button>
+              ))}
+            </div>
           </div>
+
+          <div className="inspector-field">
+            <div className="inspector-label-row">
+              <label htmlFor="inspector-dt">Downtime</label>
+              <div className={`field-help ${openHelpKey === "downtimePct" ? "is-open" : ""}`}>
+                <button
+                  type="button"
+                  className="field-help-trigger"
+                  aria-label="About Downtime"
+                  aria-expanded={openHelpKey === "downtimePct"}
+                  aria-describedby="inspector-dt-help"
+                  onClick={() =>
+                    setOpenHelpKey((current) => (current === "downtimePct" ? null : "downtimePct"))
+                  }
+                  onBlur={(event) => {
+                    if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)) {
+                      setOpenHelpKey((current) => (current === "downtimePct" ? null : current));
+                    }
+                  }}
+                >
+                  i
+                </button>
+                <div id="inspector-dt-help" role="tooltip" className="field-help-tooltip">
+                  {STEP_FIELD_HELP.downtimePct}
+                </div>
+              </div>
+            </div>
+            <div className="step-input-row">
+              <input
+                id="inspector-dt"
+                className="inspector-range"
+                type="range"
+                min={0}
+                max={95}
+                step={DOWNTIME_STEP}
+                value={values.downtimePct}
+                onChange={(event) =>
+                  onChange("downtimePct", clamp(Number(event.target.value), 0, 95))
+                }
+              />
+              <button
+                type="button"
+                className="secondary mini"
+                onClick={() =>
+                  onChange("downtimePct", clamp(values.downtimePct - DOWNTIME_STEP, 0, 95))
+                }
+              >
+                -
+              </button>
+              <button
+                type="button"
+                className="secondary mini"
+                onClick={() =>
+                  onChange("downtimePct", clamp(values.downtimePct + DOWNTIME_STEP, 0, 95))
+                }
+              >
+                +
+              </button>
+              <input
+                className="downtime-value-input"
+                type="number"
+                min={0}
+                max={95}
+                step={0.1}
+                value={downtimeInput.draft}
+                onFocus={() => downtimeInput.setIsEditing(true)}
+                onChange={(event) => downtimeInput.setDraft(event.target.value)}
+                onBlur={downtimeInput.commitDraft}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.currentTarget.blur();
+                  }
+                  if (event.key === "Escape") {
+                    downtimeInput.revertDraft();
+                    event.currentTarget.blur();
+                  }
+                }}
+              />
+              <span className="unit-pill">%</span>
+            </div>
+            <div className="preset-row">
+              {DOWNTIME_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  className="secondary preset-btn"
+                  onClick={() => onChange("downtimePct", preset)}
+                >
+                  {preset}%
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <NumberField
+            id="inspector-lead-time"
+            label="Lead Time"
+            helpKey="leadTimeMinutes"
+            helpText={STEP_FIELD_HELP.leadTimeMinutes}
+            openHelpKey={openHelpKey}
+            onToggleHelp={(key) => setOpenHelpKey((current) => (current === key ? null : key))}
+            onCloseHelp={(key) => setOpenHelpKey((current) => (current === key ? null : current))}
+            value={values.leadTimeMinutes}
+            min={0}
+            max={leadTimeMax}
+            step={10}
+            unit="min"
+            onChange={(next) => onChange("leadTimeMinutes", next)}
+          />
+
+          <NumberField
+            id="inspector-material-cost"
+            label="Material cost / unit"
+            helpKey="materialCostPerUnit"
+            helpText={STEP_FIELD_HELP.materialCostPerUnit}
+            openHelpKey={openHelpKey}
+            onToggleHelp={(key) => setOpenHelpKey((current) => (current === key ? null : key))}
+            onCloseHelp={(key) => setOpenHelpKey((current) => (current === key ? null : current))}
+            value={values.materialCostPerUnit}
+            min={0}
+            max={materialCostMax}
+            step={0.1}
+            unit="$"
+            onChange={(next) => onChange("materialCostPerUnit", next)}
+          />
+
+          <NumberField
+            id="inspector-labor-rate"
+            label="Labor rate / hr"
+            helpKey="laborRatePerHour"
+            helpText={STEP_FIELD_HELP.laborRatePerHour}
+            openHelpKey={openHelpKey}
+            onToggleHelp={(key) => setOpenHelpKey((current) => (current === key ? null : key))}
+            onCloseHelp={(key) => setOpenHelpKey((current) => (current === key ? null : current))}
+            value={values.laborRatePerHour}
+            min={0}
+            max={laborCostMax}
+            step={0.1}
+            unit="$/hr"
+            onChange={(next) => onChange("laborRatePerHour", next)}
+          />
+
+          <NumberField
+            id="inspector-equipment-rate"
+            label="Equipment rate / hr"
+            helpKey="equipmentRatePerHour"
+            helpText={STEP_FIELD_HELP.equipmentRatePerHour}
+            openHelpKey={openHelpKey}
+            onToggleHelp={(key) => setOpenHelpKey((current) => (current === key ? null : key))}
+            onCloseHelp={(key) => setOpenHelpKey((current) => (current === key ? null : current))}
+            value={values.equipmentRatePerHour}
+            min={0}
+            max={equipmentCostMax}
+            step={0.1}
+            unit="$/hr"
+            onChange={(next) => onChange("equipmentRatePerHour", next)}
+          />
         </div>
-
-        <NumberField
-          id="inspector-lead-time"
-          label="Lead Time"
-          value={values.leadTimeMinutes}
-          min={0}
-          max={leadTimeMax}
-          step={10}
-          unit="min"
-          onChange={(next) => onChange("leadTimeMinutes", next)}
-        />
-
-        <NumberField
-          id="inspector-material-cost"
-          label="Material cost / unit"
-          value={values.materialCostPerUnit}
-          min={0}
-          max={materialCostMax}
-          step={0.1}
-          unit="$"
-          onChange={(next) => onChange("materialCostPerUnit", next)}
-        />
-
-        <NumberField
-          id="inspector-labor-rate"
-          label="Labor rate / hr"
-          value={values.laborRatePerHour}
-          min={0}
-          max={laborCostMax}
-          step={0.1}
-          unit="$/hr"
-          onChange={(next) => onChange("laborRatePerHour", next)}
-        />
-
-        <NumberField
-          id="inspector-equipment-rate"
-          label="Equipment rate / hr"
-          value={values.equipmentRatePerHour}
-          min={0}
-          max={equipmentCostMax}
-          step={0.1}
-          unit="$/hr"
-          onChange={(next) => onChange("equipmentRatePerHour", next)}
-        />
 
         <div className="inspector-actions">
           {isPaused ? (

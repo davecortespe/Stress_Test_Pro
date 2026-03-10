@@ -1339,13 +1339,14 @@
   border: 1px solid rgba(114, 167, 194, 0.38);
   border-radius: 12px;
   box-shadow: 0 16px 28px rgba(0, 0, 0, 0.38);
-  padding: 14px;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .inspector-panel.is-popover {
   position: fixed;
-  max-height: min(76vh, 560px);
+  max-height: min(82vh, 640px);
 }
 
 .inspector-panel.is-modal {
@@ -1353,7 +1354,7 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  max-height: 88vh;
+  max-height: 92vh;
 }
 
 .inspector-header {
@@ -1361,17 +1362,37 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 14px;
+  margin: 0;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(114, 167, 194, 0.2);
+  background: linear-gradient(180deg, rgba(12, 31, 52, 0.96), rgba(8, 21, 36, 0.94));
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .inspector-header h3 {
   margin: 0;
 }
 
+.inspector-content {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 12px 14px;
+  overscroll-behavior: contain;
+}
+
 .inspector-field {
   display: grid;
   gap: 6px;
   margin-bottom: 10px;
+}
+
+.inspector-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .inspector-field label {
@@ -1401,6 +1422,76 @@
 
 .step-input-row input[type="range"] {
   flex: 1;
+}
+
+.inspector-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 30px;
+  min-width: 120px;
+  cursor: pointer;
+  background: transparent;
+  accent-color: #1ee0ff;
+}
+
+.inspector-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(232, 240, 250, 0.92), rgba(205, 219, 235, 0.92));
+  border: 1px solid rgba(114, 167, 194, 0.35);
+}
+
+.inspector-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 51, 173, 0.68);
+  background: radial-gradient(circle at 35% 35%, #ff6fdf, #ff2fae 62%, #d10d83 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 188, 232, 0.28),
+    0 0 12px rgba(255, 74, 178, 0.38);
+}
+
+.inspector-range::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(232, 240, 250, 0.92), rgba(205, 219, 235, 0.92));
+  border: 1px solid rgba(114, 167, 194, 0.35);
+}
+
+.inspector-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 51, 173, 0.68);
+  background: radial-gradient(circle at 35% 35%, #ff6fdf, #ff2fae 62%, #d10d83 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 188, 232, 0.28),
+    0 0 12px rgba(255, 74, 178, 0.38);
+}
+
+.inspector-range:focus-visible {
+  outline: none;
+}
+
+.inspector-range:focus-visible::-webkit-slider-runnable-track {
+  box-shadow:
+    0 0 0 1px rgba(30, 224, 255, 0.45),
+    0 0 10px rgba(30, 224, 255, 0.32);
+}
+
+.inspector-range:focus-visible::-moz-range-track {
+  box-shadow:
+    0 0 0 1px rgba(30, 224, 255, 0.45),
+    0 0 10px rgba(30, 224, 255, 0.32);
+}
+
+.downtime-value-input {
+  min-width: 78px !important;
+  max-width: 88px;
 }
 
 .simulator-page button.mini {
@@ -1445,10 +1536,16 @@
 }
 
 .inspector-actions {
-  margin-top: 14px;
+  margin-top: 0;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(114, 167, 194, 0.2);
+  background: linear-gradient(180deg, rgba(11, 27, 47, 0.94), rgba(7, 19, 34, 0.96));
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
 }
 
 .library-shell {
@@ -1670,7 +1767,37 @@
     width: min(560px, calc(100% - 24px));
   }
 
+  .inspector-panel.is-modal .inspector-content {
+    max-height: calc(92vh - 132px);
+  }
+
   .library-header {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .inspector-panel {
+    width: calc(100% - 16px);
+    border-radius: 10px;
+  }
+
+  .step-input-row {
+    flex-wrap: wrap;
+  }
+
+  .step-input-row input[type="number"] {
+    min-width: 0;
+  }
+
+  .downtime-value-input {
+    max-width: none;
+    width: 100%;
+    min-width: 0 !important;
+  }
+
+  .unit-pill {
+    min-width: 30px;
+    padding: 0 6px;
   }
 }

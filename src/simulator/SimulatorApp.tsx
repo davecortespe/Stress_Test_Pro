@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { GraphCanvas } from "../components/GraphCanvas";
 import { KpiRow } from "../components/KpiRow";
@@ -194,10 +194,31 @@ export default function SimulatorApp() {
     () => createBottleneckForecastOutput(forecastModel, committedScenario, simElapsedHours),
     [forecastModel, committedScenario, simElapsedHours]
   );
-  const operationalDiagnosis = useMemo(
-    () => buildOperationalDiagnosis(forecastModel, output, committedScenario),
-    [forecastModel, output, committedScenario]
+  const wasRunningRef = useRef(false);
+  const [operationalDiagnosis, setOperationalDiagnosis] = useState(() =>
+    buildOperationalDiagnosis(forecastModel, output, committedScenario)
   );
+
+  // Refresh diagnosis once a run stops (or is paused) rather than every simulation tick.
+  useEffect(() => {
+    if (!isPaused) {
+      wasRunningRef.current = true;
+      return;
+    }
+
+    if (wasRunningRef.current) {
+      setOperationalDiagnosis(buildOperationalDiagnosis(forecastModel, output, committedScenario));
+      wasRunningRef.current = false;
+    }
+  }, [isPaused, forecastModel, output, committedScenario]);
+
+  // Also refresh diagnosis for committed baseline changes outside of active runs (reset/load/startup).
+  useEffect(() => {
+    if (isPaused && simElapsedHours <= 1e-6) {
+      setOperationalDiagnosis(buildOperationalDiagnosis(forecastModel, output, committedScenario));
+    }
+  }, [isPaused, simElapsedHours, forecastModel, output, committedScenario]);
+
   const throughputAnalysis = useMemo(
     () => buildThroughputAnalysis(forecastModel, masterData, committedScenario, output),
     [forecastModel, masterData, committedScenario, output]
