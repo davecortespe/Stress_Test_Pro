@@ -1,80 +1,52 @@
-import type { OperationalDiagnosis } from "../types/contracts";
-
-interface ExportScenarioBundleInput {
-  name?: string;
-  includeMetrics: boolean;
-  dashboardConfig: unknown;
-  vsmGraph: unknown;
-  masterData: unknown;
-  compiledForecastModel: unknown;
-  scenarioCommitted: Record<string, number | string>;
-  resultMetrics?: {
-    globalMetrics: Record<string, number | string>;
-    nodeMetrics: Record<string, unknown>;
-  };
-  operationalDiagnosis?: OperationalDiagnosis;
-  operationalDiagnosisMarkdown?: string;
+function formatTimestamp(date) {
+    const yyyy = String(date.getFullYear());
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mi = String(date.getMinutes()).padStart(2, "0");
+    const ss = String(date.getSeconds()).padStart(2, "0");
+    return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
 }
-
-interface ExportScenarioBundleResult {
-  folderName: string;
-  exportPath: string;
+function sanitizeName(input) {
+    const compact = input
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    return compact.length > 0 ? compact.slice(0, 48) : "scenario";
 }
-
-function formatTimestamp(date: Date): string {
-  const yyyy = String(date.getFullYear());
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  const hh = String(date.getHours()).padStart(2, "0");
-  const mi = String(date.getMinutes()).padStart(2, "0");
-  const ss = String(date.getSeconds()).padStart(2, "0");
-  return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
-}
-
-function sanitizeName(input: string): string {
-  const compact = input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return compact.length > 0 ? compact.slice(0, 48) : "scenario";
-}
-
-async function directoryExists(parent: any, name: string): Promise<boolean> {
-  try {
-    await parent.getDirectoryHandle(name);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function createUniqueDirectory(parent: any, baseName: string): Promise<{ name: string; handle: any }> {
-  for (let i = 0; i < 5000; i += 1) {
-    const candidate = i === 0 ? baseName : `${baseName}_${i + 1}`;
-    const exists = await directoryExists(parent, candidate);
-    if (exists) {
-      continue;
+async function directoryExists(parent, name) {
+    try {
+        await parent.getDirectoryHandle(name);
+        return true;
     }
-    const handle = await parent.getDirectoryHandle(candidate, { create: true });
-    return { name: candidate, handle };
-  }
-  throw new Error("Unable to allocate unique export directory.");
+    catch {
+        return false;
+    }
 }
-
-async function writeTextFile(directoryHandle: any, fileName: string, contents: string): Promise<void> {
-  const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
-  const writable = await fileHandle.createWritable();
-  await writable.write(contents);
-  await writable.close();
+async function createUniqueDirectory(parent, baseName) {
+    for (let i = 0; i < 5000; i += 1) {
+        const candidate = i === 0 ? baseName : `${baseName}_${i + 1}`;
+        const exists = await directoryExists(parent, candidate);
+        if (exists) {
+            continue;
+        }
+        const handle = await parent.getDirectoryHandle(candidate, { create: true });
+        return { name: candidate, handle };
+    }
+    throw new Error("Unable to allocate unique export directory.");
 }
-
-async function writeJsonFile(directoryHandle: any, fileName: string, value: unknown): Promise<void> {
-  await writeTextFile(directoryHandle, fileName, `${JSON.stringify(value, null, 2)}\n`);
+async function writeTextFile(directoryHandle, fileName, contents) {
+    const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(contents);
+    await writable.close();
 }
-
-export function buildPortableRunnerSource(): string {
-  return `#!/usr/bin/env node
+async function writeJsonFile(directoryHandle, fileName, value) {
+    await writeTextFile(directoryHandle, fileName, `${JSON.stringify(value, null, 2)}\n`);
+}
+export function buildPortableRunnerSource() {
+    return `#!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
 
@@ -496,12 +468,11 @@ if (args.json) {
 }
 `;
 }
-
-function buildReadme(folderName: string, includeMetrics: boolean): string {
-  const metricsLine = includeMetrics
-    ? "- `result_metrics.json` contains latest exported metrics from the source run."
-    : "- `result_metrics.json` not included for this export.";
-  return `# Export Scenario Bundle
+function buildReadme(folderName, includeMetrics) {
+    const metricsLine = includeMetrics
+        ? "- `result_metrics.json` contains latest exported metrics from the source run."
+        : "- `result_metrics.json` not included for this export.";
+    return `# Export Scenario Bundle
 
 This bundle is a portable snapshot of a committed forecast scenario.
 
@@ -546,27 +517,16 @@ node exports/${folderName}/run_forecast.mjs --path exports/${folderName}
 ${metricsLine}
 `;
 }
-
-function safeJsonForScript(value: unknown): string {
-  return JSON.stringify(value).replace(/</g, "\\u003c");
+function safeJsonForScript(value) {
+    return JSON.stringify(value).replace(/</g, "\\u003c");
 }
-
-function buildBrowserSnapshotHtmlSource(
-  dashboardConfig: unknown,
-  compiledForecastModel: unknown,
-  scenarioCommitted: unknown,
-  resultMetrics?: {
-    globalMetrics: Record<string, number | string>;
-    nodeMetrics: Record<string, unknown>;
-  },
-  operationalDiagnosis?: OperationalDiagnosis
-): string {
-  const dashboardJson = safeJsonForScript(dashboardConfig);
-  const modelJson = safeJsonForScript(compiledForecastModel);
-  const scenarioJson = safeJsonForScript(scenarioCommitted);
-  const metricsJson = safeJsonForScript(resultMetrics ?? null);
-  const diagnosisJson = safeJsonForScript(operationalDiagnosis ?? null);
-  return `<!doctype html>
+function buildBrowserSnapshotHtmlSource(dashboardConfig, compiledForecastModel, scenarioCommitted, resultMetrics, operationalDiagnosis) {
+    const dashboardJson = safeJsonForScript(dashboardConfig);
+    const modelJson = safeJsonForScript(compiledForecastModel);
+    const scenarioJson = safeJsonForScript(scenarioCommitted);
+    const metricsJson = safeJsonForScript(resultMetrics ?? null);
+    const diagnosisJson = safeJsonForScript(operationalDiagnosis ?? null);
+    return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -687,55 +647,35 @@ function buildBrowserSnapshotHtmlSource(
 </html>
 `;
 }
-
-export async function exportScenarioBundleToLocalFolder(
-  input: ExportScenarioBundleInput
-): Promise<ExportScenarioBundleResult> {
-  const w = window as Window & { showDirectoryPicker?: (options?: { mode?: string }) => Promise<any> };
-  if (typeof w.showDirectoryPicker !== "function") {
-    throw new Error("File System Access API is not available in this browser.");
-  }
-
-  const rootHandle = await w.showDirectoryPicker({ mode: "readwrite" });
-  const exportsHandle = await rootHandle.getDirectoryHandle("exports", { create: true });
-
-  const timestamp = formatTimestamp(new Date());
-  const safeName = sanitizeName(input.name ?? "scenario");
-  const { name: folderName, handle: bundleHandle } = await createUniqueDirectory(
-    exportsHandle,
-    `${timestamp}_${safeName}`
-  );
-
-  await writeJsonFile(bundleHandle, "dashboard_config.json", input.dashboardConfig);
-  await writeJsonFile(bundleHandle, "vsm_graph.json", input.vsmGraph);
-  await writeJsonFile(bundleHandle, "master_data.json", input.masterData);
-  await writeJsonFile(bundleHandle, "compiled_forecast_model.json", input.compiledForecastModel);
-  await writeJsonFile(bundleHandle, "scenario_committed.json", input.scenarioCommitted);
-  if (input.includeMetrics) {
-    await writeJsonFile(bundleHandle, "result_metrics.json", input.resultMetrics ?? null);
-  }
-  if (input.operationalDiagnosis) {
-    await writeJsonFile(bundleHandle, "operational_diagnosis.json", input.operationalDiagnosis);
-  }
-  if (input.operationalDiagnosisMarkdown) {
-    await writeTextFile(bundleHandle, "operational_diagnosis.md", `${input.operationalDiagnosisMarkdown}\n`);
-  }
-  await writeTextFile(bundleHandle, "run_forecast.mjs", buildPortableRunnerSource());
-  await writeTextFile(
-    bundleHandle,
-    "browser_forecast.html",
-    buildBrowserSnapshotHtmlSource(
-      input.dashboardConfig,
-      input.compiledForecastModel,
-      input.scenarioCommitted,
-      input.resultMetrics,
-      input.operationalDiagnosis
-    )
-  );
-  await writeTextFile(bundleHandle, "README.md", buildReadme(folderName, input.includeMetrics));
-
-  return {
-    folderName,
-    exportPath: `${rootHandle.name}/exports/${folderName}`
-  };
+export async function exportScenarioBundleToLocalFolder(input) {
+    const w = window;
+    if (typeof w.showDirectoryPicker !== "function") {
+        throw new Error("File System Access API is not available in this browser.");
+    }
+    const rootHandle = await w.showDirectoryPicker({ mode: "readwrite" });
+    const exportsHandle = await rootHandle.getDirectoryHandle("exports", { create: true });
+    const timestamp = formatTimestamp(new Date());
+    const safeName = sanitizeName(input.name ?? "scenario");
+    const { name: folderName, handle: bundleHandle } = await createUniqueDirectory(exportsHandle, `${timestamp}_${safeName}`);
+    await writeJsonFile(bundleHandle, "dashboard_config.json", input.dashboardConfig);
+    await writeJsonFile(bundleHandle, "vsm_graph.json", input.vsmGraph);
+    await writeJsonFile(bundleHandle, "master_data.json", input.masterData);
+    await writeJsonFile(bundleHandle, "compiled_forecast_model.json", input.compiledForecastModel);
+    await writeJsonFile(bundleHandle, "scenario_committed.json", input.scenarioCommitted);
+    if (input.includeMetrics) {
+        await writeJsonFile(bundleHandle, "result_metrics.json", input.resultMetrics ?? null);
+    }
+    if (input.operationalDiagnosis) {
+        await writeJsonFile(bundleHandle, "operational_diagnosis.json", input.operationalDiagnosis);
+    }
+    if (input.operationalDiagnosisMarkdown) {
+        await writeTextFile(bundleHandle, "operational_diagnosis.md", `${input.operationalDiagnosisMarkdown}\n`);
+    }
+    await writeTextFile(bundleHandle, "run_forecast.mjs", buildPortableRunnerSource());
+    await writeTextFile(bundleHandle, "browser_forecast.html", buildBrowserSnapshotHtmlSource(input.dashboardConfig, input.compiledForecastModel, input.scenarioCommitted, input.resultMetrics, input.operationalDiagnosis));
+    await writeTextFile(bundleHandle, "README.md", buildReadme(folderName, input.includeMetrics));
+    return {
+        folderName,
+        exportPath: `${rootHandle.name}/exports/${folderName}`
+    };
 }

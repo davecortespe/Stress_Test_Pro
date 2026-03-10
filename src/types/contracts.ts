@@ -156,6 +156,8 @@ export interface DashboardConfig {
   };
 }
 
+export type SimulatorResultsMode = "flow" | "diagnosis" | "throughput" | "waste";
+
 export interface ChecklistItem {
   severity: "warning" | "critical";
   code: string;
@@ -351,6 +353,67 @@ export interface ThroughputAnalysisResult {
   stepRows: ThroughputStepCostRow[];
   profitLossRows: ThroughputProfitLossRow[];
   insights: ThroughputInsight[];
+}
+
+export interface WasteAnalysisValidation {
+  code: string;
+  severity: "error" | "warning";
+  message: string;
+  stepId?: string;
+  metricKey?: string;
+}
+
+export interface WasteSummaryMetrics {
+  totalLeadTimeMinutes: number | null;
+  totalTouchTimeMinutes: number | null;
+  totalWasteMinutes: number | null;
+  totalWastePct: number | null;
+  valueAddRatio: number | null;
+  topWasteStep: string;
+  fallbackCount: number;
+  warningCount: number;
+}
+
+export interface WasteSummaryRow {
+  key: string;
+  label: string;
+  value: number | string | null;
+  format?: "number" | "percent" | "currency" | "text" | "duration";
+  decimals?: number;
+}
+
+export interface WasteStepRow {
+  stepId: string;
+  stepName: string;
+  comparisonCtMinutes: number | null;
+  comparisonLtMinutes: number | null;
+  wasteMinutes: number | null;
+  wastePct: number | null;
+  valueAddPct: number | null;
+  routeWeight: number;
+  weightedWasteMinutes: number | null;
+  weightedLtMinutes: number | null;
+  weightedCtMinutes: number | null;
+  usedCtFallback: boolean;
+  usedLtFallback: boolean;
+  missingBoth: boolean;
+  ltBelowCt: boolean;
+}
+
+export interface WasteInsight {
+  finding: string;
+  impactEstimate: string;
+  recommendedAction: string;
+}
+
+export interface WasteAnalysisResult {
+  scenarioLabel: string;
+  validations: WasteAnalysisValidation[];
+  hasBlockingErrors: boolean;
+  summary: WasteSummaryMetrics;
+  summaryRows: WasteSummaryRow[];
+  stepRows: WasteStepRow[];
+  insights: WasteInsight[];
 }
 
 export interface ScenarioLibraryEntry {

@@ -132,6 +132,14 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function readActiveShiftCount(scenario) {
+  return clamp(Math.round(num(scenario.activeShiftCount, 3)), 1, 3);
+}
+
+function getActiveHoursPerDay(shiftCount) {
+  return clamp(shiftCount, 1, 3) * 8;
+}
+
 function normalizeOutgoing(edges) {
   if (edges.length === 0) {
     return [];
@@ -256,6 +264,9 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
   const setupPenaltyMultiplier = clamp(num(scenario.setupPenaltyMultiplier, 1), 0, 3);
   const variabilityMultiplier = clamp(num(scenario.variabilityMultiplier, 1), 0.2, 3);
   const horizonHours = clamp(num(scenario.simulationHorizonHours, 8), 8, 720);
+  const activeShiftCount = readActiveShiftCount(scenario);
+  const activeHoursPerDay = getActiveHoursPerDay(activeShiftCount);
+  const activeCapacityFraction = activeHoursPerDay / 24;
   const horizonSeverity = 1 + ((horizonHours - 8) / 16) * 0.22;
   const mixProfile = String(scenario.mixProfile ?? "balanced");
 
@@ -276,6 +287,7 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
         queueDepth: null,
         wipQty: null,
         capacityPerHour: null,
+        calendarCapacityPerHour: null,
         bottleneckIndex: null,
         status: "unknown",
         throughputLimit: null
@@ -310,12 +322,13 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
     const computedCapacityRate =
       (effectiveUnits * 60 * clamp(stepAvailabilityMultiplier, 0.05, 1)) / Math.max(0.05, effectiveCt);
     const capacityRate = Math.max(0.001, computedCapacityRate);
+    const calendarCapacityRate = Math.max(0.001, capacityRate * activeCapacityFraction);
 
     const worstCtMinutes =
       Math.max(0.05, ctBaseline * ctMultiplier * stepCtMultiplier) * (1 + stepDowntimePct / 100);
     worstCaseTouchTime += worstCtMinutes;
 
-    const utilizationRaw = stepDemandRate / Math.max(0.001, capacityRate);
+    const utilizationRaw = stepDemandRate / Math.max(0.001, calendarCapacityRate);
     const utilization = clamp(utilizationRaw, 0, 1.35);
     const headroom = Math.max(0, 1 - utilizationRaw);
     const cv = Math.max(0.03, num(step.variabilityCv, 0.18) * variabilityMultiplier);
@@ -325,7 +338,7 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
       0,
       Math.min(24, (Math.max(0, utilizationRaw - 0.66) * 8 + queueRisk * 14) * stepVisitFactor)
     );
-    const accumulationRate = Math.max(0, stepDemandRate - capacityRate);
+    const accumulationRate = Math.max(0, stepDemandRate - calendarCapacityRate);
     const wipQty = Math.max(0, queueDepth + accumulationRate * horizonHours);
     totalWipQty += wipQty;
 
@@ -336,7 +349,7 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
       1
     );
     const status = stepStatus(utilizationRaw, bottleneckIndex);
-    const throughputLimit = capacityRate / Math.max(0.01, stepVisitFactor * stepMixFactor);
+    const throughputLimit = calendarCapacityRate / Math.max(0.01, stepVisitFactor * stepMixFactor);
 
     lineCapacity = Math.min(lineCapacity, throughputLimit);
     stepEvals[step.stepId] = {
@@ -347,6 +360,7 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
       queueDepth,
       wipQty,
       capacityPerHour: capacityRate,
+      calendarCapacityPerHour: calendarCapacityRate,
       bottleneckIndex,
       status,
       throughputLimit
@@ -433,7 +447,7 @@ function runForecast(model, scenario) {
       utilization: stepEval?.utilization ?? null,
       headroom: stepEval?.headroom ?? null,
       queueRisk: stepEval?.queueRisk ?? null,
-      capacityPerHour: stepEval?.capacityPerHour ?? null,
+      capacityPerHour: stepEval?.calendarCapacityPerHour ?? stepEval?.capacityPerHour ?? null,
       status: stepEval?.status ?? "unknown"
     };
   });
@@ -1136,6 +1150,73 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
         return 1;
       }
 
+      function readActiveShiftCount(scenario) {
+        return clamp(Math.round(num(scenario.activeShiftCount, 3)), 1, 3);
+      }
+
+      function getActiveHoursPerDay(shiftCount) {
+        return clamp(shiftCount, 1, 3) * 8;
+      }
+
+      function activeHoursBetween(startHour, endHour, activeHoursPerDay) {
+        if (endHour <= startHour || activeHoursPerDay <= 0) return 0;
+        if (activeHoursPerDay >= 24) return endHour - startHour;
+        let cursor = startHour;
+        let activeHours = 0;
+        while (cursor < endHour - 1e-9) {
+          const dayIndex = Math.floor(cursor / 24);
+          const dayStart = dayIndex * 24;
+          const activeWindowEnd = dayStart + activeHoursPerDay;
+          const nextBoundary = Math.min(endHour, dayStart + 24);
+          if (cursor < activeWindowEnd) {
+            activeHours += Math.max(0, Math.min(nextBoundary, activeWindowEnd) - cursor);
+          }
+          cursor = nextBoundary;
+        }
+        return activeHours;
+      }
+
+      function topologicalOrder(graph) {
+        const indegree = new Map();
+        const outgoing = new Map();
+        const nodeIds = graph.nodes.map(function (node) { return node.id; });
+        nodeIds.forEach(function (nodeId) {
+          indegree.set(nodeId, 0);
+          outgoing.set(nodeId, []);
+        });
+        graph.edges.forEach(function (edge) {
+          if (!indegree.has(edge.from) || !indegree.has(edge.to)) return;
+          indegree.set(edge.to, (indegree.get(edge.to) || 0) + 1);
+          outgoing.set(edge.from, (outgoing.get(edge.from) || []).concat([edge.to]));
+        });
+        const queue = nodeIds.filter(function (nodeId) { return (indegree.get(nodeId) || 0) === 0; });
+        const ordered = [];
+        while (queue.length > 0) {
+          const current = queue.shift();
+          ordered.push(current);
+          (outgoing.get(current) || []).forEach(function (next) {
+            const nextDegree = (indegree.get(next) || 0) - 1;
+            indegree.set(next, nextDegree);
+            if (nextDegree === 0) queue.push(next);
+          });
+        }
+        return ordered.length === nodeIds.length ? ordered : nodeIds;
+      }
+
+      function resolveTerminalNodeIds(graph, outgoingMap) {
+        const declared = (graph.endNodes || []).filter(function (nodeId) {
+          return (outgoingMap.get(nodeId) || []).length === 0;
+        });
+        if (declared.length > 0) {
+          return new Set(declared);
+        }
+        return new Set(
+          graph.nodes
+            .map(function (node) { return node.id; })
+            .filter(function (nodeId) { return (outgoingMap.get(nodeId) || []).length === 0; })
+        );
+      }
+
       function stepStatus(utilization, bottleneckIndex) {
         if (utilization >= 0.98 || bottleneckIndex >= 0.82) return "critical";
         if (utilization >= 0.85 || bottleneckIndex >= 0.62) return "risk";
@@ -1158,18 +1239,40 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
         const setupPenaltyMultiplier = clamp(num(scenario.setupPenaltyMultiplier, 1), 0, 3);
         const variabilityMultiplier = clamp(num(scenario.variabilityMultiplier, 1), 0.2, 3);
         const horizonHours = clamp(num(scenario.simulationHorizonHours, 8), 8, 720);
+        const activeShiftCount = readActiveShiftCount(scenario);
+        const activeHoursPerDay = getActiveHoursPerDay(activeShiftCount);
+        const activeCapacityFraction = activeHoursPerDay / 24;
         const horizonSeverity = 1 + ((horizonHours - 8) / 16) * 0.22;
         const mixProfile = String(scenario.mixProfile || "balanced");
 
         const stepEvals = {};
         const ranked = [];
         let lineCapacity = Number.POSITIVE_INFINITY;
+        let totalWipQty = 0;
+        let totalLeadTimeMinutes = 0;
+        let totalExplicitLeadTimeMinutes = 0;
+        let leadTimeTopStepId = "";
+        let leadTimeTopValue = -1;
         let worstCaseTouchTime = 0;
 
         model.stepModels.forEach(function (step, index) {
           const ctMinutes = typeof step.ctMinutes === "number" ? step.ctMinutes : null;
           if (ctMinutes === null) {
-            stepEvals[step.stepId] = { utilization: null, headroom: null, queueRisk: null, queueDepth: null, wipQty: null, bottleneckIndex: null, status: "unknown", capacityPerHour: null };
+            stepEvals[step.stepId] = {
+              utilization: null,
+              headroom: null,
+              queueRisk: null,
+              queueDepth: null,
+              queueDelayMinutes: null,
+              wipQty: null,
+              effectiveCtMinutes: null,
+              capacityPerHour: null,
+              calendarCapacityPerHour: null,
+              serviceTimeHours: null,
+              explicitLeadTimeMinutes: null,
+              bottleneckIndex: null,
+              status: "unknown"
+            };
             return;
           }
           const visit = Math.max(0.01, num(visitFactors[step.stepId], 1));
@@ -1179,6 +1282,7 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
           const stepCtBaselineOverride = readStepOverride(scenario, step.stepId, "ctBaseline");
           const stepCtMultiplier = Math.max(0.1, readStepOverride(scenario, step.stepId, "ctMultiplier") || 1);
           const stepDowntimePct = clamp(readStepOverride(scenario, step.stepId, "downtimePct") || 0, 0, 95);
+          const stepLeadTimeMinutesOverride = readStepOverride(scenario, step.stepId, "leadTimeMinutes");
           const ctBaseline = Math.max(0.05, stepCtBaselineOverride || ctMinutes);
           const setupPenalty = Math.max(0, num(step.changeoverPenaltyPerUnitMinutes, 0));
           const effectiveCt = Math.max(0.05, ctBaseline * ctMultiplier * stepCtMultiplier) + Math.max(0, setupPenalty * setupPenaltyMultiplier);
@@ -1187,26 +1291,248 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
           const effectiveUnits = baseUnits + relief;
           const avail = availabilityMultiplier * (1 - stepDowntimePct / 100);
           const capRate = Math.max(0.001, (effectiveUnits * 60 * clamp(avail, 0.05, 1)) / Math.max(0.05, effectiveCt));
-          const utilRaw = stepDemandRate / Math.max(0.001, capRate);
+          const calendarCapRate = Math.max(0.001, capRate * activeCapacityFraction);
+          const utilRaw = stepDemandRate / Math.max(0.001, calendarCapRate);
           const util = clamp(utilRaw, 0, 1.35);
           const headroom = Math.max(0, 1 - utilRaw);
           const cv = Math.max(0.03, num(step.variabilityCv, 0.18) * variabilityMultiplier);
           const qPressure = (util * util) / Math.max(0.06, 1 - util);
           const qRisk = clamp((qPressure * (0.52 + cv)) / 7.2, 0, 1);
           const qDepth = Math.max(0, Math.min(24, (Math.max(0, utilRaw - 0.66) * 8 + qRisk * 14) * visit));
-          const accum = Math.max(0, stepDemandRate - capRate);
+          const queueDelayMinutes = (qDepth / Math.max(0.001, calendarCapRate)) * 60;
+          const explicitLeadMinutesBase =
+            typeof step.leadTimeMinutes === "number" && Number.isFinite(step.leadTimeMinutes)
+              ? Math.max(0, step.leadTimeMinutes)
+              : null;
+          const explicitLeadMinutes =
+            stepLeadTimeMinutesOverride !== null
+              ? Math.max(0, stepLeadTimeMinutesOverride)
+              : explicitLeadMinutesBase;
+          const stepLeadMinutes = Math.max(0.01, effectiveCt + queueDelayMinutes + Math.max(0, explicitLeadMinutes || 0));
+          const accum = Math.max(0, stepDemandRate - calendarCapRate);
           const wipQty = Math.max(0, qDepth + accum * horizonHours);
           const shortage = clamp(utilRaw - 1, 0, 1);
           const bn = clamp((0.6 * (Math.min(utilRaw, 1.25) / 1.25) + 0.3 * qRisk + 0.1 * shortage) * horizonSeverity, 0, 1);
-          lineCapacity = Math.min(lineCapacity, capRate / Math.max(0.01, visit * mix));
+          lineCapacity = Math.min(lineCapacity, calendarCapRate / Math.max(0.01, visit * mix));
           worstCaseTouchTime += Math.max(0.05, ctBaseline * ctMultiplier * stepCtMultiplier) * (1 + stepDowntimePct / 100);
-          stepEvals[step.stepId] = { utilization: util, headroom: headroom, queueRisk: qRisk, queueDepth: qDepth, wipQty: wipQty, bottleneckIndex: bn, status: stepStatus(utilRaw, bn), capacityPerHour: capRate };
+          totalLeadTimeMinutes += stepLeadMinutes;
+          totalExplicitLeadTimeMinutes += Math.max(0, explicitLeadMinutes || 0);
+          if (stepLeadMinutes > leadTimeTopValue) {
+            leadTimeTopValue = stepLeadMinutes;
+            leadTimeTopStepId = step.stepId;
+          }
+          totalWipQty += wipQty;
+          stepEvals[step.stepId] = {
+            utilization: util,
+            headroom: headroom,
+            queueRisk: qRisk,
+            queueDepth: qDepth,
+            queueDelayMinutes: queueDelayMinutes,
+            wipQty: wipQty,
+            effectiveCtMinutes: effectiveCt,
+            capacityPerHour: capRate,
+            calendarCapacityPerHour: calendarCapRate,
+            serviceTimeHours: effectiveCt / 60,
+            explicitLeadTimeMinutes: explicitLeadMinutes,
+            bottleneckIndex: bn,
+            status: stepStatus(utilRaw, bn)
+          };
           ranked.push({ stepId: step.stepId, score: bn });
         });
         ranked.sort(function (a, b) { return b.score - a.score; });
         const throughput = Math.min(lineDemand, Number.isFinite(lineCapacity) ? lineCapacity : lineDemand);
         const avgQueueRisk = ranked.length > 0 ? ranked.reduce(function (sum, row) { return sum + (stepEvals[row.stepId].queueRisk || 0); }, 0) / ranked.length : 0;
-        return { lineDemand: lineDemand, throughput: throughput, stepEvals: stepEvals, bottleneckStepId: ranked[0] ? ranked[0].stepId : "", avgQueueRisk: avgQueueRisk, worstCaseTouchTime: worstCaseTouchTime, horizonHours: horizonHours, sortedByBottleneck: ranked };
+        return {
+          lineDemand: lineDemand,
+          throughput: throughput,
+          stepEvals: stepEvals,
+          bottleneckStepId: ranked[0] ? ranked[0].stepId : "",
+          leadTimeTopStepId: leadTimeTopStepId,
+          avgQueueRisk: avgQueueRisk,
+          totalWipQty: totalWipQty,
+          totalLeadTimeMinutes: totalLeadTimeMinutes,
+          totalExplicitLeadTimeMinutes: totalExplicitLeadTimeMinutes,
+          worstCaseTouchTime: worstCaseTouchTime,
+          horizonHours: horizonHours,
+          sortedByBottleneck: ranked
+        };
+      }
+
+      function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
+        const orderedNodes = topologicalOrder(model.graph);
+        const nodeIds = model.graph.nodes.map(function (node) { return node.id; });
+        const startNodes =
+          (model.graph.startNodes || []).length > 0
+            ? model.graph.startNodes
+            : orderedNodes.length > 0
+              ? [orderedNodes[0]]
+              : [];
+        const startRatePerNode = startNodes.length > 0 ? system.lineDemand / startNodes.length : 0;
+        const activeHoursPerDay = getActiveHoursPerDay(readActiveShiftCount(scenario));
+        const outgoingMap = new Map();
+        nodeIds.forEach(function (nodeId) {
+          const edges = model.graph.edges.filter(function (edge) { return edge.from === nodeId; });
+          outgoingMap.set(nodeId, normalizeOutgoing(edges));
+        });
+        const terminalNodeSet = resolveTerminalNodeIds(model.graph, outgoingMap);
+        const queueQty = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        const cumulativeProcessedQtyByStep = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        const snapshotProcessedRateByStep = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        const completedQtyByStep = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        const blockedIdleHoursByStep = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        let arrivals = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        let totalCompletedQty = 0;
+        const cappedElapsed = Math.max(0, elapsedHours);
+        const activeElapsedHours = activeHoursBetween(0, cappedElapsed, activeHoursPerDay);
+
+        if (cappedElapsed > 0) {
+          const maxSteps = 1800;
+          const targetDt = 1 / 240;
+          const rawSteps = Math.ceil(cappedElapsed / targetDt);
+          const steps = Math.max(1, Math.min(maxSteps, rawSteps));
+          const dtHours = cappedElapsed / steps;
+
+          for (let tick = 0; tick < steps; tick += 1) {
+            const intervalStartHours = tick * dtHours;
+            const intervalEndHours = intervalStartHours + dtHours;
+            const activeHours = activeHoursBetween(intervalStartHours, intervalEndHours, activeHoursPerDay);
+
+            startNodes.forEach(function (startId) {
+              arrivals.set(startId, (arrivals.get(startId) || 0) + startRatePerNode * dtHours);
+            });
+
+            const nextArrivals = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+            orderedNodes.forEach(function (nodeId) {
+              const stepEval = system.stepEvals[nodeId];
+              const incomingQty = arrivals.get(nodeId) || 0;
+              const outgoing = outgoingMap.get(nodeId) || [];
+              if (!stepEval || stepEval.capacityPerHour === null || stepEval.capacityPerHour <= 0) {
+                if (terminalNodeSet.has(nodeId)) {
+                  totalCompletedQty += incomingQty;
+                }
+                completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) || 0) + incomingQty);
+                outgoing.forEach(function (edge) {
+                  nextArrivals.set(edge.to, (nextArrivals.get(edge.to) || 0) + incomingQty * edge.probability);
+                });
+                cumulativeProcessedQtyByStep.set(nodeId, (cumulativeProcessedQtyByStep.get(nodeId) || 0) + incomingQty);
+                snapshotProcessedRateByStep.set(nodeId, activeHours > 0 ? incomingQty / activeHours : 0);
+                return;
+              }
+
+              const availableQty = (queueQty.get(nodeId) || 0) + incomingQty;
+              const capacityQty = stepEval.capacityPerHour * activeHours;
+              let downstreamAcceptance = 1;
+              if (outgoing.length > 0 && activeHours > 0) {
+                let weightedAcceptance = 0;
+                let totalProbability = 0;
+                outgoing.forEach(function (edge) {
+                  const childEval = system.stepEvals[edge.to];
+                  const probability = edge.probability;
+                  totalProbability += probability;
+                  if (!childEval) {
+                    weightedAcceptance += probability;
+                    return;
+                  }
+                  const childQueueQty = queueQty.get(edge.to) || 0;
+                  const childPendingQty = (arrivals.get(edge.to) || 0) + (nextArrivals.get(edge.to) || 0);
+                  const childProjectedLoad = childQueueQty + childPendingQty;
+                  const childCalendarCapacity = childEval.calendarCapacityPerHour || childEval.capacityPerHour || 0;
+                  const childBufferQty = Math.max(1, childCalendarCapacity * 12);
+                  const childAcceptance = clamp(1 - childProjectedLoad / childBufferQty, 0.25, 1);
+                  weightedAcceptance += childAcceptance * probability;
+                });
+                if (totalProbability > 0) {
+                  downstreamAcceptance = weightedAcceptance / totalProbability;
+                }
+              }
+
+              const processedQty = Math.min(availableQty, capacityQty * downstreamAcceptance);
+              queueQty.set(nodeId, Math.max(0, availableQty - processedQty));
+              cumulativeProcessedQtyByStep.set(nodeId, (cumulativeProcessedQtyByStep.get(nodeId) || 0) + processedQty);
+              snapshotProcessedRateByStep.set(nodeId, activeHours > 0 ? processedQty / activeHours : 0);
+              completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) || 0) + processedQty);
+
+              if (activeHours > 0 && outgoing.length > 0 && availableQty > 1e-9 && capacityQty > 1e-9) {
+                const blockedIdleRatio = clamp(1 - processedQty / Math.max(1e-9, Math.min(availableQty, capacityQty)), 0, 1);
+                blockedIdleHoursByStep.set(nodeId, (blockedIdleHoursByStep.get(nodeId) || 0) + activeHours * blockedIdleRatio);
+              }
+
+              if (terminalNodeSet.has(nodeId)) {
+                totalCompletedQty += processedQty;
+              }
+              if (outgoing.length === 0) {
+                return;
+              }
+              outgoing.forEach(function (edge) {
+                nextArrivals.set(edge.to, (nextArrivals.get(edge.to) || 0) + processedQty * edge.probability);
+              });
+            });
+            arrivals = nextArrivals;
+          }
+        }
+
+        const node = {};
+        let totalWipQty = 0;
+        let bottleneckStepId = null;
+        let bottleneckIndex = 0;
+        const realizedThroughput = cappedElapsed > 0 ? totalCompletedQty / cappedElapsed : 0;
+
+        nodeIds.forEach(function (nodeId) {
+          const stepEval = system.stepEvals[nodeId];
+          if (!stepEval || stepEval.capacityPerHour === null || stepEval.capacityPerHour <= 0) {
+            node[nodeId] = {
+              utilization: null,
+              queueRisk: null,
+              queueDepth: null,
+              wipQty: null,
+              completedQty: Math.max(0, completedQtyByStep.get(nodeId) || 0),
+              idleWaitHours: null,
+              idleWaitPct: null,
+              bottleneckIndex: null,
+              status: "unknown"
+            };
+            return;
+          }
+          const displayedCapacityPerHour = stepEval.calendarCapacityPerHour || stepEval.capacityPerHour || 0;
+          const cumulativeProcessedQty = cumulativeProcessedQtyByStep.get(nodeId) || 0;
+          const realizedRate = cappedElapsed > 0 ? cumulativeProcessedQty / Math.max(1e-9, cappedElapsed) : 0;
+          const utilizationRaw = realizedRate / Math.max(0.001, displayedCapacityPerHour);
+          const utilization = clamp(utilizationRaw, 0, 1.35);
+          const queueDepth = Math.max(0, queueQty.get(nodeId) || 0);
+          const snapshotProcessedRate = snapshotProcessedRateByStep.get(nodeId) || 0;
+          const processWip = Math.max(0, snapshotProcessedRate * Math.max(0, stepEval.serviceTimeHours || 0));
+          const wipQty = queueDepth + processWip;
+          totalWipQty += wipQty;
+          const idleWaitHours = Math.max(0, blockedIdleHoursByStep.get(nodeId) || 0);
+          const idleWaitPct = activeElapsedHours > 0 ? clamp(idleWaitHours / activeElapsedHours, 0, 1) : 0;
+          const queueRisk = clamp(queueDepth / Math.max(1, displayedCapacityPerHour * 0.6), 0, 1);
+          const stepBottleneckIndex = clamp(0.65 * utilization + 0.35 * queueRisk, 0, 1);
+          const status = stepStatus(utilization, stepBottleneckIndex);
+          if (stepBottleneckIndex > bottleneckIndex) {
+            bottleneckIndex = stepBottleneckIndex;
+            bottleneckStepId = nodeId;
+          }
+          node[nodeId] = {
+            utilization: utilization,
+            queueRisk: queueRisk,
+            queueDepth: queueDepth,
+            wipQty: wipQty,
+            completedQty: Math.max(0, completedQtyByStep.get(nodeId) || 0),
+            idleWaitHours: idleWaitHours,
+            idleWaitPct: idleWaitPct,
+            bottleneckIndex: stepBottleneckIndex,
+            status: status
+          };
+        });
+
+        return {
+          node: node,
+          totalWipQty: totalWipQty,
+          bottleneckStepId: bottleneckStepId,
+          bottleneckIndex: bottleneckIndex,
+          realizedThroughput: realizedThroughput,
+          completedOutputQty: totalCompletedQty
+        };
       }
 
       function createOutput(model, scenario, elapsedHours) {
@@ -1214,22 +1540,21 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
         const baseline = evaluateSystem(model, scenario, visit, "", 0);
         const reliefUnits = Math.max(0, Math.round(num(scenario.bottleneckReliefUnits, 1)));
         const relief = baseline.bottleneckStepId && reliefUnits > 0 ? evaluateSystem(model, scenario, visit, baseline.bottleneckStepId, reliefUnits) : baseline;
-        const topScore = baseline.sortedByBottleneck[0] ? baseline.sortedByBottleneck[0].score : 0;
+        const runtime = simulateRuntimeFlow(model, baseline, elapsedHours, scenario);
+        const topScore = runtime.bottleneckIndex;
         const secondScore = baseline.sortedByBottleneck[1] ? baseline.sortedByBottleneck[1].score : 0;
         const margin = Math.max(0, topScore - secondScore);
-        const knownIds = Object.keys(baseline.stepEvals).filter(function (id) { return baseline.stepEvals[id].utilization !== null; });
-        const nearSat = knownIds.filter(function (id) { return (baseline.stepEvals[id].utilization || 0) >= 0.9; }).length;
-        const cascadePressure = knownIds.length > 0 ? nearSat / knownIds.length : 0;
-        const wipScale = clamp(num(scenario.simulationHorizonHours, 8), 8, 720) * Math.max(1, model.stepModels.length) * 10;
-        const baselineTotalWip = knownIds.reduce(function (sum, id) { return sum + (baseline.stepEvals[id].wipQty || 0); }, 0);
-        const progress = clamp(elapsedHours / Math.max(0.01, baseline.horizonHours), 0, 1);
-        const ramp = 0.2 + 0.8 * progress;
-        const totalWipQty = baselineTotalWip * ramp;
-        const wipPressure = clamp(totalWipQty / Math.max(1, wipScale), 0, 1);
-        const migrationPenalty = baseline.bottleneckStepId !== relief.bottleneckStepId ? 0.08 : 0;
+        const knownSteps = Object.keys(runtime.node)
+          .map(function (stepId) { return runtime.node[stepId]; })
+          .filter(function (step) { return step.utilization !== null; });
+        const nearSat = knownSteps.filter(function (step) { return (step.utilization || 0) >= 0.9; }).length;
+        const cascadePressure = knownSteps.length > 0 ? nearSat / knownSteps.length : 0;
+        const wipPressure = clamp(runtime.totalWipQty / Math.max(1, baseline.horizonHours * Math.max(1, model.stepModels.length) * 10), 0, 1);
+        const migrationPenalty = runtime.bottleneckStepId && runtime.bottleneckStepId !== relief.bottleneckStepId ? 0.08 : 0;
+        const avgRuntimeQueueRisk = knownSteps.length > 0 ? knownSteps.reduce(function (sum, step) { return sum + (step.queueRisk || 0); }, 0) / knownSteps.length : 0;
         const brittleness = clamp(
           0.48 * topScore +
-            0.18 * baseline.avgQueueRisk +
+            0.18 * avgRuntimeQueueRisk +
             0.16 * cascadePressure +
             0.18 * wipPressure +
             migrationPenalty +
@@ -1239,32 +1564,79 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
           1
         );
         const labels = new Map(model.graph.nodes.map(function (node) { return [node.id, node.label]; }));
-        const completedTotal = baseline.throughput * elapsedHours;
+        const baselineLabel = labels.get(baseline.bottleneckStepId) || baseline.bottleneckStepId || "n/a";
+        const reliefLabel = labels.get(relief.bottleneckStepId) || relief.bottleneckStepId || "n/a";
         const nodeMetrics = {};
+        let totalLeadTimeMinutes = 0;
+        let totalExplicitLeadTimeMinutes = 0;
+        let leadTimeTopStepId = "";
+        let leadTimeTopValue = -1;
         model.stepModels.forEach(function (step) {
-          const evalStep = baseline.stepEvals[step.stepId] || {};
+          const evalStep = runtime.node[step.stepId];
+          const stepBaseline = baseline.stepEvals[step.stepId];
+          if (!evalStep) {
+            nodeMetrics[step.stepId] = {
+              utilization: null,
+              headroom: null,
+              queueRisk: null,
+              queueDepth: null,
+              wipQty: null,
+              completedQty: 0,
+              idleWaitHours: null,
+              idleWaitPct: null,
+              leadTimeMinutes: null,
+              capacityPerHour: null,
+              bottleneckIndex: null,
+              bottleneckFlag: false,
+              status: "unknown"
+            };
+            return;
+          }
+          const displayedCapacityPerHour = stepBaseline ? (stepBaseline.calendarCapacityPerHour || stepBaseline.capacityPerHour || null) : null;
+          const queueDelayMinutes =
+            displayedCapacityPerHour !== null && displayedCapacityPerHour > 0
+              ? ((evalStep.queueDepth || 0) / displayedCapacityPerHour) * 60
+              : 0;
+          const processMinutes = Math.max(0, ((stepBaseline && stepBaseline.serviceTimeHours) || 0) * 60);
+          const explicitLeadMinutes = Math.max(0, (stepBaseline && stepBaseline.explicitLeadTimeMinutes) || 0);
+          const leadTimeMinutes = processMinutes + queueDelayMinutes + explicitLeadMinutes;
+          totalLeadTimeMinutes += leadTimeMinutes;
+          totalExplicitLeadTimeMinutes += explicitLeadMinutes;
+          if (leadTimeMinutes > leadTimeTopValue) {
+            leadTimeTopValue = leadTimeMinutes;
+            leadTimeTopStepId = step.stepId;
+          }
           nodeMetrics[step.stepId] = {
             utilization: evalStep.utilization,
-            headroom: evalStep.headroom,
+            headroom: evalStep.utilization !== null ? Math.max(0, 1 - evalStep.utilization) : (stepBaseline ? stepBaseline.headroom : null),
             queueRisk: evalStep.queueRisk,
-            queueDepth: evalStep.queueDepth == null ? null : evalStep.queueDepth * ramp,
-            wipQty: evalStep.wipQty == null ? null : evalStep.wipQty * ramp,
-            completedQty: completedTotal,
-            capacityPerHour: evalStep.capacityPerHour == null ? null : evalStep.capacityPerHour,
+            queueDepth: evalStep.queueDepth,
+            wipQty: evalStep.wipQty,
+            completedQty: evalStep.completedQty,
+            idleWaitHours: evalStep.idleWaitHours,
+            idleWaitPct: evalStep.idleWaitPct,
+            leadTimeMinutes: leadTimeMinutes,
+            capacityPerHour: displayedCapacityPerHour,
             bottleneckIndex: evalStep.bottleneckIndex,
-            bottleneckFlag: step.stepId === baseline.bottleneckStepId,
-            status: step.stepId === baseline.bottleneckStepId ? "critical" : (evalStep.status || "unknown")
+            bottleneckFlag: step.stepId === runtime.bottleneckStepId,
+            status: step.stepId === runtime.bottleneckStepId ? "critical" : evalStep.status
           };
         });
+        const compiledBaselineLeadTime = num((model.baseline.globalMetrics || {}).totalLeadTimeMinutes, baseline.totalLeadTimeMinutes);
+        const waitSharePct = totalLeadTimeMinutes > 0 ? totalExplicitLeadTimeMinutes / totalLeadTimeMinutes : 0;
         return {
           globalMetrics: {
             simElapsedHours: elapsedHours,
-            forecastThroughput: baseline.throughput,
-            totalCompletedOutputPieces: completedTotal,
-            totalWipQty: totalWipQty,
+            forecastThroughput: runtime.realizedThroughput > 0 ? runtime.realizedThroughput : baseline.throughput,
+            totalCompletedOutputPieces: runtime.completedOutputQty,
+            totalWipQty: runtime.totalWipQty,
             worstCaseTouchTime: baseline.worstCaseTouchTime,
+            totalLeadTimeMinutes: totalLeadTimeMinutes,
+            leadTimeDeltaMinutes: totalLeadTimeMinutes - compiledBaselineLeadTime,
+            waitSharePct: waitSharePct,
+            leadTimeTopContributor: labels.get(leadTimeTopStepId) || "n/a",
             throughputDelta: relief.throughput - baseline.throughput,
-            bottleneckMigration: (labels.get(baseline.bottleneckStepId) || baseline.bottleneckStepId) + " -> " + (labels.get(relief.bottleneckStepId) || relief.bottleneckStepId || "n/a"),
+            bottleneckMigration: baselineLabel === reliefLabel ? baselineLabel + " -> no change" : baselineLabel + " -> " + reliefLabel,
             bottleneckIndex: topScore,
             brittleness: brittleness
           },

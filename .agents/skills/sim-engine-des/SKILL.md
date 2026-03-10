@@ -40,10 +40,14 @@ Non-DES required behavior:
 - Effective capacity per step from CT, units, downtime, staffing/equipment multipliers
 - Utilization/headroom/queue risk/bottleneck index recompute on every parameter change
 - Bottleneck migration preview when relief units are applied
+- Completion accounting must be capacity-driven (CT/effective CT + available units), not lead-time-driven
+- Lead time is a downstream KPI (process + queue + explicit delay), not the completion trigger
+- `capacityUnits` must be treated as parallel processing units (for example lines/stations in parallel)
+- If baseline demand is missing from source data, seed baseline incoming demand from release/start-step capacity (not bottleneck capacity) and log the assumption explicitly
 - Runtime elapsed-hours integration for live behavior:
   - WIP starts at zero at simulation start
   - WIP/queue/completed output evolve with elapsed time
-  - speed multipliers (x1/x2/x5/x50/x200) scale elapsed progression deterministically
+  - speed multipliers (x1/x2/x5/x50/x200/x1440) scale elapsed progression deterministically
   - simulation horizon supports 8/16/24/168/720 hours (8 hrs, 16 hrs, 24 hrs, 1 week, 1 month)
 
 UI contract expectations:

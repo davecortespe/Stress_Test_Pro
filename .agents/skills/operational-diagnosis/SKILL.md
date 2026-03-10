@@ -62,6 +62,11 @@ Use these rules consistently:
 - If downstream congestion is blocking upstream work, say that explicitly.
 - If average capacity looks sufficient but queue spikes come from bunching, release timing, or arrival peaking, diagnose instability rather than pure undersizing.
 - Always connect the diagnosis to an operator action.
+- Always separate these quantities in plain language:
+  - step max capacity (what a step could do at full feed)
+  - configured incoming demand (what the system is asked to do)
+  - actual completion/throughput (what the system is currently achieving)
+- If output is lower than a step's max capacity, verify demand-limited operation before diagnosing local underperformance.
 
 Internal logic anchor:
 "What is the AI doing that humans currently cannot scale?"
@@ -105,6 +110,10 @@ Use these patterns as working heuristics:
 - `arrivals exceed handling capacity`
   - Signals: upstream arrival rate above combined effective service rate, early queues grow immediately, backlog rises.
   - Likely action: smooth arrivals, add temporary handling capacity, reduce service time.
+
+- `demand-limited start step`
+  - Signals: a step has large headroom and still reports low completed quantity because configured incoming demand is low.
+  - Likely action: confirm demand assumptions before proposing local capacity changes.
 
 - `dock doors saturated`
   - Signals: unloading queues persist, dock utilization stays pinned, downstream teams wait on release windows.

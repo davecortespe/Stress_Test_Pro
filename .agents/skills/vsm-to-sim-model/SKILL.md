@@ -144,6 +144,12 @@ Compile structure:
 - Inputs: demand multiplier, staffing/equipment multipliers, downtime, CT/setup multipliers, horizon, relief units.
 - Per-step baselines: effective capacity/hr, utilization, headroom, queue risk, bottleneck index.
 - Global metrics: throughput, bottleneck index, brittleness, migration summary.
+- Capacity semantics: preserve station/line counts as parallel processing units (`effectiveUnits` / `capacityUnits`).
+- Time semantics: CT/effective CT drives service capacity and completion; LT stays as flow-delay KPI.
+- Demand-seeding semantics when demand is missing from source:
+  - derive release capacity from start-step capacities
+  - set baseline demand from release capacity (for example 90% heuristic), not bottleneck capacity
+  - log this assumption in `assumptions[]`
 
 Hard constraints:
 - Keep model deterministic and fast (sub-second recompute target).
@@ -153,6 +159,7 @@ Hard constraints:
 ### Required assumptions behavior
 - Every non-explicit assumption must be logged in `assumptions[]` with severity and reason.
 - `missing_data_report.md` must map each unresolved field to a specific step.
+- If baseline demand is inferred, include a clear statement of the formula and source (for example start-step release capacity).
 
 ### Hand-off contract to UI/engine skills
 `compiled_forecast_model.json` must include at minimum:

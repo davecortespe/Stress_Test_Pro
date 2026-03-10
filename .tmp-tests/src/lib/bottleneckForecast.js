@@ -315,20 +315,30 @@ function topologicalOrder(graph) {
     }
     return nodeIds;
 }
+function resolveTerminalNodeIds(graph, outgoingMap) {
+    const declaredTerminalIds = (graph.endNodes ?? []).filter((nodeId) => (outgoingMap.get(nodeId) ?? []).length === 0);
+    if (declaredTerminalIds.length > 0) {
+        return new Set(declaredTerminalIds);
+    }
+    return new Set(graph.nodes
+        .map((node) => node.id)
+        .filter((nodeId) => (outgoingMap.get(nodeId) ?? []).length === 0));
+}
 function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
     const orderedNodes = topologicalOrder(model.graph);
     const nodeIds = model.graph.nodes.map((node) => node.id);
     const startNodes = model.graph.startNodes.length > 0 ? model.graph.startNodes : orderedNodes.length > 0 ? [orderedNodes[0]] : [];
     const startRatePerNode = startNodes.length > 0 ? system.lineDemand / startNodes.length : 0;
     const activeHoursPerDay = getActiveHoursPerDay(readActiveShiftCount(scenario));
-    const endNodeSet = new Set(model.graph.endNodes);
     const outgoingMap = new Map();
     nodeIds.forEach((nodeId) => {
         const edges = model.graph.edges.filter((edge) => edge.from === nodeId);
         outgoingMap.set(nodeId, normalizeOutgoing(edges));
     });
+    const terminalNodeSet = resolveTerminalNodeIds(model.graph, outgoingMap);
     const queueQty = new Map(nodeIds.map((nodeId) => [nodeId, 0]));
-    const processedRate = new Map(nodeIds.map((nodeId) => [nodeId, 0]));
+    const cumulativeProcessedQtyByStep = new Map(nodeIds.map((nodeId) => [nodeId, 0]));
+    const snapshotProcessedRateByStep = new Map(nodeIds.map((nodeId) => [nodeId, 0]));
     const completedQtyByStep = new Map(nodeIds.map((nodeId) => [nodeId, 0]));
     const blockedIdleHoursByStep = new Map(nodeIds.map((nodeId) => [nodeId, 0]));
     let arrivals = new Map(nodeIds.map((nodeId) => [nodeId, 0]));
@@ -354,14 +364,15 @@ function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
                 const incomingQty = arrivals.get(nodeId) ?? 0;
                 const outgoing = outgoingMap.get(nodeId) ?? [];
                 if (!stepEval || stepEval.capacityPerHour === null || stepEval.capacityPerHour <= 0) {
-                    if (endNodeSet.has(nodeId)) {
+                    if (terminalNodeSet.has(nodeId)) {
                         totalCompletedQty += incomingQty;
                     }
                     completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) ?? 0) + incomingQty);
                     for (const edge of outgoing) {
                         nextArrivals.set(edge.to, (nextArrivals.get(edge.to) ?? 0) + incomingQty * edge.probability);
                     }
-                    processedRate.set(nodeId, incomingQty / Math.max(1e-9, dtHours));
+                    cumulativeProcessedQtyByStep.set(nodeId, (cumulativeProcessedQtyByStep.get(nodeId) ?? 0) + incomingQty);
+                    snapshotProcessedRateByStep.set(nodeId, activeHours > 0 ? incomingQty / activeHours : 0);
                     continue;
                 }
                 const availableQty = (queueQty.get(nodeId) ?? 0) + incomingQty;
@@ -393,13 +404,14 @@ function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
                 const processedQty = Math.min(availableQty, capacityQty * downstreamAcceptance);
                 const queueRemaining = Math.max(0, availableQty - processedQty);
                 queueQty.set(nodeId, queueRemaining);
-                processedRate.set(nodeId, processedQty / Math.max(1e-9, dtHours));
+                cumulativeProcessedQtyByStep.set(nodeId, (cumulativeProcessedQtyByStep.get(nodeId) ?? 0) + processedQty);
+                snapshotProcessedRateByStep.set(nodeId, activeHours > 0 ? processedQty / activeHours : 0);
                 completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) ?? 0) + processedQty);
                 if (activeHours > 0 && outgoing.length > 0 && availableQty > 1e-9 && capacityQty > 1e-9) {
                     const blockedIdleRatio = clamp(1 - processedQty / Math.max(1e-9, Math.min(availableQty, capacityQty)), 0, 1);
                     blockedIdleHoursByStep.set(nodeId, (blockedIdleHoursByStep.get(nodeId) ?? 0) + activeHours * blockedIdleRatio);
                 }
-                if (endNodeSet.has(nodeId)) {
+                if (terminalNodeSet.has(nodeId)) {
                     totalCompletedQty += processedQty;
                 }
                 if (outgoing.length === 0) {
@@ -433,16 +445,19 @@ function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
             };
             continue;
         }
-        const outRate = processedRate.get(nodeId) ?? 0;
-        const utilizationRaw = outRate / Math.max(0.001, stepEval.capacityPerHour);
+        const displayedCapacityPerHour = stepEval.calendarCapacityPerHour ?? stepEval.capacityPerHour ?? 0;
+        const cumulativeProcessedQty = cumulativeProcessedQtyByStep.get(nodeId) ?? 0;
+        const realizedRate = cappedElapsed > 0 ? cumulativeProcessedQty / Math.max(1e-9, cappedElapsed) : 0;
+        const utilizationRaw = realizedRate / Math.max(0.001, displayedCapacityPerHour);
         const utilization = clamp(utilizationRaw, 0, 1.35);
         const queueDepth = Math.max(0, queueQty.get(nodeId) ?? 0);
-        const processWip = Math.max(0, outRate * Math.max(0, stepEval.serviceTimeHours ?? 0));
+        const snapshotProcessedRate = snapshotProcessedRateByStep.get(nodeId) ?? 0;
+        const processWip = Math.max(0, snapshotProcessedRate * Math.max(0, stepEval.serviceTimeHours ?? 0));
         const wipQty = queueDepth + processWip;
         totalWipQty += wipQty;
         const idleWaitHours = Math.max(0, blockedIdleHoursByStep.get(nodeId) ?? 0);
         const idleWaitPct = activeElapsedHours > 0 ? clamp(idleWaitHours / activeElapsedHours, 0, 1) : 0;
-        const queueRisk = clamp(queueDepth / Math.max(1, stepEval.capacityPerHour * 0.6), 0, 1);
+        const queueRisk = clamp(queueDepth / Math.max(1, displayedCapacityPerHour * 0.6), 0, 1);
         const stepBottleneckIndex = clamp(0.65 * utilization + 0.35 * queueRisk, 0, 1);
         const status = stepStatus(utilization, stepBottleneckIndex);
         if (stepBottleneckIndex > bottleneckIndex) {
@@ -515,7 +530,7 @@ export function createBottleneckForecastOutput(model, scenario, elapsedHours = 0
     const nearSatCount = knownNodes.filter((step) => (step.utilization ?? 0) >= 0.9).length;
     const cascadePressure = knownNodes.length > 0 ? nearSatCount / knownNodes.length : 0;
     const wipPressure = clamp(runtime.totalWipQty / Math.max(1, baseline.horizonHours * Math.max(1, model.stepModels.length) * 10), 0, 1);
-    const migrationPenalty = runtime.bottleneckStepId !== relief.bottleneckStepId ? 0.08 : 0;
+    const migrationPenalty = runtime.bottleneckStepId && runtime.bottleneckStepId !== relief.bottleneckStepId ? 0.08 : 0;
     const brittleness = clamp(0.48 * topScore +
         0.18 * (knownNodes.reduce((sum, row) => sum + (row.queueRisk ?? 0), 0) / Math.max(1, knownNodes.length)) +
         0.16 * cascadePressure +
@@ -549,7 +564,7 @@ export function createBottleneckForecastOutput(model, scenario, elapsedHours = 0
             };
             continue;
         }
-        const capacityPerHour = stepBaseline?.capacityPerHour ?? null;
+        const capacityPerHour = stepBaseline?.calendarCapacityPerHour ?? stepBaseline?.capacityPerHour ?? null;
         const queueDelayMinutes = capacityPerHour !== null && capacityPerHour > 0
             ? ((evalStep.queueDepth ?? 0) / capacityPerHour) * 60
             : 0;

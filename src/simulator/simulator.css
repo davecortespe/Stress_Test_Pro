@@ -64,8 +64,8 @@
   position: relative;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: stretch;
+  gap: 18px;
   background: var(--surface);
   border: 1px solid rgba(56, 89, 129, 0.7);
   border-radius: 14px;
@@ -77,15 +77,63 @@
 
 .header-left {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
+  flex: 1 1 780px;
 }
 
 .header-right {
   margin-left: auto;
   display: flex;
   justify-content: flex-end;
-  align-items: flex-start;
+  align-items: stretch;
+  flex: 0 1 620px;
+}
+
+.header-title-block {
+  display: grid;
+  gap: 2px;
+}
+
+.header-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.header-control-card,
+.status-block {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(65, 103, 149, 0.44);
+  background:
+    linear-gradient(180deg, rgba(11, 28, 48, 0.76), rgba(7, 20, 36, 0.88)),
+    radial-gradient(circle at 100% 0, rgba(30, 224, 255, 0.08), transparent 34%);
+  box-shadow: var(--ls-shadow-inner);
+}
+
+.header-control-label {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #91a8ca;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.header-state-card {
+  min-width: 152px;
+}
+
+.header-state-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .header-shell::after {
@@ -110,9 +158,10 @@
 }
 
 .status-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) minmax(250px, 1.1fr) auto;
+  gap: 12px;
+  width: 100%;
   justify-content: flex-end;
 }
 
@@ -176,10 +225,11 @@
   border-radius: 12px;
   border: 1px solid rgba(65, 103, 149, 0.54);
   background: linear-gradient(180deg, rgba(10, 29, 50, 0.82), rgba(6, 20, 39, 0.9));
+  flex-wrap: wrap;
 }
 
 .speed-pill {
-  min-width: 46px;
+  min-width: 52px;
   height: 34px;
   border-radius: 10px;
   border: 1px solid rgba(66, 103, 147, 0.56);
@@ -1568,10 +1618,16 @@
     margin-left: 0;
     width: 100%;
     justify-content: flex-start;
+    flex-basis: auto;
   }
 
   .status-strip {
+    grid-template-columns: 1fr;
     justify-content: flex-start;
+  }
+
+  .header-toolbar {
+    grid-template-columns: 1fr;
   }
 
   .throughput-summary-shell {
@@ -1580,6 +1636,18 @@
 }
 
 @media (max-width: 720px) {
+  .header-controls,
+  .results-mode-group,
+  .header-state-group,
+  .speed-group {
+    width: 100%;
+  }
+
+  .status-block,
+  .header-control-card {
+    padding: 10px;
+  }
+
   .kpi-row {
     grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   }
@@ -1590,6 +1658,10 @@
 
   .diagnosis-header {
     flex-direction: column;
+  }
+
+  .timer-chip .status-chip-value {
+    font-size: 1.3rem;
   }
 }
 

@@ -182,7 +182,17 @@ const validCapacities = stepModels
   .map((step) => step.effectiveCapacityPerHour)
   .filter((value) => typeof value === "number" && Number.isFinite(value) && value > 0);
 const lineCapacityPerHour = validCapacities.length > 0 ? Math.min(...validCapacities) : 1;
-const demandRatePerHour = Number((lineCapacityPerHour * 0.9).toFixed(4));
+const startNodeIds = Array.isArray(graph.startNodes) && graph.startNodes.length > 0
+  ? graph.startNodes
+  : stepModels.length > 0
+    ? [stepModels[0].stepId]
+    : [];
+const startCapacityPerHour = startNodeIds
+  .map((startId) => stepModels.find((step) => step.stepId === startId)?.effectiveCapacityPerHour ?? null)
+  .filter((value) => typeof value === "number" && Number.isFinite(value) && value > 0)
+  .reduce((sum, value) => sum + (value ?? 0), 0);
+const releaseCapacityPerHour = startCapacityPerHour > 0 ? startCapacityPerHour : lineCapacityPerHour;
+const demandRatePerHour = Number((releaseCapacityPerHour * 0.9).toFixed(4));
 const throughputPerHour = Number(Math.min(demandRatePerHour, lineCapacityPerHour).toFixed(4));
 
 const nodeMetrics = {};
@@ -397,6 +407,17 @@ const compiled = {
       ]
     },
     {
+      key: "activeShiftCount",
+      label: "Operating Shifts",
+      type: "select",
+      defaultValue: "3",
+      options: [
+        { label: "1 shift", value: "1" },
+        { label: "2 shifts", value: "2" },
+        { label: "3 shifts", value: "3" }
+      ]
+    },
+    {
       key: "bottleneckReliefUnits",
       label: "Bottleneck Relief (+units)",
       type: "number",
@@ -426,6 +447,7 @@ const compiled = {
     setupPenaltyMultiplier: 1,
     variabilityMultiplier: 1,
     simulationHorizonHours: "8",
+    activeShiftCount: "3",
     bottleneckReliefUnits: 1,
     sellingPricePerUnit
   },
@@ -455,7 +477,7 @@ const compiled = {
     {
       id: "compile-001",
       severity: "warning",
-      text: "Demand rate is not shown in the VSM image; baseline demandRatePerHour is set to 90% of computed line capacity."
+      text: "Demand rate is not shown in the VSM image; baseline demandRatePerHour is set to 90% of computed release capacity at start steps."
     },
     {
       id: "compile-002",

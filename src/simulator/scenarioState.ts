@@ -10,7 +10,7 @@ export type StepField =
   | "materialCostPerUnit"
   | "laborRatePerHour"
   | "equipmentRatePerHour";
-export type SpeedMultiplier = 1 | 2 | 5 | 50 | 200;
+export type SpeedMultiplier = 1 | 2 | 5 | 50 | 200 | 1440;
 
 export const BASE_SIM_HOURS_PER_SECOND = 0.1;
 export const DEFAULT_SPEED_MULTIPLIER: SpeedMultiplier = 1;

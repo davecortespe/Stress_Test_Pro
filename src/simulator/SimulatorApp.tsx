@@ -7,6 +7,7 @@ import { ParameterSidebar } from "../components/ParameterSidebar";
 import { ScenarioLibraryPanel } from "../components/ScenarioLibraryPanel";
 import { StepInspector } from "../components/StepInspector";
 import { ThroughputAnalysisPanel } from "../components/ThroughputAnalysisPanel";
+import { WasteAnalysisPanel } from "../components/WasteAnalysisPanel";
 import { createBottleneckForecastOutput } from "../lib/bottleneckForecast";
 import {
   buildOperationalDiagnosis
@@ -16,23 +17,27 @@ import {
   buildThroughputStepCsv,
   buildThroughputSummaryCsv
 } from "../lib/throughputAnalysis";
+import {
+  buildWasteAnalysis,
+  buildWasteStepCsv,
+  buildWasteSummaryCsv
+} from "../lib/wasteAnalysis";
 import type {
   CompiledForecastModel,
   DashboardConfig,
   KpiConfig,
-  MasterData
+  MasterData,
+  SimulatorResultsMode
 } from "../types/contracts";
 import compiledForecastModelJson from "../../models/active/compiled_forecast_model.json";
 import masterDataJson from "../../models/active/master_data.json";
-import vsmGraphJson from "../../models/active/vsm_graph.json";
 import dashboardConfigJson from "../../models/dashboard_config.json";
 import {
   bindParameterGroupsToForecast,
   buildResolvedStepScenario,
   buildScenarioLibraryStepColumns,
   buildInspectorValues,
-  getDefaultScenario,
-  type ScenarioState
+  getDefaultScenario
 } from "./scenarioState";
 import { getExportBundleData, getStartupScenarioOverride } from "./runtimeData";
 import { useScenarioLibrary } from "./useScenarioLibrary";
@@ -71,6 +76,38 @@ const throughputKpis: KpiConfig[] = [
   }
 ];
 
+const wasteKpis: KpiConfig[] = [
+  {
+    key: "totalLeadTimeMinutes",
+    label: "Weighted LT",
+    format: "duration",
+    decimals: 1
+  },
+  {
+    key: "totalTouchTimeMinutes",
+    label: "Weighted CT",
+    format: "duration",
+    decimals: 1
+  },
+  {
+    key: "totalWasteMinutes",
+    label: "Weighted Waste",
+    format: "duration",
+    decimals: 1
+  },
+  {
+    key: "totalWastePct",
+    label: "Waste %",
+    format: "percent",
+    decimals: 1
+  },
+  {
+    key: "topWasteStep",
+    label: "Top Waste Step",
+    format: "text"
+  }
+];
+
 function downloadTextFile(fileName: string, contents: string, mimeType = "text/plain;charset=utf-8"): void {
   const blob = new Blob([contents], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -90,7 +127,6 @@ export default function SimulatorApp() {
   const dashboardConfig = (exportBundleData?.dashboardConfig ?? dashboardConfigJson) as DashboardConfig;
   const forecastModel = (exportBundleData?.compiledForecastModel ?? compiledForecastModelJson) as CompiledForecastModel;
   const masterData = (exportBundleData?.masterData ?? masterDataJson) as MasterData;
-  const vsmGraph = exportBundleData?.vsmGraph ?? vsmGraphJson;
   const boundParameterGroups = useMemo(
     () => bindParameterGroupsToForecast(dashboardConfig.parameterGroups, forecastModel),
     [dashboardConfig, forecastModel]
@@ -133,7 +169,7 @@ export default function SimulatorApp() {
   const [inspectorStepId, setInspectorStepId] = useState<string | null>(null);
   const [inspectorAnchor, setInspectorAnchor] = useState<{ x: number; y: number } | null>(null);
   const [appNotice, setAppNotice] = useState<ExportNotice | null>(null);
-  const [resultsMode, setResultsMode] = useState<"flow" | "diagnosis" | "throughput">("flow");
+  const [resultsMode, setResultsMode] = useState<SimulatorResultsMode>("flow");
   const [isScenarioLibraryOpen, setIsScenarioLibraryOpen] = useState(false);
   const {
     libraryEntries,
@@ -165,6 +201,10 @@ export default function SimulatorApp() {
   const throughputAnalysis = useMemo(
     () => buildThroughputAnalysis(forecastModel, masterData, committedScenario, output),
     [forecastModel, masterData, committedScenario, output]
+  );
+  const wasteAnalysis = useMemo(
+    () => buildWasteAnalysis(forecastModel, committedScenario, output),
+    [forecastModel, committedScenario, output]
   );
 
   const inspectorStep = useMemo(
@@ -213,24 +253,39 @@ export default function SimulatorApp() {
       ),
     [activeScenario, inspectorDefaultsByStepId, inspectorStep]
   );
-  const activeKpis = resultsMode === "throughput" ? throughputKpis : dashboardConfig.kpis;
+  const activeKpis =
+    resultsMode === "throughput"
+      ? throughputKpis
+      : resultsMode === "waste"
+        ? wasteKpis
+        : dashboardConfig.kpis;
   const resolvedStepScenario = useMemo(
     () => buildResolvedStepScenario(forecastModel.stepModels, committedScenario, inspectorDefaultsByStepId),
     [committedScenario, forecastModel.stepModels, inspectorDefaultsByStepId]
   );
   const activeMetrics = useMemo(() => {
-    if (resultsMode !== "throughput") {
-      return output.globalMetrics;
+    if (resultsMode === "throughput") {
+      return {
+        tocThroughputPerUnit: throughputAnalysis.summary.tocThroughputPerUnit ?? "Blocked",
+        fullyLoadedProfitPerUnit: throughputAnalysis.summary.fullyLoadedProfitPerUnit ?? "Blocked",
+        tocThroughputPerBottleneckMinute:
+          throughputAnalysis.summary.tocThroughputPerBottleneckMinute ?? "Blocked",
+        estimatedGainPercent: throughputAnalysis.summary.estimatedGainPercent ?? "Blocked"
+      };
     }
 
-    return {
-      tocThroughputPerUnit: throughputAnalysis.summary.tocThroughputPerUnit ?? "Blocked",
-      fullyLoadedProfitPerUnit: throughputAnalysis.summary.fullyLoadedProfitPerUnit ?? "Blocked",
-      tocThroughputPerBottleneckMinute:
-        throughputAnalysis.summary.tocThroughputPerBottleneckMinute ?? "Blocked",
-      estimatedGainPercent: throughputAnalysis.summary.estimatedGainPercent ?? "Blocked"
-    };
-  }, [output.globalMetrics, resultsMode, throughputAnalysis.summary]);
+    if (resultsMode === "waste") {
+      return {
+        totalLeadTimeMinutes: wasteAnalysis.summary.totalLeadTimeMinutes ?? 0,
+        totalTouchTimeMinutes: wasteAnalysis.summary.totalTouchTimeMinutes ?? 0,
+        totalWasteMinutes: wasteAnalysis.summary.totalWasteMinutes ?? 0,
+        totalWastePct: wasteAnalysis.summary.totalWastePct ?? 0,
+        topWasteStep: wasteAnalysis.summary.topWasteStep || "n/a"
+      };
+    }
+
+    return output.globalMetrics;
+  }, [output.globalMetrics, resultsMode, throughputAnalysis.summary, wasteAnalysis.summary]);
 
   const openScenarioLibraryCsv = async () => {
     try {
@@ -390,6 +445,29 @@ export default function SimulatorApp() {
                   downloadTextFile(
                     "throughput-analysis-step-costs.csv",
                     buildThroughputStepCsv(throughputAnalysis),
+                    "text/csv;charset=utf-8"
+                  )
+                }
+              />
+            ) : null}
+
+            {resultsMode === "waste" ? (
+              <WasteAnalysisPanel
+                analysis={{
+                  ...wasteAnalysis,
+                  scenarioLabel: wasteAnalysis.scenarioLabel || dashboardConfig.appTitle
+                }}
+                onExportSummaryCsv={() =>
+                  downloadTextFile(
+                    "waste-analysis-summary.csv",
+                    buildWasteSummaryCsv(wasteAnalysis),
+                    "text/csv;charset=utf-8"
+                  )
+                }
+                onExportStepCsv={() =>
+                  downloadTextFile(
+                    "waste-analysis-steps.csv",
+                    buildWasteStepCsv(wasteAnalysis),
                     "text/csv;charset=utf-8"
                   )
                 }

@@ -1,15 +1,27 @@
+import type { SimulatorResultsMode } from "../types/contracts";
+import type { SpeedMultiplier } from "../simulator/scenarioState";
+
+const SPEED_OPTIONS: Array<{ value: SpeedMultiplier; label: string; hint?: string }> = [
+  { value: 1, label: "x1" },
+  { value: 2, label: "x2" },
+  { value: 5, label: "x5" },
+  { value: 50, label: "x50" },
+  { value: 200, label: "x200" },
+  { value: 1440, label: "5s/mo", hint: "Run a 720-hour horizon in about 5 seconds." }
+];
+
 interface DashboardHeaderProps {
   title: string;
   subtitle: string;
-  resultsMode: "flow" | "diagnosis" | "throughput";
+  resultsMode: SimulatorResultsMode;
   isPaused: boolean;
   hasStagedChanges: boolean;
   simElapsedHours: number;
   simHorizonHours: number;
   scenarioCount: number;
-  speedMultiplier: 1 | 2 | 5 | 50 | 200;
-  onResultsModeChange: (mode: "flow" | "diagnosis" | "throughput") => void;
-  onSpeedChange: (speed: 1 | 2 | 5 | 50 | 200) => void;
+  speedMultiplier: SpeedMultiplier;
+  onResultsModeChange: (mode: SimulatorResultsMode) => void;
+  onSpeedChange: (speed: SpeedMultiplier) => void;
   onStartPause: () => void;
   onReset: () => void;
   onOpenLibraryCsv: () => void;
@@ -38,74 +50,100 @@ export function DashboardHeader({
   return (
     <header className="header-shell">
       <div className="header-left">
-        <h1>{title}</h1>
-        <p className="subtitle">{subtitle}</p>
-        <div className="header-controls">
-          <button className="primary" onClick={onStartPause}>
-            {isPaused ? "Start" : "Pause"}
-          </button>
-          <button className="secondary" onClick={onReset}>
-            Reset
-          </button>
-          <button type="button" className="secondary" onClick={onOpenLibraryCsv}>
-            Open Library CSV
-          </button>
-          <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
-            Save Current Scenario
-          </button>
-          <div className="results-mode-group" role="group" aria-label="results panel mode">
-            {[
-              { key: "flow", label: "FLOW MAP" },
-              { key: "diagnosis", label: "DIAGNOSIS" },
-              { key: "throughput", label: "THROUGHPUT" }
-            ].map((mode) => (
-              <button
-                key={mode.key}
-                type="button"
-                className={`secondary mode-toggle-btn ${resultsMode === mode.key ? "is-active" : ""}`}
-                onClick={() =>
-                  onResultsModeChange(mode.key as "flow" | "diagnosis" | "throughput")
-                }
-                aria-pressed={resultsMode === mode.key}
-              >
-                {mode.label}
+        <div className="header-title-block">
+          <h1>{title}</h1>
+          <p className="subtitle">{subtitle}</p>
+        </div>
+        <div className="header-toolbar">
+          <div className="header-control-card">
+            <p className="header-control-label">Actions</p>
+            <div className="header-controls">
+              <button className="primary" onClick={onStartPause}>
+                {isPaused ? "Start" : "Pause"}
               </button>
-            ))}
-          </div>
-          <div className={`live-pill ${isPaused ? "is-paused" : "is-live"}`}>
-            <span className="dot" />
-            {isPaused ? "Paused" : "Live"}
-          </div>
-          {isPaused && hasStagedChanges ? (
-            <div className={`staged-chip ${hasStagedChanges ? "has-changes" : "no-changes"}`}>
-              Staged changes
+              <button className="secondary" onClick={onReset}>
+                Reset
+              </button>
+              <button type="button" className="secondary" onClick={onOpenLibraryCsv}>
+                Open Library CSV
+              </button>
+              <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
+                Save Current Scenario
+              </button>
             </div>
-          ) : null}
+          </div>
+
+          <div className="header-control-card">
+            <p className="header-control-label">View</p>
+            <div className="results-mode-group" role="group" aria-label="results panel mode">
+              {[
+                { key: "flow", label: "FLOW MAP" },
+                { key: "diagnosis", label: "DIAGNOSIS" },
+                { key: "throughput", label: "THROUGHPUT" },
+                { key: "waste", label: "WASTE" }
+              ].map((mode) => (
+                <button
+                  key={mode.key}
+                  type="button"
+                  className={`secondary mode-toggle-btn ${resultsMode === mode.key ? "is-active" : ""}`}
+                  onClick={() => onResultsModeChange(mode.key as SimulatorResultsMode)}
+                  aria-pressed={resultsMode === mode.key}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="header-control-card header-state-card">
+            <p className="header-control-label">State</p>
+            <div className="header-state-group">
+              <div className={`live-pill ${isPaused ? "is-paused" : "is-live"}`}>
+                <span className="dot" />
+                {isPaused ? "Paused" : "Live"}
+              </div>
+              {isPaused && hasStagedChanges ? (
+                <div className={`staged-chip ${hasStagedChanges ? "has-changes" : "no-changes"}`}>
+                  Staged changes
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
       <div className="header-right">
         <div className="status-strip" aria-label="simulation status">
-          <div className="status-chip timer-chip is-active">
-            <span className="status-chip-label">Sim Time</span>
-            <span className="status-chip-value">
-              {simElapsedHours.toFixed(2)} / {simHorizonHours} h
-            </span>
+          <div className="status-block">
+            <p className="header-control-label">Simulation</p>
+            <div className="status-chip timer-chip is-active">
+              <span className="status-chip-label">Sim Time</span>
+              <span className="status-chip-value">
+                {simElapsedHours.toFixed(2)} / {simHorizonHours} h
+              </span>
+            </div>
           </div>
-          <div className="speed-group" role="group" aria-label="simulation speed">
-            {[1, 2, 5, 50, 200].map((speed) => (
-              <button
-                key={speed}
-                type="button"
-                className={`speed-pill ${speedMultiplier === speed ? "is-active" : ""}`}
-                onClick={() => onSpeedChange(speed as 1 | 2 | 5 | 50 | 200)}
-              >
-                x{speed}
-              </button>
-            ))}
+          <div className="status-block speed-block">
+            <p className="header-control-label">Playback Speed</p>
+            <div className="speed-group" role="group" aria-label="simulation speed">
+              {SPEED_OPTIONS.map((speed) => (
+                <button
+                  key={speed.value}
+                  type="button"
+                  className={`speed-pill ${speedMultiplier === speed.value ? "is-active" : ""}`}
+                  onClick={() => onSpeedChange(speed.value)}
+                  title={speed.hint}
+                >
+                  {speed.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <button type="button" className="status-chip scenario-chip-button" onClick={onToggleScenarioLibrary}>
-            <span className="status-chip-value">Scenarios {scenarioCount}</span>
-          </button>
+          <div className="status-block">
+            <p className="header-control-label">Library</p>
+            <button type="button" className="status-chip scenario-chip-button" onClick={onToggleScenarioLibrary}>
+              <span className="status-chip-value">Scenarios {scenarioCount}</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>

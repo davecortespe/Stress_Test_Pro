@@ -38,6 +38,12 @@ Required metrics:
 - per-step: effective capacity, utilization, headroom, queue risk, bottleneck index
 - global: throughput, bottleneck index, bottleneck migration, brittleness
 
+Required semantics:
+- CT/effective CT controls service capacity and completion counting.
+- LT is reported as a delay KPI (process + queue + explicit delay), not used as completion trigger.
+- `capacityUnits` means parallel units at the step (lines/stations).
+- If explicit demand is absent, baseline incoming demand must be seeded from release/start-step capacity, not bottleneck capacity.
+
 Exit gate:
 - Deterministic output from same inputs.
 - Assumptions explicitly logged.
@@ -77,7 +83,7 @@ Rules:
 
 ## UX Contract (template baseline)
 - Header left: `Start/Pause`, `Reset`, live indicator.
-- Header right: large simulation timer + speed chips (`x1/x2/x5/x50/x200`) + scenarios chip.
+- Header right: grouped simulation controls with timer, speed chips (`x1/x2/x5/x50/x200/x1440`) and scenarios chip.
 - Left parameters include `Simulation Horizon` presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
 - Node cards: `util`, `lot/wip`, `Completed Lot`, `status` + WIP fill strip.
 - Step edit: double-click node opens near-node popover on desktop (modal on small screens).

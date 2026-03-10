@@ -60,6 +60,25 @@ returns `index.html`. Without that rewrite, direct refreshes on nested routes wi
    - Output a leader-ready Operational Diagnosis that explains failure mechanism, downstream effects, economic meaning, and smallest stabilizing action
 8. Export/report the committed scenario only after the diagnosis is generated.
 
+## Model semantics (forecast mode)
+
+Use these definitions consistently when validating simulator behavior:
+
+- `capacityUnits`: parallel processing units at a step (for example lines/stations in parallel).
+- `CT/effective CT`: service-time basis for capacity and completion.
+- `LT`: delay KPI (process + queue + explicit delay), not a completion trigger.
+- `completed output`: capacity-constrained flow completion over elapsed simulation time.
+
+Incoming demand behavior:
+
+- If explicit demand is missing in source VSM data, the compile step seeds baseline demand from release/start-step capacity (not bottleneck capacity) and logs the assumption in `compiled_forecast_model.json`.
+- Runtime demand used by the forecast engine is:
+  `lineDemand = baselineDemandRatePerHour * demandMultiplier`.
+
+Interpretation rule:
+
+- If a step's theoretical max over horizon is high but completed quantity is low, check demand-limited operation first before diagnosing local capacity loss.
+
 ## One-command VSM image -> export workflow
 
 Use this when you have ingested/transcribed a VSM image into `models/active/vsm_graph.json` and
@@ -137,3 +156,4 @@ When using an assumptions-plan-execute-deliver workflow, insert `operational-dia
 - UI layout remains fixed while config/data changes content
 - Compile emits compiled spec and checklist
 - UI still renders using mocked output if DES is not implemented
+- Demand seeding assumptions are explicit and traceable in compiled model assumptions

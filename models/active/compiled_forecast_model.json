@@ -1,6 +1,6 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-03-09T20:40:02.414Z",
+  "generatedAt": "2026-03-10T21:26:32.609Z",
   "metadata": {
     "name": "Filter Making Line",
     "units": "per-hour",
@@ -337,6 +337,26 @@
       ]
     },
     {
+      "key": "activeShiftCount",
+      "label": "Operating Shifts",
+      "type": "select",
+      "defaultValue": "3",
+      "options": [
+        {
+          "label": "1 shift",
+          "value": "1"
+        },
+        {
+          "label": "2 shifts",
+          "value": "2"
+        },
+        {
+          "label": "3 shifts",
+          "value": "3"
+        }
+      ]
+    },
+    {
       "key": "bottleneckReliefUnits",
       "label": "Bottleneck Relief (+units)",
       "type": "number",
@@ -356,7 +376,7 @@
     }
   ],
   "inputDefaults": {
-    "demandRatePerHour": 2.6024,
+    "demandRatePerHour": 16.2,
     "demandMultiplier": 1,
     "mixProfile": "balanced",
     "staffingMultiplier": 1,
@@ -366,6 +386,7 @@
     "setupPenaltyMultiplier": 1,
     "variabilityMultiplier": 1,
     "simulationHorizonHours": "8",
+    "activeShiftCount": "3",
     "bottleneckReliefUnits": 1,
     "sellingPricePerUnit": 0
   },
@@ -385,12 +406,12 @@
       "effectiveCtMinutes": 10,
       "effectiveCapacityPerHour": 18,
       "baseline": {
-        "demandRatePerHour": 2.6024,
-        "utilization": 0.1446,
-        "headroom": 0.8554,
-        "queueRisk": 0.0025,
-        "bottleneckIndex": 0.0724,
-        "status": "healthy"
+        "demandRatePerHour": 16.2,
+        "utilization": 0.9,
+        "headroom": 0.1,
+        "queueRisk": 0.8353,
+        "bottleneckIndex": 0.6803,
+        "status": "risk"
       }
     },
     {
@@ -408,11 +429,11 @@
       "effectiveCtMinutes": 5,
       "effectiveCapacityPerHour": 1200,
       "baseline": {
-        "demandRatePerHour": 2.6024,
-        "utilization": 0.0022,
-        "headroom": 0.9978,
+        "demandRatePerHour": 16.2,
+        "utilization": 0.0135,
+        "headroom": 0.9865,
         "queueRisk": 0,
-        "bottleneckIndex": 0.0011,
+        "bottleneckIndex": 0.0067,
         "status": "healthy"
       }
     },
@@ -431,12 +452,12 @@
       "effectiveCtMinutes": 20.75,
       "effectiveCapacityPerHour": 2.8916,
       "baseline": {
-        "demandRatePerHour": 2.6024,
-        "utilization": 0.9,
-        "headroom": 0.1,
-        "queueRisk": 0.8352,
-        "bottleneckIndex": 0.6802,
-        "status": "risk"
+        "demandRatePerHour": 16.2,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "bottleneckIndex": 1,
+        "status": "critical"
       }
     },
     {
@@ -454,11 +475,11 @@
       "effectiveCtMinutes": 3.75,
       "effectiveCapacityPerHour": 32,
       "baseline": {
-        "demandRatePerHour": 2.6024,
-        "utilization": 0.0813,
-        "headroom": 0.9187,
-        "queueRisk": 0.0007,
-        "bottleneckIndex": 0.0405,
+        "demandRatePerHour": 16.2,
+        "utilization": 0.5062,
+        "headroom": 0.4938,
+        "queueRisk": 0.0535,
+        "bottleneckIndex": 0.2661,
         "status": "healthy"
       }
     },
@@ -477,11 +498,11 @@
       "effectiveCtMinutes": 1.75,
       "effectiveCapacityPerHour": 34.2857,
       "baseline": {
-        "demandRatePerHour": 2.6024,
-        "utilization": 0.0759,
-        "headroom": 0.9241,
-        "queueRisk": 0.0006,
-        "bottleneckIndex": 0.0378,
+        "demandRatePerHour": 16.2,
+        "utilization": 0.4725,
+        "headroom": 0.5275,
+        "queueRisk": 0.0436,
+        "bottleneckIndex": 0.2466,
         "status": "healthy"
       }
     },
@@ -500,11 +521,11 @@
       "effectiveCtMinutes": 3.5,
       "effectiveCapacityPerHour": 34.2857,
       "baseline": {
-        "demandRatePerHour": 2.6024,
-        "utilization": 0.0759,
-        "headroom": 0.9241,
-        "queueRisk": 0.0006,
-        "bottleneckIndex": 0.0378,
+        "demandRatePerHour": 16.2,
+        "utilization": 0.4725,
+        "headroom": 0.5275,
+        "queueRisk": 0.0436,
+        "bottleneckIndex": 0.2466,
         "status": "healthy"
       }
     },
@@ -523,11 +544,11 @@
       "effectiveCtMinutes": 3.75,
       "effectiveCapacityPerHour": 32,
       "baseline": {
-        "demandRatePerHour": 2.6024,
-        "utilization": 0.0813,
-        "headroom": 0.9187,
-        "queueRisk": 0.0007,
-        "bottleneckIndex": 0.0405,
+        "demandRatePerHour": 16.2,
+        "utilization": 0.5062,
+        "headroom": 0.4938,
+        "queueRisk": 0.0535,
+        "bottleneckIndex": 0.2661,
         "status": "healthy"
       }
     },
@@ -546,12 +567,12 @@
       "effectiveCtMinutes": 5,
       "effectiveCapacityPerHour": 12,
       "baseline": {
-        "demandRatePerHour": 2.6024,
-        "utilization": 0.2169,
-        "headroom": 0.7831,
-        "queueRisk": 0.0062,
-        "bottleneckIndex": 0.1093,
-        "status": "healthy"
+        "demandRatePerHour": 16.2,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "bottleneckIndex": 0.935,
+        "status": "critical"
       }
     },
     {
@@ -569,151 +590,151 @@
       "effectiveCtMinutes": 5,
       "effectiveCapacityPerHour": 12,
       "baseline": {
-        "demandRatePerHour": 2.6024,
-        "utilization": 0.2169,
-        "headroom": 0.7831,
-        "queueRisk": 0.0062,
-        "bottleneckIndex": 0.1093,
-        "status": "healthy"
+        "demandRatePerHour": 16.2,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "bottleneckIndex": 0.935,
+        "status": "critical"
       }
     }
   ],
   "baseline": {
-    "demandRatePerHour": 2.6024,
+    "demandRatePerHour": 16.2,
     "lineCapacityPerHour": 2.8916,
     "bottleneckStepId": "pleating",
     "globalMetrics": {
-      "throughput": 2.6024,
-      "forecastThroughput": 2.6024,
+      "throughput": 2.8916,
+      "forecastThroughput": 2.8916,
       "throughputDelta": 0,
       "bottleneckMigration": "baseline only",
-      "bottleneckIndex": 0.6802,
-      "brittleness": 0.3899,
-      "avgQueueRisk": 0.0948,
-      "totalWipQty": 11.6341,
+      "bottleneckIndex": 1,
+      "brittleness": 0.7729,
+      "avgQueueRisk": 0.4477,
+      "totalWipQty": 266.8404,
       "worstCaseTouchTime": 55,
-      "totalLeadTimeMinutes": 525.9073,
+      "totalLeadTimeMinutes": 1456.8885,
       "leadTimeDeltaMinutes": 0,
-      "waitSharePct": 0.443,
+      "waitSharePct": 0.1599,
       "leadTimeTopContributor": "Pleating"
     },
     "nodeMetrics": {
       "receiving": {
-        "utilization": 0.1446,
-        "headroom": 0.8554,
-        "queueRisk": 0.0025,
-        "queueDepth": 0.0302,
-        "wipQty": 0.0302,
+        "utilization": 0.9,
+        "headroom": 0.1,
+        "queueRisk": 0.8353,
+        "queueDepth": 11.4237,
+        "wipQty": 11.4237,
         "completedQty": 0,
-        "leadTimeMinutes": 16.1008,
+        "leadTimeMinutes": 54.0792,
         "capacityPerHour": 18,
-        "bottleneckIndex": 0.0724,
+        "bottleneckIndex": 0.6803,
         "bottleneckFlag": false,
-        "status": "healthy"
+        "status": "risk"
       },
       "stocking": {
-        "utilization": 0.0022,
-        "headroom": 0.9978,
+        "utilization": 0.0135,
+        "headroom": 0.9865,
         "queueRisk": 0,
-        "queueDepth": 0,
-        "wipQty": 0,
+        "queueDepth": 0.0002,
+        "wipQty": 0.0002,
         "completedQty": 0,
         "leadTimeMinutes": 15,
         "capacityPerHour": 1200,
-        "bottleneckIndex": 0.0011,
+        "bottleneckIndex": 0.0067,
         "bottleneckFlag": false,
         "status": "healthy"
       },
       "pleating": {
-        "utilization": 0.9,
-        "headroom": 0.1,
-        "queueRisk": 0.8352,
-        "queueDepth": 11.422,
-        "wipQty": 11.422,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "queueDepth": 46.317,
+        "wipQty": 152.7842,
         "completedQty": 0,
-        "leadTimeMinutes": 437.0029,
+        "leadTimeMinutes": 1161.0674,
         "capacityPerHour": 2.8916,
-        "bottleneckIndex": 0.6802,
+        "bottleneckIndex": 1,
         "bottleneckFlag": true,
         "status": "critical"
       },
       "forming": {
-        "utilization": 0.0813,
-        "headroom": 0.9187,
-        "queueRisk": 0.0007,
-        "queueDepth": 0.0089,
-        "wipQty": 0.0089,
+        "utilization": 0.5062,
+        "headroom": 0.4938,
+        "queueRisk": 0.0535,
+        "queueDepth": 0.6423,
+        "wipQty": 0.6423,
         "completedQty": 0,
-        "leadTimeMinutes": 4.0167,
+        "leadTimeMinutes": 5.2044,
         "capacityPerHour": 32,
-        "bottleneckIndex": 0.0405,
+        "bottleneckIndex": 0.2661,
         "bottleneckFlag": false,
         "status": "healthy"
       },
       "capping": {
-        "utilization": 0.0759,
-        "headroom": 0.9241,
-        "queueRisk": 0.0006,
-        "queueDepth": 0.0077,
-        "wipQty": 0.0077,
+        "utilization": 0.4725,
+        "headroom": 0.5275,
+        "queueRisk": 0.0436,
+        "queueDepth": 0.5238,
+        "wipQty": 0.5238,
         "completedQty": 0,
-        "leadTimeMinutes": 3.0135,
+        "leadTimeMinutes": 3.9166,
         "capacityPerHour": 34.2857,
-        "bottleneckIndex": 0.0378,
+        "bottleneckIndex": 0.2466,
         "bottleneckFlag": false,
         "status": "healthy"
       },
       "testing": {
-        "utilization": 0.0759,
-        "headroom": 0.9241,
-        "queueRisk": 0.0006,
-        "queueDepth": 0.0077,
-        "wipQty": 0.0077,
+        "utilization": 0.4725,
+        "headroom": 0.5275,
+        "queueRisk": 0.0436,
+        "queueDepth": 0.5238,
+        "wipQty": 0.5238,
         "completedQty": 0,
-        "leadTimeMinutes": 7.0135,
+        "leadTimeMinutes": 7.9166,
         "capacityPerHour": 34.2857,
-        "bottleneckIndex": 0.0378,
+        "bottleneckIndex": 0.2466,
         "bottleneckFlag": false,
         "status": "healthy"
       },
       "packaging": {
-        "utilization": 0.0813,
-        "headroom": 0.9187,
-        "queueRisk": 0.0007,
-        "queueDepth": 0.0089,
-        "wipQty": 0.0089,
+        "utilization": 0.5062,
+        "headroom": 0.4938,
+        "queueRisk": 0.0535,
+        "queueDepth": 0.6423,
+        "wipQty": 0.6423,
         "completedQty": 0,
-        "leadTimeMinutes": 13.0167,
+        "leadTimeMinutes": 14.2044,
         "capacityPerHour": 32,
-        "bottleneckIndex": 0.0405,
+        "bottleneckIndex": 0.2661,
         "bottleneckFlag": false,
         "status": "healthy"
       },
       "palletizing": {
-        "utilization": 0.2169,
-        "headroom": 0.7831,
-        "queueRisk": 0.0062,
-        "queueDepth": 0.0743,
-        "wipQty": 0.0743,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "queueDepth": 16.55,
+        "wipQty": 50.15,
         "completedQty": 0,
-        "leadTimeMinutes": 15.3716,
+        "leadTimeMinutes": 97.75,
         "capacityPerHour": 12,
-        "bottleneckIndex": 0.1093,
+        "bottleneckIndex": 0.935,
         "bottleneckFlag": false,
-        "status": "healthy"
+        "status": "critical"
       },
       "shipping": {
-        "utilization": 0.2169,
-        "headroom": 0.7831,
-        "queueRisk": 0.0062,
-        "queueDepth": 0.0743,
-        "wipQty": 0.0743,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "queueDepth": 16.55,
+        "wipQty": 50.15,
         "completedQty": 0,
-        "leadTimeMinutes": 15.3716,
+        "leadTimeMinutes": 97.75,
         "capacityPerHour": 12,
-        "bottleneckIndex": 0.1093,
+        "bottleneckIndex": 0.935,
         "bottleneckFlag": false,
-        "status": "healthy"
+        "status": "critical"
       }
     }
   },
@@ -721,7 +742,7 @@
     {
       "id": "compile-001",
       "severity": "warning",
-      "text": "Demand rate is not shown in the VSM image; baseline demandRatePerHour is set to 90% of computed line capacity."
+      "text": "Demand rate is not shown in the VSM image; baseline demandRatePerHour is set to 90% of computed release capacity at start steps."
     },
     {
       "id": "compile-002",
