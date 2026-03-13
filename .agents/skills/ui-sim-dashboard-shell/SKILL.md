@@ -97,6 +97,30 @@ Apply this profile when building the same style of cockpit achieved in this repo
 - `Simulation Horizon` remains in the left parameter panel with presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
 - Keep top ribbon compact so graph/node rows stay visually dominant.
 - View mode buttons should be larger than default chips for easy click/tap targeting.
+- View mode buttons should fill the available width of the View card evenly.
+- Place the report help `(i)` inside each view button, aligned as part of the button, not as a separate row.
+- Speed chips should be visually larger than default pills for quick operator recognition.
+
+### Standard report surfaces
+- `FLOW MAP`
+- `DIAGNOSIS`
+- `KAIZEN`
+- `THROUGHPUT`
+- `WASTE`
+
+### Report-language guidance
+- Keep report structure and metrics stable.
+- Prefer operator-facing wording over analyst jargon in `THROUGHPUT` and `WASTE`.
+- Simplify labels such as:
+  - "Validation" -> more direct pre-use wording when appropriate
+  - "Waste" -> "delay" language where it improves understanding
+  - "Economic constraint" -> "step holding back output" style plain English
+
+### Landing-to-simulator access gate
+- If the project uses a marketing landing page before the simulator, intercept all entry points to the simulator.
+- Require access code `LEAN`.
+- Store accepted access in a cookie so repeat visits from the same browser bypass the prompt.
+- Direct visits to the simulator route must enforce the same gate.
 
 ### Node card contract
 - Must show at least:
@@ -278,6 +302,8 @@ The app must render a working dashboard immediately.
 - [ ] Simulation Horizon control includes 8 hrs, 16 hrs, 24 hrs, 1 week, and 1 month presets
 - [ ] KPI row renders cards from config and formats values
 - [ ] KPI row has glass/dark panels, glow accents, and clear hierarchy
+- [ ] View buttons span the width of the View card with large, readable targets
+- [ ] Each view button contains an in-button `(i)` explainer affordance
 - [ ] Graph canvas renders nodes/edges from graph JSON
 - [ ] Canvas uses dark grid background with overlaid zoom/pan controls
 - [ ] Edges are curved + dashed + animated
@@ -289,3 +315,4 @@ The app must render a working dashboard immediately.
 - [ ] Palette follows dark navy/ink base, cyan/teal flow, magenta/red risk
 - [ ] No domain-specific labels hardcoded
 - [ ] SimulatorPage renders without needing the simulation engine
+- [ ] If access-gated, both landing-page entry and direct simulator route entry enforce the same code prompt

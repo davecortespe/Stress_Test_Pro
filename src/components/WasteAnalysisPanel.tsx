@@ -63,7 +63,7 @@ export function WasteAnalysisPanel({
         <div>
           <p className="throughput-eyebrow">Waste Analysis</p>
           <h2>{analysis.scenarioLabel}</h2>
-          <p className="throughput-meta">LT is the current-state baseline; CT is the touch-time benchmark.</p>
+          <p className="throughput-meta">LT is total elapsed time. CT is hands-on work time.</p>
         </div>
         <div className="throughput-toolbar-actions">
           <button type="button" className="secondary" onClick={onExportSummaryCsv}>
@@ -81,7 +81,7 @@ export function WasteAnalysisPanel({
 
       {analysis.validations.length > 0 ? (
         <section className="throughput-validations">
-          <h3>Validation</h3>
+          <h3>Check Before Use</h3>
           <ul>
             {analysis.validations.map((validation) => (
               <li
@@ -97,29 +97,29 @@ export function WasteAnalysisPanel({
 
       <div className="throughput-summary-shell">
         <article className="throughput-hero-card">
-          <h3>LT vs CT</h3>
+          <h3>Delay Vs Touch Time</h3>
           <dl>
             <div>
-              <dt>Total lead time</dt>
+              <dt>Total elapsed time</dt>
               <dd>{formatValue({ key: "lt", label: "", value: analysis.summary.totalLeadTimeMinutes, format: "duration" })}</dd>
             </div>
             <div>
-              <dt>Total touch time</dt>
+              <dt>Total hands-on time</dt>
               <dd>{formatValue({ key: "ct", label: "", value: analysis.summary.totalTouchTimeMinutes, format: "duration" })}</dd>
             </div>
             <div>
-              <dt>Total waste</dt>
+              <dt>Total delay time</dt>
               <dd>{formatValue({ key: "waste", label: "", value: analysis.summary.totalWasteMinutes, format: "duration" })}</dd>
             </div>
             <div>
-              <dt>Top contributor</dt>
+              <dt>Biggest delay step</dt>
               <dd>{analysis.summary.topWasteStep}</dd>
             </div>
           </dl>
         </article>
 
         <article className="throughput-insights-card">
-          <h3>Insights / Actions</h3>
+          <h3>What To Do</h3>
           <div className="throughput-insights-grid">
             {analysis.insights.map((insight, index) => (
               <article key={`${insight.finding}-${index}`} className="throughput-insight">
@@ -134,7 +134,7 @@ export function WasteAnalysisPanel({
 
       <div className="throughput-table-grid">
         <article className="throughput-table-card">
-          <h3>Summary Analysis</h3>
+          <h3>Key Numbers</h3>
           <div className="throughput-table-scroll">
             <table className="throughput-table">
               <tbody>
@@ -150,7 +150,7 @@ export function WasteAnalysisPanel({
         </article>
 
         <article className="throughput-table-card">
-          <h3>Step-Level Waste Breakdown</h3>
+          <h3>Delay By Step</h3>
           <div className="throughput-table-scroll">
             <table className="throughput-table throughput-steps-table">
               <thead>
@@ -159,11 +159,11 @@ export function WasteAnalysisPanel({
                   <th>LT</th>
                   <th>CT</th>
                   <th>Waste</th>
-                  <th>Waste %</th>
-                  <th>Value-add %</th>
-                  <th>Route weight</th>
-                  <th>Weighted waste</th>
-                  <th>Flags</th>
+                  <th>Delay %</th>
+                  <th>Value work %</th>
+                  <th>Flow share</th>
+                  <th>Weighted delay</th>
+                  <th>Notes</th>
                 </tr>
               </thead>
               <tbody>

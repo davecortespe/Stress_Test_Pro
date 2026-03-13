@@ -72,6 +72,12 @@ For stable overwriteable Replit deploy output, use:
 
 This writes to `deploy/replit/` and should not replace or modify the timestamped export flow.
 
+If the accepted app includes a simulator access gate:
+- preserve the gate behavior in the exported app
+- keep the accepted code check deterministic
+- do not add server-side auth dependencies just for bundle export
+- document the access code expectation in the generated README when applicable
+
 ## App integration
 Add button: `Export Scenario`
 
@@ -87,3 +93,4 @@ If prompting is unavailable, default name to app title + timestamp.
 - [ ] Bundle contains required files
 - [ ] CLI runner works with `node run_forecast.mjs --path <bundleFolder>`
 - [ ] README contains exact run command
+- [ ] Stable Replit deploy output preserves current landing-to-simulator access behavior when the app is gated

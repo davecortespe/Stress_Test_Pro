@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, type MouseEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { SimulatorAccessDialog } from "../components/SimulatorAccessDialog";
+import { grantSimulatorAccess, hasSimulatorAccess } from "../lib/simulatorAccess";
 import type { SimulatorResultsMode } from "../types/contracts";
 import { heroMockData, marketingContent, reportShowcase } from "./marketingContent";
 import "./landing.css";
@@ -62,10 +64,12 @@ function SectionIntro({
 
 function ReportShowcase({
   activeMode,
-  onSelectMode
+  onSelectMode,
+  onEnterSimulation
 }: {
   activeMode: SimulatorResultsMode;
   onSelectMode: (mode: SimulatorResultsMode) => void;
+  onEnterSimulation: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const activeReport = reportShowcase.find((item) => item.id === activeMode) ?? reportShowcase[0];
 
@@ -110,7 +114,7 @@ function ReportShowcase({
               </div>
             ))}
           </div>
-          <Link to="/sim" className="ls-btn ls-btn-primary">
+          <Link to="/sim" className="ls-btn ls-btn-primary" onClick={onEnterSimulation}>
             Enter the simulation
           </Link>
         </article>
@@ -121,8 +125,19 @@ function ReportShowcase({
 
 export default function LandingPage() {
   const [activeReportMode, setActiveReportMode] = useState<SimulatorResultsMode>("diagnosis");
+  const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false);
+  const navigate = useNavigate();
   const builtForLabel = marketingContent.footer.builtFor.replace("{{COMPANY_NAME}}", companyName);
   const aboutParagraphs = marketingContent.about.body.split("\n\n");
+
+  function requestSimulationEntry(event: MouseEvent<HTMLAnchorElement>): void {
+    event.preventDefault();
+    if (hasSimulatorAccess()) {
+      navigate("/sim");
+      return;
+    }
+    setIsAccessDialogOpen(true);
+  }
 
   return (
     <div className="landing-page">
@@ -163,8 +178,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <p className="ls-brand-callout hero-brand-callout">{operationalStressLabsBrand}</p>
-
           <div className="ls-cta-row">
             <button
                   type="button"
@@ -182,12 +195,16 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              <Link to="/sim" className="ls-inline-link">
+              <Link to="/sim" className="ls-inline-link" onClick={requestSimulationEntry}>
                 {marketingContent.hero.workspaceCta}
               </Link>
             </div>
 
-            <ReportShowcase activeMode={activeReportMode} onSelectMode={setActiveReportMode} />
+            <ReportShowcase
+              activeMode={activeReportMode}
+              onSelectMode={setActiveReportMode}
+              onEnterSimulation={requestSimulationEntry}
+            />
           </div>
         </section>
 
@@ -270,7 +287,7 @@ export default function LandingPage() {
             </div>
 
             <div className="ls-contact-actions">
-              <Link to="/sim" className="ls-btn ls-btn-primary">
+              <Link to="/sim" className="ls-btn ls-btn-primary" onClick={requestSimulationEntry}>
                 {marketingContent.enter.primaryCta}
               </Link>
               <a
@@ -289,7 +306,6 @@ export default function LandingPage() {
       <footer className="ls-footer section-shell">
         <div>
           <strong>{marketingContent.footer.attribution}</strong>
-          <p className="ls-brand-callout footer-brand-callout">{operationalStressLabsBrand}</p>
           <p>{builtForLabel}</p>
           <p>{marketingContent.footer.poweredBy}</p>
           <p className="ls-footer-signoff">{marketingContent.footer.signoff}</p>
@@ -299,9 +315,20 @@ export default function LandingPage() {
           <a href={leanStormingUrl} target="_blank" rel="noopener noreferrer">
             {marketingContent.footer.url}
           </a>
-          <Link to="/sim">Enter Simulation</Link>
+          <Link to="/sim" onClick={requestSimulationEntry}>Enter Simulation</Link>
         </div>
       </footer>
+
+      {isAccessDialogOpen ? (
+        <SimulatorAccessDialog
+          onValidated={() => {
+            grantSimulatorAccess();
+            setIsAccessDialogOpen(false);
+            navigate("/sim");
+          }}
+          onCancel={() => setIsAccessDialogOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

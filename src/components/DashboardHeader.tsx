@@ -10,6 +10,34 @@ const SPEED_OPTIONS: Array<{ value: SpeedMultiplier; label: string; hint?: strin
   { value: 1440, label: "5s/mo", hint: "Run a 720-hour horizon in about 5 seconds." }
 ];
 
+const RESULTS_MODES: Array<{ key: SimulatorResultsMode; label: string; description: string }> = [
+  {
+    key: "flow",
+    label: "FLOW MAP",
+    description: "Shows the live step-by-step flow, where work is piling up, and which step is acting as the bottleneck right now."
+  },
+  {
+    key: "diagnosis",
+    label: "DIAGNOSIS",
+    description: "Explains what is breaking, why it is happening, what it causes downstream, and the best move to stabilize the system."
+  },
+  {
+    key: "kaizen",
+    label: "KAIZEN",
+    description: "Highlights the strongest improvement opportunities, likely root causes, and where a Kaizen event can make the biggest difference."
+  },
+  {
+    key: "throughput",
+    label: "THROUGHPUT",
+    description: "Shows how the current bottleneck affects output, cost, and profit so you can see where added capacity creates the most value."
+  },
+  {
+    key: "waste",
+    label: "WASTE",
+    description: "Compares lead time with touch time to show where delay and non-value-added time are building up across the flow."
+  }
+];
+
 interface DashboardHeaderProps {
   brandLabel?: string;
   title: string;
@@ -114,22 +142,24 @@ export function DashboardHeader({
           <div className="header-control-card">
             <p className="header-control-label">View</p>
             <div className="results-mode-group" role="group" aria-label="results panel mode">
-              {[
-                { key: "flow", label: "FLOW MAP" },
-                { key: "diagnosis", label: "DIAGNOSIS" },
-                { key: "kaizen", label: "KAIZEN" },
-                { key: "throughput", label: "THROUGHPUT" },
-                { key: "waste", label: "WASTE" }
-              ].map((mode) => (
-                <button
-                  key={mode.key}
-                  type="button"
-                  className={`secondary mode-toggle-btn ${resultsMode === mode.key ? "is-active" : ""}`}
-                  onClick={() => onResultsModeChange(mode.key as SimulatorResultsMode)}
-                  aria-pressed={resultsMode === mode.key}
-                >
-                  {mode.label}
-                </button>
+              {RESULTS_MODES.map((mode) => (
+                <div key={mode.key} className="results-mode-item">
+                  <button
+                    type="button"
+                    className={`secondary mode-toggle-btn ${resultsMode === mode.key ? "is-active" : ""}`}
+                    onClick={() => onResultsModeChange(mode.key)}
+                    aria-pressed={resultsMode === mode.key}
+                    aria-describedby={`results-mode-help-${mode.key}`}
+                  >
+                    <span className="mode-toggle-label">{mode.label}</span>
+                    <span className="mode-toggle-info" aria-hidden="true">
+                      i
+                    </span>
+                  </button>
+                  <div id={`results-mode-help-${mode.key}`} className="results-mode-tooltip" role="tooltip">
+                    {mode.description}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

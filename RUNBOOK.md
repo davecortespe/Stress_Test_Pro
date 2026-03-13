@@ -23,6 +23,10 @@ Use this repository as a reusable starter for simulator projects with a skills-f
 - `/` serves the FlowStress AI landing page
 - `/sim` serves the simulator
 - The simulator route is lazy-loaded so landing-page visitors do not pull model and graph code until they open `/sim`
+- Simulator access is gated by a validation code prompt before `/sim` opens
+- Accepted code: `LEAN`
+- On successful entry, the browser stores access in a cookie so repeat visits on the same browser do not prompt again
+- Direct visits to `/sim` must enforce the same code gate as the landing-page CTAs
 
 ### Demo request configuration
 
@@ -119,6 +123,9 @@ Current template behavior for the top control ribbon:
 - Playback controls are placed below actions in the same card
 - `Reset Time` resets elapsed simulation time and view state only; it does not reset edited parameters
 - Right status strip contains sim timer/progress and scenario library chip
+- View buttons stretch across the available card width and use larger click targets
+- Playback speed buttons are larger, high-visibility direct toggles
+- Each view button contains an in-button `(i)` affordance with a short hover/focus explanation of that report
 
 ## On-demand Replit publish workflow
 
@@ -175,6 +182,8 @@ How to run after publishing:
 - `models/vsm_graph.json` (legacy/standard compile path)
 - `models/master_data.json` (legacy/standard compile path)
 - `models/compiled_sim_spec.json` (legacy/standard compile path)
+- `src/lib/simulatorAccess.ts`
+- `src/components/SimulatorAccessDialog.tsx`
 
 ## Skills
 
@@ -203,3 +212,7 @@ When using an assumptions-plan-execute-deliver workflow, insert `operational-dia
 - Forecast workflow emits active compiled model, committed scenario, metrics, and diagnosis artifacts
 - UI still renders using mocked output if DES is not implemented
 - Demand seeding assumptions are explicit and traceable in compiled model assumptions
+- Landing page requires access code `LEAN` before simulator entry unless prior acceptance cookie exists
+- Direct `/sim` navigation is gated by the same access flow
+- View surfaces include `FLOW MAP`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, and `WASTE`
+- Waste and Throughput report wording should remain operator-friendly without changing metrics or section structure

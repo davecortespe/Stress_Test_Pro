@@ -243,7 +243,7 @@ function buildValidations(
       code: "selling-price-missing",
       severity: "error",
       metricKey: "sellingPrice",
-      message: "Transfer price per unit is required before throughput economics can be computed."
+      message: "Add transfer price per unit before this report can calculate throughput and margin."
     });
   }
 
@@ -253,7 +253,7 @@ function buildValidations(
       code: "material-cost-missing",
       severity: "error",
       metricKey: "materialCostPerUnit",
-      message: `Material cost is missing for: ${missingMaterial.map((row) => row.stepName).join(", ")}.`
+      message: `Add material cost for: ${missingMaterial.map((row) => row.stepName).join(", ")}.`
     });
   }
 
@@ -263,7 +263,7 @@ function buildValidations(
       code: "labor-rate-missing",
       severity: "warning",
       metricKey: "laborCostPerUnit",
-      message: `Labor rate is missing for: ${missingLabor.map((row) => row.stepName).join(", ")}.`
+      message: `Add labor rate for: ${missingLabor.map((row) => row.stepName).join(", ")}.`
     });
   }
 
@@ -273,7 +273,7 @@ function buildValidations(
       code: "equipment-rate-missing",
       severity: "warning",
       metricKey: "equipmentCostPerUnit",
-      message: `Equipment rate is missing for: ${missingEquipment.map((row) => row.stepName).join(", ")}.`
+      message: `Add equipment rate for: ${missingEquipment.map((row) => row.stepName).join(", ")}.`
     });
   }
 
@@ -286,7 +286,7 @@ function buildValidations(
       code: "step-time-missing",
       severity: "error",
       metricKey: "bottleneckTimePerUnit",
-      message: `Labor/equipment conversion is blocked because effective step time is invalid for: ${missingStepTime
+      message: `Labor and equipment cost per unit cannot be calculated until valid step time exists for: ${missingStepTime
         .map((row) => row.stepName)
         .join(", ")}.`
     });
@@ -297,7 +297,7 @@ function buildValidations(
       code: "bottleneck-time-invalid",
       severity: "error",
       metricKey: "bottleneckTimePerUnit",
-      message: "Bottleneck-minute metrics are blocked because the active bottleneck cycle time or effective parallel capacity is invalid."
+      message: "Per-bottleneck-minute results are blocked because the active bottleneck time or parallel capacity is not valid."
     });
   }
 
@@ -306,7 +306,7 @@ function buildValidations(
       code: "next-constraint-missing",
       severity: "error",
       metricKey: "estimatedGainUnits",
-      message: "Estimated gain is blocked because the next bottleneck constraint could not be derived."
+      message: "The expected gain cannot be estimated because the next limiting step could not be determined."
     });
   }
 
@@ -323,9 +323,9 @@ function buildInsights(args: {
   if (blockingErrors.length > 0) {
     return [
       {
-        finding: "Throughput economics are incomplete.",
-        impactEstimate: `${blockingErrors.length} blocking input issue(s) must be resolved before the summary can be trusted.`,
-        recommendedAction: "Enter transfer price and missing step costs, then reopen the Throughput Analysis panel."
+        finding: "This throughput report is not ready yet.",
+        impactEstimate: `${blockingErrors.length} required input issue(s) must be fixed before the numbers can be trusted.`,
+        recommendedAction: "Add transfer price and any missing step costs, then review this report again."
       }
     ];
   }
@@ -339,23 +339,23 @@ function buildInsights(args: {
 
   return [
     {
-      finding: `${summary.primaryBottleneck} is the current economic constraint.`,
-      impactEstimate: `Relieving it changes throughput by ${formatPct(gainPercent, 1)} and about ${formatCurrency(gainDollars)} per hour-equivalent of throughput contribution.`,
-      recommendedAction: `Focus the next improvement on ${summary.primaryBottleneck} first, then validate the shift to ${summary.nextBottleneck}.`
+      finding: `${summary.primaryBottleneck} is the step holding back output right now.`,
+      impactEstimate: `If that step is improved, output changes by ${formatPct(gainPercent, 1)} and adds about ${formatCurrency(gainDollars)} in throughput value for each hour of added output.`,
+      recommendedAction: `Start the next improvement at ${summary.primaryBottleneck}, then confirm whether the limit moves to ${summary.nextBottleneck}.`
     },
     {
-      finding: `The next bottleneck after relief is ${summary.nextBottleneck}.`,
-      impactEstimate: `Projected throughput rises from ${(summary.currentThroughput ?? 0).toFixed(3)} to ${(summary.improvedThroughput ?? 0).toFixed(3)} units/hr before the next constraint binds.`,
-      recommendedAction: `Use the relief scenario as a bounded intervention, not a blanket capacity increase across all steps.`
+      finding: `If the current bottleneck is relieved, ${summary.nextBottleneck} becomes the next limit.`,
+      impactEstimate: `Projected output rises from ${(summary.currentThroughput ?? 0).toFixed(3)} to ${(summary.improvedThroughput ?? 0).toFixed(3)} units/hr before the next limit is hit.`,
+      recommendedAction: "Treat this as a targeted fix, not a broad capacity increase across every step."
     },
     {
-      finding: topCostStep ? `${topCostStep.stepName} is the largest fully loaded cost driver per unit.` : "Step-level cost signal is limited.",
+      finding: topCostStep ? `${topCostStep.stepName} is the highest-cost step per unit.` : "Step-level cost detail is still limited.",
       impactEstimate: topCostStep
-        ? `Its fully loaded step cost is ${formatCurrency(topCostStep.totalStepCost ?? 0)} per unit.`
-        : "Not all step costs are present, so cost-driver ranking is incomplete.",
+        ? `That step adds about ${formatCurrency(topCostStep.totalStepCost ?? 0)} per unit.`
+        : "Some step costs are still missing, so the cost ranking is not complete.",
       recommendedAction: topCostStep
-        ? `Review material cost and hourly labor/equipment rates at ${topCostStep.stepName} before making downstream pricing or margin decisions.`
-        : "Complete the missing step-level cost fields to unlock cost-driver analysis."
+        ? `Review material cost and hourly labor and equipment rates at ${topCostStep.stepName} before making pricing or margin decisions.`
+        : "Fill in the missing step cost fields to complete the cost view."
     }
   ];
 }
@@ -546,53 +546,53 @@ export function buildThroughputAnalysis(
     },
     {
       key: "tocThroughputPerUnit",
-      label: "TOC throughput per unit",
+      label: "Throughput value per unit",
       value: summary.tocThroughputPerUnit,
       format: "currency"
     },
     {
       key: "fullyLoadedProfitPerUnit",
-      label: "Fully loaded profit per unit",
+      label: "Profit per unit",
       value: summary.fullyLoadedProfitPerUnit,
       format: "currency"
     },
-    { key: "primaryBottleneck", label: "Primary bottleneck", value: summary.primaryBottleneck, format: "text" },
+    { key: "primaryBottleneck", label: "Current bottleneck", value: summary.primaryBottleneck, format: "text" },
     {
       key: "bottleneckTimePerUnit",
-      label: "Bottleneck time per unit",
+      label: "Time at bottleneck per unit",
       value: summary.bottleneckTimePerUnit,
       format: "duration"
     },
     {
       key: "tocThroughputPerBottleneckMinute",
-      label: "TOC throughput per bottleneck minute",
+      label: "Throughput value per bottleneck minute",
       value: summary.tocThroughputPerBottleneckMinute,
       format: "currency"
     },
-    { key: "nextBottleneck", label: "Next bottleneck", value: summary.nextBottleneck, format: "text" },
+    { key: "nextBottleneck", label: "Next limit if fixed", value: summary.nextBottleneck, format: "text" },
     {
       key: "estimatedGainUnits",
-      label: "Estimated gain if primary bottleneck is relieved",
+      label: "More output if bottleneck is fixed",
       value: summary.estimatedGainUnits,
       format: "number",
       decimals: 3
     },
     {
       key: "estimatedGainDollars",
-      label: "Estimated gain dollars",
+      label: "More throughput dollars",
       value: summary.estimatedGainDollars,
       format: "currency"
     },
     {
       key: "estimatedGainPercent",
-      label: "Estimated gain percent",
+      label: "Output gain percent",
       value: summary.estimatedGainPercent,
       format: "percent",
       decimals: 1
     },
     {
       key: "efficiencyStatus",
-      label: "Efficiency status",
+      label: "Improvement headroom",
       value: efficiencyLabel(summary.efficiencyStatus),
       format: "text"
     }

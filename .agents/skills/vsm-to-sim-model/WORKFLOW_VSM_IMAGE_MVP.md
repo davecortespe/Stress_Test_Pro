@@ -56,6 +56,8 @@ Rules:
 - Bind left parameters to model inputs.
 - Bind KPI cards and node styling to forecast outputs.
 - Keep graph zoom/pan and animated dashed edges.
+- Keep result views at: `FLOW MAP`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, `WASTE`.
+- Add short report-explainer `(i)` affordances inside the view buttons, not outside them.
 
 Exit gate:
 - UI renders from model/config data with no hardcoded domain labels.
@@ -90,8 +92,17 @@ Rules:
 - Left parameters include `Simulation Horizon` presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
 - Top ribbon should stay compact to preserve vertical space for simulation steps.
 - View mode buttons (`FLOW MAP`, `DIAGNOSIS`, `THROUGHPUT`, `WASTE`) should use comfortably large tap/click targets.
+- View mode buttons should fill the view card width evenly and keep the `(i)` explainer inside the button.
+- `KAIZEN` report is part of the standard report set and should sit with the other view buttons.
+- Throughput and Waste report language should read clearly for ops personnel without changing metrics or report structure.
 - Node cards: `util`, `lot/wip`, `Completed Lot`, `status` + WIP fill strip.
 - Step edit: double-click node opens near-node popover on desktop (modal on small screens).
+
+## Access Gate Contract
+- Landing-page entry into `/sim` must be gated by a validation prompt.
+- Accepted code: `LEAN`.
+- Successful validation must persist in browser cookie storage so the same browser is not prompted every time.
+- Direct route access to `/sim` must use the same validation rule.
 
 ## Delivery Hygiene
 - Work in batches.

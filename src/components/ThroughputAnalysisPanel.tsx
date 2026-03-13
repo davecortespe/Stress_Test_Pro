@@ -55,7 +55,7 @@ export function ThroughputAnalysisPanel({
           <p className="throughput-eyebrow">Throughput Analysis</p>
           <h2>{analysis.scenarioLabel}</h2>
           <p className="throughput-meta">
-            {analysis.productFamilyLabel ? `Product family: ${analysis.productFamilyLabel}` : "Current scenario"}
+            {analysis.productFamilyLabel ? `Product family: ${analysis.productFamilyLabel}` : "Current setup"}
           </p>
         </div>
         <div className="throughput-toolbar-actions">
@@ -79,7 +79,7 @@ export function ThroughputAnalysisPanel({
 
       {analysis.validations.length > 0 ? (
         <section className="throughput-validations">
-          <h3>Validation</h3>
+          <h3>Check Before Use</h3>
           <ul>
             {analysis.validations.map((validation) => (
               <li
@@ -95,29 +95,29 @@ export function ThroughputAnalysisPanel({
 
       <div className="throughput-summary-shell">
         <article className="throughput-hero-card">
-          <h3>Bottleneck Leverage</h3>
+          <h3>Where Output Is Limited</h3>
           <dl>
             <div>
-              <dt>Primary bottleneck</dt>
+              <dt>Current bottleneck</dt>
               <dd>{analysis.summary.primaryBottleneck}</dd>
             </div>
             <div>
-              <dt>Next bottleneck</dt>
+              <dt>Next limit if fixed</dt>
               <dd>{analysis.summary.nextBottleneck}</dd>
             </div>
             <div>
-              <dt>Estimated gain</dt>
+              <dt>More output if fixed</dt>
               <dd>{formatValue({ key: "estimatedGainUnits", label: "", value: analysis.summary.estimatedGainUnits, format: "number", decimals: 3 })}</dd>
             </div>
             <div>
-              <dt>Estimated gain dollars</dt>
+              <dt>More throughput dollars</dt>
               <dd>{formatValue({ key: "estimatedGainDollars", label: "", value: analysis.summary.estimatedGainDollars, format: "currency" })}</dd>
             </div>
           </dl>
         </article>
 
         <article className="throughput-insights-card">
-          <h3>Insights / Actions</h3>
+          <h3>What To Do</h3>
           <div className="throughput-insights-grid">
             {analysis.insights.map((insight, index) => (
               <article key={`${insight.finding}-${index}`} className="throughput-insight">
@@ -132,7 +132,7 @@ export function ThroughputAnalysisPanel({
 
       <div className="throughput-table-grid">
         <article className="throughput-table-card">
-          <h3>Summary Analysis</h3>
+          <h3>Key Numbers</h3>
           <div className="throughput-table-scroll">
             <table className="throughput-table">
               <tbody>
@@ -148,7 +148,7 @@ export function ThroughputAnalysisPanel({
         </article>
 
         <article className="throughput-table-card">
-          <h3>Step-Level Cost Breakdown</h3>
+          <h3>Cost By Step</h3>
           <div className="throughput-table-scroll">
             <table className="throughput-table throughput-steps-table">
               <thead>
@@ -189,7 +189,7 @@ export function ThroughputAnalysisPanel({
       </div>
 
       <article className="throughput-table-card">
-        <h3>P&amp;L Report</h3>
+        <h3>Money Summary</h3>
         <div className="throughput-table-scroll">
           <table className="throughput-table">
             <thead>
