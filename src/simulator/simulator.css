@@ -1159,6 +1159,171 @@
   margin-top: 8px;
 }
 
+.kaizen-panel {
+  padding-bottom: 4px;
+}
+
+.kaizen-opportunity-grid,
+.kaizen-fishbone-grid {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.kaizen-opportunity-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.kaizen-fishbone-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.kaizen-opportunity-card,
+.kaizen-fishbone-card {
+  position: relative;
+  margin: 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(65, 103, 149, 0.45);
+  background:
+    linear-gradient(170deg, rgba(10, 24, 41, 0.9), rgba(6, 18, 33, 0.93)),
+    radial-gradient(circle at 100% 0, rgba(30, 224, 255, 0.08), transparent 38%);
+}
+
+.kaizen-opportunity-card::after,
+.kaizen-fishbone-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 11px;
+  border: 1px solid rgba(167, 216, 235, 0.06);
+  pointer-events: none;
+}
+
+.kaizen-opportunity-card.category-manpower,
+.kaizen-fishbone-card.category-manpower {
+  border-color: rgba(64, 242, 181, 0.36);
+}
+
+.kaizen-opportunity-card.category-machine,
+.kaizen-fishbone-card.category-machine {
+  border-color: rgba(30, 224, 255, 0.42);
+}
+
+.kaizen-opportunity-card.category-method,
+.kaizen-fishbone-card.category-method {
+  border-color: rgba(245, 200, 76, 0.42);
+}
+
+.kaizen-opportunity-card.category-material,
+.kaizen-fishbone-card.category-material {
+  border-color: rgba(255, 172, 108, 0.42);
+}
+
+.kaizen-opportunity-card.category-measurement,
+.kaizen-fishbone-card.category-measurement {
+  border-color: rgba(255, 95, 109, 0.42);
+}
+
+.kaizen-opportunity-header,
+.kaizen-fishbone-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.kaizen-opportunity-header h4,
+.kaizen-fishbone-card h4,
+.kaizen-detail-block h5 {
+  margin: 0;
+}
+
+.kaizen-rank {
+  margin: 0 0 6px;
+  color: #90a8c8;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kaizen-score-badge {
+  display: grid;
+  gap: 4px;
+  min-width: 88px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(65, 103, 149, 0.52);
+  background: rgba(6, 19, 33, 0.62);
+  text-align: right;
+}
+
+.kaizen-score-badge span,
+.kaizen-evidence-grid span,
+.kaizen-detail-block h5,
+.kaizen-fishbone-card li {
+  color: #97b1d3;
+}
+
+.kaizen-score-badge span,
+.kaizen-evidence-grid span,
+.kaizen-detail-block h5 {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kaizen-score-badge strong,
+.kaizen-evidence-grid strong,
+.kaizen-fishbone-header strong {
+  font-family: "IBM Plex Mono", monospace;
+  color: #f4f9ff;
+}
+
+.kaizen-score-badge strong {
+  font-size: 1rem;
+}
+
+.kaizen-copy {
+  margin: 12px 0 0;
+  color: #e3edfd;
+  line-height: 1.55;
+}
+
+.kaizen-evidence-grid {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.kaizen-evidence-grid > div {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(65, 103, 149, 0.35);
+  background: rgba(5, 16, 29, 0.56);
+}
+
+.kaizen-detail-block {
+  margin-top: 12px;
+}
+
+.kaizen-detail-block p,
+.kaizen-fishbone-card li {
+  margin: 6px 0 0;
+  line-height: 1.5;
+  color: #dce7fb;
+}
+
+.kaizen-fishbone-card ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
 .throughput-table {
   width: 100%;
   margin-top: 12px;

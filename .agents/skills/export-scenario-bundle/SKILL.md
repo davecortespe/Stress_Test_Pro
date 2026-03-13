@@ -22,8 +22,16 @@ Include:
 - `compiled_forecast_model.json` (copy from `models/active/`)
 - `scenario_committed.json` (committed scenario state used for metrics)
 - `result_metrics.json` (optional latest `globalMetrics` + `nodeMetrics`)
+- `operational_diagnosis.json` (accepted diagnosis snapshot)
+- `operational_diagnosis.md` (human-readable diagnosis)
 - `README.md` (how to run bundle)
 - `run_forecast.mjs` (portable deterministic CLI runner)
+- `browser_forecast.html` (standalone browser runner)
+
+Optional full app package (when `includeFullApp=true`):
+- `app/`
+- `server.mjs`
+- `start_full_app.bat`
 
 ## Hard rules
 1. Create a new bundle directory each run; no overwrite.
@@ -31,6 +39,7 @@ Include:
 3. Keep runner dependency-free (Node built-ins only).
 4. If required value is missing, fail with explicit error.
 5. If `includeMetrics=false`, omit `result_metrics.json`.
+6. Always preserve accepted diagnosis files if present in `models/active/`.
 
 ## Runner requirements (`run_forecast.mjs`)
 Runner must:
@@ -47,6 +56,21 @@ Runner must:
 Supported args:
 - `--path <bundleFolder>`
 - `--json` for machine-readable output
+
+Exporter args commonly used:
+- `--name <scenarioName>`
+- `--scenario <path/to/scenario_committed.json>`
+- `--metrics <path/to/result_metrics.json>`
+- `--includeMetrics true|false`
+- `--includeFullApp true|false`
+- `--skipBuild true|false`
+
+## Replit publish workflow (separate from timestamped bundle)
+For stable overwriteable Replit deploy output, use:
+
+- `npm run export:replit`
+
+This writes to `deploy/replit/` and should not replace or modify the timestamped export flow.
 
 ## App integration
 Add button: `Export Scenario`

@@ -41,7 +41,7 @@ Apply a strict dark operations simulator UI style matching the provided referenc
 
 ### Hard requirements
 - Left fixed configuration panel with grouped sliders and numeric badges.
-- Top header with title, subtitle, Save Scenario button, and Live indicator.
+- Top header with compact spacing, brand line above title, actions, and live state.
 - KPI cards row with glass/dark panels, glow accents, and clear hierarchy.
 - Central simulation canvas with:
   - dark grid background
@@ -79,20 +79,24 @@ Apply this profile when building the same style of cockpit achieved in this repo
 
 ### Header behavior and placement
 - Left cluster:
+  - yellow brand mark: `LeanStorming Operational Stress Labs`
   - title + subtitle
-  - `Start/Pause` toggle
-  - `Reset`
+  - actions: `Start/Pause`, `Reset Time`, `Import Library CSV`, `Save Scenario`
+  - playback chips below actions: `x1`, `x2`, `x5`, `x50`, `x200`, `5s/mo`
   - live indicator + staged chip (when paused with staged edits)
 - Right cluster:
   - large `Sim Time {elapsed} / {horizon} h` chip
-  - speed chips `x1`, `x2`, `x5`, `x50`, `x200`
+  - progress bar + percent
   - `Scenarios` chip placeholder
 
 ### Simulation controls UX
 - Speed chips are direct toggles (no dropdown).
 - `Start/Pause` is the primary control (single toggle).
-- `Reset` restores baseline scenario and view/time state.
+- `Reset Time` resets elapsed time and graph view-fit state only.
+- `Reset Time` must not restore baseline parameters or discard user edits.
 - `Simulation Horizon` remains in the left parameter panel with presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
+- Keep top ribbon compact so graph/node rows stay visually dominant.
+- View mode buttons should be larger than default chips for easy click/tap targeting.
 
 ### Node card contract
 - Must show at least:
@@ -152,9 +156,9 @@ Apply this profile when building the same style of cockpit achieved in this repo
 ## Locked layout regions (must implement)
 
 ### Header (top bar)
-- Left: title + subtitle (from config)
-- Left controls: Start/Pause + Reset + Live indicator
-- Right status strip: large Sim Time chip + speed chips + scenario chip
+- Left: brand mark + title + subtitle (from config)
+- Left controls: actions grid + playback row + live/staged state
+- Right status strip: large Sim Time chip + progress + scenario chip
 
 ### Body (two-column)
 - Left sidebar: Parameters panel (scrollable)
@@ -266,9 +270,11 @@ The app must render a working dashboard immediately.
 
 ## Acceptance checklist (must pass)
 - [ ] Sidebar renders parameter groups from config with proper controls and value badges
-- [ ] Header uses Start/Pause + Reset with live/staged indicators
+- [ ] Header uses Start/Pause + Reset Time with live/staged indicators
+- [ ] Brand line appears above title with warning/yellow styling
 - [ ] Large timer chip is on the right side of header
-- [ ] Speed chips x1/x2/x5/x50/x200 are visible and selectable
+- [ ] Speed chips x1/x2/x5/x50/x200/5s/mo are visible and selectable below actions
+- [ ] Reset Time does not wipe edited parameters
 - [ ] Simulation Horizon control includes 8 hrs, 16 hrs, 24 hrs, 1 week, and 1 month presets
 - [ ] KPI row renders cards from config and formats values
 - [ ] KPI row has glass/dark panels, glow accents, and clear hierarchy

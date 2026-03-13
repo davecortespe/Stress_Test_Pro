@@ -117,6 +117,7 @@ export function DashboardHeader({
               {[
                 { key: "flow", label: "FLOW MAP" },
                 { key: "diagnosis", label: "DIAGNOSIS" },
+                { key: "kaizen", label: "KAIZEN" },
                 { key: "throughput", label: "THROUGHPUT" },
                 { key: "waste", label: "WASTE" }
               ].map((mode) => (

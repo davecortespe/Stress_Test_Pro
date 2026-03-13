@@ -156,7 +156,7 @@ export interface DashboardConfig {
   };
 }
 
-export type SimulatorResultsMode = "flow" | "diagnosis" | "throughput" | "waste";
+export type SimulatorResultsMode = "flow" | "diagnosis" | "kaizen" | "throughput" | "waste";
 
 export interface ChecklistItem {
   severity: "warning" | "critical";
@@ -414,6 +414,67 @@ export interface WasteAnalysisResult {
   summaryRows: WasteSummaryRow[];
   stepRows: WasteStepRow[];
   insights: WasteInsight[];
+}
+
+export type KaizenFishboneCategoryKey =
+  | "manpower"
+  | "machine"
+  | "method"
+  | "material"
+  | "measurement";
+
+export interface KaizenOpportunityEvidence {
+  utilization: number | null;
+  queueRisk: number | null;
+  bottleneckIndex: number | null;
+  leadTimeMinutes: number | null;
+  wipQty: number | null;
+  downtimePct: number | null;
+  variabilityCv: number | null;
+}
+
+export interface KaizenOpportunity {
+  rank: number;
+  fishboneCategory: KaizenFishboneCategoryKey;
+  stepId: string | null;
+  stepName: string;
+  title: string;
+  score: number;
+  rationale: string;
+  likelyRootCause: string;
+  expectedImpact: string;
+  recommendedEvent: string;
+  confidence: "high" | "medium" | "low";
+  evidence: KaizenOpportunityEvidence;
+}
+
+export interface KaizenFishboneCategory {
+  key: KaizenFishboneCategoryKey;
+  label: string;
+  headline: string;
+  priorityScore: number;
+  likelyCauses: string[];
+}
+
+export interface KaizenKpiSummary {
+  topOpportunity: string;
+  topOpportunityScore: number;
+  opportunityCount: number;
+  fishboneFocus: string;
+  missingSignalsCount: number;
+}
+
+export interface KaizenReportResult {
+  scenarioLabel: string;
+  primaryConstraint: string;
+  headline: string;
+  practitionerSummary: string;
+  selectionBasis: string;
+  confidence: "high" | "medium" | "low";
+  topOpportunities: KaizenOpportunity[];
+  fishboneCategories: KaizenFishboneCategory[];
+  missingSignals: string[];
+  kpiSummary: KaizenKpiSummary;
 }
 
 export interface ScenarioLibraryEntry {

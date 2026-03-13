@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { GraphCanvas } from "../components/GraphCanvas";
+import { KaizenReportPanel } from "../components/KaizenReportPanel";
 import { KpiRow } from "../components/KpiRow";
 import { OperationalDiagnosisCard } from "../components/OperationalDiagnosisCard";
 import { ParameterSidebar } from "../components/ParameterSidebar";
@@ -12,6 +13,7 @@ import { createBottleneckForecastOutput } from "../lib/bottleneckForecast";
 import {
   buildOperationalDiagnosis
 } from "../lib/operationalDiagnosis";
+import { buildKaizenReport } from "../lib/kaizenReport";
 import {
   buildThroughputAnalysis,
   buildThroughputStepCsv,
@@ -105,6 +107,37 @@ const wasteKpis: KpiConfig[] = [
     key: "topWasteStep",
     label: "Top Waste Step",
     format: "text"
+  }
+];
+
+const kaizenKpis: KpiConfig[] = [
+  {
+    key: "topOpportunity",
+    label: "Top Kaizen Focus",
+    format: "text"
+  },
+  {
+    key: "topOpportunityScore",
+    label: "Event Score",
+    format: "number",
+    decimals: 1
+  },
+  {
+    key: "fishboneFocus",
+    label: "Fishbone Focus",
+    format: "text"
+  },
+  {
+    key: "opportunityCount",
+    label: "Top Events",
+    format: "number",
+    decimals: 0
+  },
+  {
+    key: "missingSignalsCount",
+    label: "Missing Signals",
+    format: "number",
+    decimals: 0
   }
 ];
 
@@ -226,6 +259,10 @@ export default function SimulatorApp() {
     () => buildWasteAnalysis(forecastModel, committedScenario, output),
     [forecastModel, committedScenario, output]
   );
+  const kaizenReport = useMemo(
+    () => buildKaizenReport(forecastModel, committedScenario, output),
+    [forecastModel, committedScenario, output]
+  );
 
   const inspectorStep = useMemo(
     () => forecastModel.stepModels.find((step) => step.stepId === inspectorStepId) ?? null,
@@ -275,6 +312,8 @@ export default function SimulatorApp() {
   const activeKpis =
     resultsMode === "throughput"
       ? throughputKpis
+      : resultsMode === "kaizen"
+        ? kaizenKpis
       : resultsMode === "waste"
         ? wasteKpis
         : dashboardConfig.kpis;
@@ -288,6 +327,16 @@ export default function SimulatorApp() {
   const resolvedStepScenario = useMemo(
     () => buildResolvedStepScenario(forecastModel.stepModels, committedScenario, inspectorDefaultsByStepId),
     [committedScenario, forecastModel.stepModels, inspectorDefaultsByStepId]
+  );
+  const kaizenMetrics = useMemo<Record<string, number | string>>(
+    () => ({
+      topOpportunity: kaizenReport.kpiSummary.topOpportunity,
+      topOpportunityScore: kaizenReport.kpiSummary.topOpportunityScore,
+      opportunityCount: kaizenReport.kpiSummary.opportunityCount,
+      fishboneFocus: kaizenReport.kpiSummary.fishboneFocus,
+      missingSignalsCount: kaizenReport.kpiSummary.missingSignalsCount
+    }),
+    [kaizenReport.kpiSummary]
   );
   const activeMetrics = useMemo(() => {
     if (resultsMode === "throughput") {
@@ -310,8 +359,12 @@ export default function SimulatorApp() {
       };
     }
 
+    if (resultsMode === "kaizen") {
+      return kaizenMetrics;
+    }
+
     return output.globalMetrics;
-  }, [output.globalMetrics, resultsMode, throughputAnalysis.summary, wasteAnalysis.summary]);
+  }, [kaizenMetrics, output.globalMetrics, resultsMode, throughputAnalysis.summary, wasteAnalysis.summary]);
 
   const openScenarioLibraryCsv = async () => {
     try {
@@ -454,6 +507,10 @@ export default function SimulatorApp() {
 
             {resultsMode === "diagnosis" ? (
               <OperationalDiagnosisCard diagnosis={operationalDiagnosis} />
+            ) : null}
+
+            {resultsMode === "kaizen" ? (
+              <KaizenReportPanel report={kaizenReport} />
             ) : null}
 
             {resultsMode === "throughput" ? (

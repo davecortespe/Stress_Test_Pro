@@ -82,9 +82,14 @@ Rules:
 - Respect reduced-motion preferences.
 
 ## UX Contract (template baseline)
-- Header left: `Start/Pause`, `Reset`, live indicator.
-- Header right: grouped simulation controls with timer, speed chips (`x1/x2/x5/x50/x200/x1440`) and scenarios chip.
+- Header title block includes brand line above title: `LeanStorming Operational Stress Labs` in warning/yellow styling.
+- Header actions use: `Start/Pause`, `Reset Time`, `Import Library CSV`, `Save Scenario`.
+- `Reset Time` resets elapsed time (and viewport fit) only; it does not revert edited parameters/scenario state.
+- Playback speed controls render below the actions row in the same card (`x1/x2/x5/x50/x200/5s/mo`).
+- Header right keeps simulation timer/progress and scenarios chip.
 - Left parameters include `Simulation Horizon` presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
+- Top ribbon should stay compact to preserve vertical space for simulation steps.
+- View mode buttons (`FLOW MAP`, `DIAGNOSIS`, `THROUGHPUT`, `WASTE`) should use comfortably large tap/click targets.
 - Node cards: `util`, `lot/wip`, `Completed Lot`, `status` + WIP fill strip.
 - Step edit: double-click node opens near-node popover on desktop (modal on small screens).
 

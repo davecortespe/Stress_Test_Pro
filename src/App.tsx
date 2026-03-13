@@ -11,7 +11,8 @@ function RouteEffects() {
     const routeClass = location.pathname.startsWith("/sim") ? "route-sim" : "route-landing";
     document.body.classList.remove("route-landing", "route-sim");
     document.body.classList.add(routeClass);
-    document.title = routeClass === "route-sim" ? "FlowStress AI Simulator" : "FlowStress AI";
+    document.title =
+      routeClass === "route-sim" ? "Operational Stress Labs Simulator" : "LeanStorming Operational Intelligence";
   }, [location.pathname]);
 
   return null;

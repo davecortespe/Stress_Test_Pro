@@ -5,7 +5,7 @@
 Use this repository as a reusable starter for simulator projects with a skills-first workflow:
 
 - Generic dashboard shell (left parameters, top KPIs, center graph/simulation)
-- VSM + tables to compiled simulation spec pipeline
+- VSM ingestion to deterministic non-DES forecast outputs (with optional DES compile path)
 - Domain swaps through config/model data, not UI rewrites
 - Operational diagnosis of simulation outputs for leader-ready decisions
 
@@ -110,6 +110,16 @@ Recommended deterministic refresh order:
 2. `node scripts/generate-result-metrics.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --out models/active/result_metrics.json`
 3. `node scripts/generate-operational-diagnosis.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --metrics models/active/result_metrics.json --outJson models/active/operational_diagnosis.json --outMd models/active/operational_diagnosis.md`
 
+## Simulator header contract
+
+Current template behavior for the top control ribbon:
+
+- Brand line above title: `LeanStorming Operational Stress Labs` (warning/yellow treatment)
+- Actions row: `Start/Pause`, `Reset Time`, `Import Library CSV`, `Save Scenario`
+- Playback controls are placed below actions in the same card
+- `Reset Time` resets elapsed simulation time and view state only; it does not reset edited parameters
+- Right status strip contains sim timer/progress and scenario library chip
+
 ## On-demand Replit publish workflow
 
 Use this only when you want a stable deployment target for Replit. It keeps the normal timestamped export flow intact, then republishes the latest accepted bundle into `deploy/replit/`:
@@ -136,11 +146,15 @@ What it writes:
 - `deploy/replit/app/`
 - `deploy/replit/server.mjs`
 - `deploy/replit/package.json`
+- `deploy/replit/README.md`
+- `deploy/replit/dashboard_config.json`
+- `deploy/replit/vsm_graph.json`
+- `deploy/replit/master_data.json`
+- `deploy/replit/compiled_forecast_model.json`
 - `deploy/replit/scenario_committed.json`
 - `deploy/replit/result_metrics.json`
 - `deploy/replit/operational_diagnosis.json`
 - `deploy/replit/operational_diagnosis.md`
-- `deploy/replit/browser_forecast.html`
 - `deploy/replit/publish_manifest.json`
 
 How to run after publishing:
@@ -150,18 +164,28 @@ How to run after publishing:
 
 ## Key files
 
-- `models/vsm_graph.json`
-- `models/master_data.json`
-- `models/compiled_sim_spec.json`
-- `models/missing_data_checklist.json`
 - `models/dashboard_config.json`
+- `models/active/vsm_graph.json`
+- `models/active/master_data.json`
+- `models/active/compiled_forecast_model.json`
+- `models/active/scenario_committed.json`
+- `models/active/result_metrics.json`
+- `models/active/operational_diagnosis.json`
+- `models/active/operational_diagnosis.md`
+- `models/vsm_graph.json` (legacy/standard compile path)
+- `models/master_data.json` (legacy/standard compile path)
+- `models/compiled_sim_spec.json` (legacy/standard compile path)
 
 ## Skills
 
+- `.agents/skills/export-scenario-bundle/SKILL.md`
+- `.agents/skills/operational-diagnosis/SKILL.md`
+- `.agents/skills/project-bootstrap-simulator/SKILL.md`
+- `.agents/skills/sim-engine-des/SKILL.md`
+- `.agents/skills/sim-scenario-insights/SKILL.md`
+- `.agents/skills/sim-visual-motion/SKILL.md`
 - `.agents/skills/ui-sim-dashboard-shell/SKILL.md`
 - `.agents/skills/vsm-to-sim-model/SKILL.md`
-- `.agents/skills/project-bootstrap-simulator/SKILL.md`
-- `.agents/skills/operational-diagnosis/SKILL.md`
 
 ## Orchestrator handoff
 
@@ -176,6 +200,6 @@ When using an assumptions-plan-execute-deliver workflow, insert `operational-dia
 
 - Repo is runnable with `npm run start:sim` (after install)
 - UI layout remains fixed while config/data changes content
-- Compile emits compiled spec and checklist
+- Forecast workflow emits active compiled model, committed scenario, metrics, and diagnosis artifacts
 - UI still renders using mocked output if DES is not implemented
 - Demand seeding assumptions are explicit and traceable in compiled model assumptions
