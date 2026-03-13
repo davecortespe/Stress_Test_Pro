@@ -1,26 +1,37 @@
 # Missing Data Report
 
-Source: user-provided VSM image transcribed on 2026-03-12.
+Source: user-provided VSM image transcribed on 2026-03-13.
 
 ## Global gaps
 
+- VSM title/name is not visible.
 - Demand rate is not visible.
-- Shift calendar / staffed hours are not visible.
-- Uptime / downtime assumptions are not visible.
-- Variability assumptions are not visible.
-- Resource-sharing rules between stages are not visible.
+- Product mix is not visible.
+- Lot size is not visible.
+- Shift hours (hours per shift) are not visible.
+- Uptime/downtime assumptions are not visible.
+- Worker counts are not visible.
 
 ## Step-level unresolved fields
 
 | Step | Missing / null field | Reason |
 | --- | --- | --- |
-| Order entry and RN awareness | `changeover`, `workers`, `parallelProcedures` | No C/O is shown; visible counts are shared pool sizes, not step-dedicated workers or stations. |
-| RN review and patient clinical prep | `changeover`, `workers`, `parallelProcedures` | No C/O is shown; visible counts are shared pool sizes, not step-dedicated workers or stations. |
-| Discharge clearance and med processing | `changeover`, `workers`, `parallelProcedures` | No C/O is shown; visible counts are shared pool sizes, not step-dedicated workers or stations. |
-| Education and paperwork completion | `changeover`, `workers`, `parallelProcedures` | No C/O is shown; visible counts are shared pool sizes, not step-dedicated workers or stations. |
-| Patient/family departure prep | `changeover`, `workers`, `parallelProcedures` | No C/O is shown; patient/family has no numeric count and RN support is marked optional. |
-| Transport and physical exit | `changeover`, `workers`, `parallelProcedures` | No C/O is shown; visible counts are shared pool sizes, not step-dedicated workers or stations. |
+| Raw Material Staging & Weighing | `workers` | Worker count is not shown in the image. |
+| Buffer / Media Preparation | `workers` | Worker count is not shown in the image. |
+| Upstream Batch Transfer to Purification | `workers` | Worker count is not shown in the image. |
+| Primary Capture Chromatography | `workers` | Worker count is not shown in the image. |
+| Intermediate Purification Step | `workers` | Worker count is not shown in the image. |
+| Viral Inactivation / Hold | `workers` | Worker count is not shown in the image. |
+| Polishing Chromatography | `workers` | Worker count is not shown in the image. |
+| UF/DF Concentration & Diafiltration | `workers` | Worker count is not shown in the image. |
+| Bulk Fill / Collection | `workers` | Worker count is not shown in the image. |
+| Sample Submission to QC | `workers` | Worker count is not shown in the image. |
+| QC Testing / Release Hold | `workers` | Worker count is not shown in the image. |
+| Final Bulk Release to Packaging / Cold Storage | `workers` | Worker count is not shown in the image. |
 
-## Material modeling ambiguity
+## Notes on strict transcription
 
-- The image shows shared resource pools by step, but it does not specify whether those pools are required simultaneously, partially shared, or only conditionally involved. Forecast capacity inference must therefore use an explicit assumption in compilation rather than a directly observed value.
+- Step labels and sequence are preserved exactly as visible in the provided image.
+- `Lead Time (hrs)` is transcribed as step wait/flow-delay input.
+- `# of Lines` is transcribed as `parallelProcedures`.
+- `# of Shifts` is preserved per-step in notes/data, but conversion to staffed hours requires an assumption (not visible in source).

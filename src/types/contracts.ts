@@ -118,6 +118,7 @@ export interface ParameterGroup {
 export interface KpiConfig {
   key: string;
   label: string;
+  helpText?: string;
   format?: "number" | "percent" | "duration" | "delta" | "text" | "currency";
   decimals?: number;
 }

@@ -107,6 +107,7 @@ function clampTitleLines(input: string, maxCharsPerLine = 16): string[] {
 
   const lines: string[] = [];
   let current = "";
+  const maxLines = 4;
 
   for (const word of words) {
     const candidate = current.length > 0 ? `${current} ${word}` : word;
@@ -116,26 +117,28 @@ function clampTitleLines(input: string, maxCharsPerLine = 16): string[] {
     }
     lines.push(current);
     current = word;
-    if (lines.length === 2) {
+    if (lines.length === maxLines) {
       break;
     }
   }
 
-  if (lines.length < 2 && current.length > 0) {
+  if (lines.length < maxLines && current.length > 0) {
     lines.push(current);
   }
 
-  if (lines.length > 2) {
-    lines.length = 2;
+  if (lines.length > maxLines) {
+    lines.length = maxLines;
   }
 
   const reconstructed = lines.join(" ");
-  if (reconstructed.length < input.length && lines.length === 2) {
-    const second = lines[1];
-    lines[1] = second.length > maxCharsPerLine - 1 ? `${second.slice(0, maxCharsPerLine - 2)}...` : `${second}...`;
+  if (reconstructed.length < input.length && lines.length === maxLines) {
+    const lastIndex = maxLines - 1;
+    const tail = lines[lastIndex];
+    lines[lastIndex] =
+      tail.length > maxCharsPerLine - 1 ? `${tail.slice(0, maxCharsPerLine - 2)}...` : `${tail}...`;
   }
 
-  return lines.slice(0, 2);
+  return lines.slice(0, maxLines);
 }
 
 function wipFillRatio(wipQty: number | null | undefined, capacityPerHour: number | null | undefined): number {
@@ -184,7 +187,7 @@ export function GraphCanvas({
   resetViewSignal
 }: GraphCanvasProps) {
   const positions = useMemo(() => computeNodeLayout(graph), [graph]);
-  const nodeCardHeight = 140;
+  const nodeCardHeight = 184;
   const nodeCardWidth = 170;
   const nodeMetricSpacing = 12;
   const [zoom, setZoom] = useState(1);
@@ -406,15 +409,16 @@ export function GraphCanvas({
             const filledSegments = Math.round(wipFill * 10);
             const wipClass = wipLoadClass(wipFill);
             const titleLines = clampTitleLines(node.label, 12);
+            const titleLineCount = titleLines.length;
             const completedLotValue = metricValue(metrics?.completedQty, "completedQty");
             const displayFields = nodeCardFields.filter((field) => field !== "completedQty").slice(0, 3);
-            const hasWrappedTitle = titleLines.length > 1;
             const titleBaseY = 24;
             const titleLineHeight = 12;
-            const cornerLabelY = hasWrappedTitle ? 20 : 22;
-            const cornerValueY = hasWrappedTitle ? 42 : 44;
-            const subtitleY = hasWrappedTitle ? 62 : 50;
-            const nodeMetricY = hasWrappedTitle ? 80 : 76;
+            const titleBottomY = titleBaseY + (titleLineCount - 1) * titleLineHeight;
+            const cornerLabelY = 22;
+            const cornerValueY = 44;
+            const subtitleY = titleBottomY + 14;
+            const nodeMetricY = subtitleY + 18;
             return (
               <g key={node.id} transform={`translate(${pos.x}, ${pos.y})`}>
                 <title>{node.label}</title>
@@ -447,7 +451,7 @@ export function GraphCanvas({
                 </text>
 
                 <text x="158" y={cornerLabelY} textAnchor="end" className="node-corner-label">
-                  completed lot
+                  Completed Lot
                 </text>
                 <text x="158" y={cornerValueY} textAnchor="end" className="node-corner-value">
                   {completedLotValue}

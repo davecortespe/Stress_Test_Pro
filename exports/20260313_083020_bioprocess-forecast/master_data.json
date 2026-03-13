@@ -509,7 +509,7 @@
     {
       "id": "strict-001",
       "severity": "warning",
-      "text": "The VSM name is not visible in the provided image; simulation title was set by user override to 'LeanBio Batch Purification Train'."
+      "text": "The VSM name is not visible in the provided image; metadata.name is set to null."
     },
     {
       "id": "strict-002",

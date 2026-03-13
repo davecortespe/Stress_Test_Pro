@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "name": "LeanBio Batch Purification Train",
+    "name": null,
     "units": "hours",
     "source": "User-provided VSM image (strict transcription, 2026-03-13)"
   },
@@ -199,7 +199,11 @@
     }
   ],
   "edges": [
-    { "from": "raw_material_staging_weighing", "to": "buffer_media_preparation", "probability": 1 },
+    {
+      "from": "raw_material_staging_weighing",
+      "to": "buffer_media_preparation",
+      "probability": 1
+    },
     {
       "from": "buffer_media_preparation",
       "to": "upstream_batch_transfer_to_purification",
@@ -215,18 +219,46 @@
       "to": "intermediate_purification_step",
       "probability": 1
     },
-    { "from": "intermediate_purification_step", "to": "viral_inactivation_hold", "probability": 1 },
-    { "from": "viral_inactivation_hold", "to": "polishing_chromatography", "probability": 1 },
-    { "from": "polishing_chromatography", "to": "uf_df_concentration_diafiltration", "probability": 1 },
-    { "from": "uf_df_concentration_diafiltration", "to": "bulk_fill_collection", "probability": 1 },
-    { "from": "bulk_fill_collection", "to": "sample_submission_to_qc", "probability": 1 },
-    { "from": "sample_submission_to_qc", "to": "qc_testing_release_hold", "probability": 1 },
+    {
+      "from": "intermediate_purification_step",
+      "to": "viral_inactivation_hold",
+      "probability": 1
+    },
+    {
+      "from": "viral_inactivation_hold",
+      "to": "polishing_chromatography",
+      "probability": 1
+    },
+    {
+      "from": "polishing_chromatography",
+      "to": "uf_df_concentration_diafiltration",
+      "probability": 1
+    },
+    {
+      "from": "uf_df_concentration_diafiltration",
+      "to": "bulk_fill_collection",
+      "probability": 1
+    },
+    {
+      "from": "bulk_fill_collection",
+      "to": "sample_submission_to_qc",
+      "probability": 1
+    },
+    {
+      "from": "sample_submission_to_qc",
+      "to": "qc_testing_release_hold",
+      "probability": 1
+    },
     {
       "from": "qc_testing_release_hold",
       "to": "final_bulk_release_to_packaging_cold_storage",
       "probability": 1
     }
   ],
-  "startNodes": ["raw_material_staging_weighing"],
-  "endNodes": ["final_bulk_release_to_packaging_cold_storage"]
+  "startNodes": [
+    "raw_material_staging_weighing"
+  ],
+  "endNodes": [
+    "final_bulk_release_to_packaging_cold_storage"
+  ]
 }

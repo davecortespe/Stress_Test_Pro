@@ -6,6 +6,22 @@ interface KpiRowProps {
   metrics: Record<string, number | string>;
 }
 
+const KPI_HELP_FALLBACK: Record<string, string> = {
+  forecastThroughput:
+    "Estimated completed output rate per hour under the current scenario settings and elapsed-time state.",
+  bottleneckMigration:
+    "Shows where the active constraint is predicted to move after applying current relief settings.",
+  bottleneckIndex:
+    "Constraint pressure score (0-100%). Higher values mean tighter capacity and higher risk of flow breakage.",
+  brittleness:
+    "System fragility score (0-100%) combining queue risk, saturation, WIP pressure, and migration instability.",
+  throughputDelta:
+    "Change in throughput per hour versus baseline after applying bottleneck relief settings.",
+  totalWipQty: "Total work-in-process currently in the system (queue plus in-process load across all steps).",
+  totalCompletedOutputPieces:
+    "Cumulative completed units at the end of the flow for the current elapsed simulation time."
+};
+
 function useAnimatedNumber(target: number, durationMs = 280): number {
   const [value, setValue] = useState(target);
   const lastValueRef = useRef(target);
@@ -89,10 +105,29 @@ function KpiCard({ kpi, rawValue }: { kpi: KpiConfig; rawValue: number | string 
     typeof rawValue === "number"
       ? formatValue(animatedNumeric, kpi.format, kpi.decimals ?? 1)
       : formatValue(rawValue, kpi.format, kpi.decimals ?? 1);
+  const helpText = kpi.helpText ?? KPI_HELP_FALLBACK[kpi.key] ?? "";
+  const tooltipId = `kpi-help-${kpi.key.replace(/[^a-z0-9_-]/gi, "-").toLowerCase()}`;
 
   return (
     <article className={`kpi-card kpi-${trend} ${isFeatured ? "kpi-featured-output" : ""}`}>
-      <p>{kpi.label}</p>
+      <div className="kpi-label-row">
+        <p>{kpi.label}</p>
+        {helpText ? (
+          <span className="kpi-help-wrap">
+            <button
+              type="button"
+              className="kpi-help-trigger"
+              aria-label={`About ${kpi.label}`}
+              aria-describedby={tooltipId}
+            >
+              i
+            </button>
+            <span id={tooltipId} role="tooltip" className="kpi-help-tooltip">
+              {helpText}
+            </span>
+          </span>
+        ) : null}
+      </div>
       <h2>{displayValue}</h2>
     </article>
   );
