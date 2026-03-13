@@ -94,6 +94,22 @@ What it enforces:
 - writes `exports/LATEST_EXPORT.txt`
 - writes `start_latest_export.bat` at repo root to launch latest exported full app
 
+## Accepted forecast artifacts
+
+When the active non-DES forecast model has been accepted, the canonical active files are:
+
+- `models/active/compiled_forecast_model.json`
+- `models/active/scenario_committed.json`
+- `models/active/result_metrics.json`
+- `models/active/operational_diagnosis.json`
+- `models/active/operational_diagnosis.md`
+
+Recommended deterministic refresh order:
+
+1. `node scripts/compile-forecast-model.mjs models/active`
+2. `node scripts/generate-result-metrics.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --out models/active/result_metrics.json`
+3. `node scripts/generate-operational-diagnosis.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --metrics models/active/result_metrics.json --outJson models/active/operational_diagnosis.json --outMd models/active/operational_diagnosis.md`
+
 ## On-demand Replit publish workflow
 
 Use this only when you want a stable deployment target for Replit. It keeps the normal timestamped export flow intact, then republishes the latest accepted bundle into `deploy/replit/`:
@@ -108,6 +124,12 @@ Optional inputs:
 
 - `npm run export:replit -- --name sterile-brr-replit`
 - `npm run export:replit -- --scenario models/active/scenario_committed.json --metrics models/active/result_metrics.json --skipBuild true`
+
+Default behavior:
+
+- If `models/active/scenario_committed.json` exists, `npm run export:replit` uses it automatically.
+- If `models/active/result_metrics.json` exists, `npm run export:replit` uses it automatically.
+- If `models/active/operational_diagnosis.json` / `.md` exist, `npm run export:replit` preserves them in the deploy target instead of regenerating different copies.
 
 What it writes:
 

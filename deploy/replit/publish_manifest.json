@@ -1,6 +1,6 @@
 {
-  "name": "sterile-brr-replit",
+  "name": "discharge-flow-replit",
   "target": "deploy/replit",
-  "generatedAt": "2026-03-07T02:13:45.243Z",
+  "generatedAt": "2026-03-12T21:42:43.504Z",
   "runCommand": "npm run start:replit-bundle"
 }

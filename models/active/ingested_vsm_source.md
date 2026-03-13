@@ -1,30 +1,21 @@
-# Missing Data Report (Strict VSM Transcription)
+# Ingested VSM Source
 
-Source image title text: `Consumption Report`
+Source type: inline image attached in the user prompt on 2026-03-12.
 
-This report lists unresolved or ambiguous fields extracted from the provided VSM image.
+Transcribed table:
 
-| Step | Field | Extracted value | Resolution | Reason |
-| --- | --- | --- | --- | --- |
-| Receiving | C/O | not readable | `null` | No clear numeric value visible in C/O row. |
-| Micro | D.T.(%) | not readable | `null` | No clear numeric value visible in D.T.(%) row. |
-| Micro | C/O | not readable | `null` | No clear numeric value visible in C/O row. |
-| Granulation | C/O | not readable | `null` | No clear numeric value visible in C/O row. |
-| Compression | C/O | not readable | `null` | No clear numeric value visible in C/O row. |
-| Analitical Lab | D.T.(%) | not readable | `null` | No clear numeric value visible in D.T.(%) row. |
-| Analitical Lab | C/O | not readable | `null` | No clear numeric value visible in C/O row. |
-| Docking | C.T.(m) | not readable | `null` | CT value not clearly visible in the process box. |
-| Docking | D.T.(%) | not readable | `null` | No clear numeric value visible in D.T.(%) row. |
-| Docking | C/O | not readable | `null` | No clear numeric value visible in C/O row. |
-| Shipping | D.T.(%) | not readable | `null` | No clear numeric value visible in D.T.(%) row. |
-| Shipping | C/O | not readable | `null` | No clear numeric value visible in C/O row. |
-| All process steps | Workers | not shown | `null` | Worker counts are not visible in process boxes. |
-| Whole VSM | Lead-time badge units | `7.3` | unresolved | The red text `LEAD TIME FROM CUSTOMER STAND POINT = 7.3` does not show units. |
-| Whole VSM | Demand/mix/shift/uptime | not shown | unresolved | Arrival and staffing policy inputs are not fully specified in the image. |
+| Stage | Name | Resources | PT | WT | Total |
+| --- | --- | --- | --- | --- | --- |
+| A | Order entry and RN awareness | Provider pool (2), RN pool (5) | 5 min | 20 min | 25 min |
+| B | RN review and patient clinical prep | RN pool (5), Tech pool (2) | 20 min | 35 min | 55 min |
+| C | Discharge clearance and med processing | RN pool (5), Provider pool (2), Pharmacy pool (1), Case Manager pool (1) | 22 min | 60 min | 82 min |
+| D | Education and paperwork completion | RN pool (5), Unit Clerk pool (1) | 23 min | 25 min | 48 min |
+| E | Patient/family departure prep | Patient/family, RN pool (5) if support needed | 10 min | 30 min | 40 min |
+| F | Transport and physical exit | Transport pool (2), RN pool (5) | 8 min | 25 min | 33 min |
 
-## Notes captured as visible values
-- Process sequence transcribed exactly: `Receiving -> Micro -> Granulation -> Compression -> Coating -> Printing -> Analitical Lab -> Packaging -> Docking -> Shipping`.
-- Inbound/outbound inventory triangles show `7 Days` and `5-7 Days`; treated as contextual notes, not process nodes.
-- `# of Lines` values were visible for Granulation (2), Compression (3), Coating (2), Printing (2), Packaging (1.00).
-- Lead-time `8 hrs` is visible for Receiving, Micro, Granulation, Compression, Coating, Printing, Docking, and Shipping; `48 hrs` for Analitical Lab and Packaging.
-- Bottom timeline values visible in this image pass: `0.05, 6.0, 1.0, -, 0.1, 2.19, 0.31, 1.89, 0.15, 0.52, 0.12, 4.02, 0.90, 20, 1.34, 0.71, 0.03`.
+Strict transcription rules applied:
+
+- Step names preserved exactly as shown.
+- Left-to-right sequence preserved exactly.
+- Only visible PT, WT, resources, and totals were transcribed.
+- Changeover, dedicated worker count, and explicit parallel procedures were left null because they are not visible as step-level values in the image.

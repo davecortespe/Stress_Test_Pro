@@ -157,10 +157,7 @@ export function useScenarioSession({
   };
 
   const resetSimulation = () => {
-    setCommittedScenario(cloneScenario(baselineScenario));
-    setStagedScenario(cloneScenario(baselineScenario));
     setIsPaused(true);
-    setSpeedMultiplier(DEFAULT_SPEED_MULTIPLIER);
     setSimElapsedHours(0);
     setResetViewSignal((current) => current + 1);
   };

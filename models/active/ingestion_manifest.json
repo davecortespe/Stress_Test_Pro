@@ -1,13 +1,13 @@
-﻿{
-    "workflowVersion":  "1.0.0",
-    "ingestedAt":  "2026-03-03T16:36:12.6144223Z",
-    "activeModels":  {
-                         "masterDataPath":  "C:\\Users\\webda\\CODEX_FILES\\Simulator_Final_R0\\models\\active\\master_data.json",
-                         "vsmGraphPath":  "C:\\Users\\webda\\CODEX_FILES\\Simulator_Final_R0\\models\\active\\vsm_graph.json"
-                     },
-    "sourceImage":  {
-                        "sizeBytes":  2519,
-                        "providedPath":  "C:\\Users\\webda\\CODEX_FILES\\Simulator_Final_R0\\models\\missing_data_report.md",
-                        "copiedPath":  "C:\\Users\\webda\\CODEX_FILES\\Simulator_Final_R0\\models\\active\\ingested_vsm_source.md"
-                    }
+{
+  "workflowVersion": "1.0.0",
+  "ingestedAt": "2026-03-12T00:00:00.000Z",
+  "sourceImage": {
+    "providedPath": "inline-user-attachment",
+    "copiedPath": "models/active/ingested_vsm_source.md",
+    "sizeBytes": null
+  },
+  "activeModels": {
+    "vsmGraphPath": "models/active/vsm_graph.json",
+    "masterDataPath": "models/active/master_data.json"
+  }
 }

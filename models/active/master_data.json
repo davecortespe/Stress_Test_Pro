@@ -1,134 +1,85 @@
 {
   "products": [
     {
-      "productId": "filter_main",
-      "family": "filter",
+      "productId": "patient_discharge",
+      "family": "patient-discharge",
       "mixPct": 1,
       "demandRatePerHour": null,
       "batchSize": null,
       "sellingPricePerUnit": 0
     }
   ],
+  "sharedResourcePools": [
+    { "name": "Provider pool", "count": 2 },
+    { "name": "RN pool", "count": 5 },
+    { "name": "Tech pool", "count": 2 },
+    { "name": "Pharmacy pool", "count": 1 },
+    { "name": "Case Manager pool", "count": 1 },
+    { "name": "Unit Clerk pool", "count": 1 },
+    { "name": "Transport pool", "count": 2 }
+  ],
   "equipment": [
     {
-      "equipmentType": "Receiving",
-      "count": 3,
-      "availability": {
-        "shiftHours": null,
-        "uptimePct": null
-      },
-      "sourceText": "# of Lines: 3; # Shifts: 1"
-    },
-    {
-      "equipmentType": "Stocking",
-      "count": 100,
-      "availability": {
-        "shiftHours": null,
-        "uptimePct": null
-      },
-      "sourceText": "# of Lines: 100; # Shifts: 2.00"
-    },
-    {
-      "equipmentType": "Pleating",
-      "count": 1,
-      "availability": {
-        "shiftHours": null,
-        "uptimePct": null
-      },
-      "sourceText": "# of Lines: 1.00; # Shifts: 3.00"
-    },
-    {
-      "equipmentType": "Forming",
+      "equipmentType": "Provider pool",
       "count": 2,
       "availability": {
         "shiftHours": null,
         "uptimePct": null
-      },
-      "sourceText": "# of Lines: 2.00; # Shifts: 1.00"
+      }
     },
     {
-      "equipmentType": "Capping",
-      "count": 1,
+      "equipmentType": "RN pool",
+      "count": 5,
       "availability": {
         "shiftHours": null,
         "uptimePct": null
-      },
-      "sourceText": "# of Lines: 1.00; # Shifts: 1.00"
+      }
     },
     {
-      "equipmentType": "Testing",
+      "equipmentType": "Tech pool",
       "count": 2,
       "availability": {
         "shiftHours": null,
         "uptimePct": null
-      },
-      "sourceText": "# of Lines: 2.00; Shifts: 1.00"
+      }
     },
     {
-      "equipmentType": "Packaging",
+      "equipmentType": "Pharmacy pool",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Case Manager pool",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Unit Clerk pool",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Transport pool",
       "count": 2,
       "availability": {
         "shiftHours": null,
         "uptimePct": null
-      },
-      "sourceText": "# of Lines: 2.00; Shifts: 1.00"
-    },
-    {
-      "equipmentType": "Palletizing",
-      "count": 1,
-      "availability": {
-        "shiftHours": null,
-        "uptimePct": null
-      },
-      "sourceText": "# of Lines: 1.00; Shifts: 1.00"
-    },
-    {
-      "equipmentType": "Shipping",
-      "count": 1,
-      "availability": {
-        "shiftHours": null,
-        "uptimePct": null
-      },
-      "sourceText": "# of Lines: 1.00; Shifts: 1.00"
+      }
     }
   ],
   "processing": [
     {
-      "stepId": "receiving",
-      "equipmentType": "Receiving",
-      "productKey": "*",
-      "ct": {
-        "dist": "fixed",
-        "params": {
-          "value": 10,
-          "unit": "min"
-        }
-      },
-      "changeover": {
-        "rule": "none",
-        "time": {
-          "dist": "fixed",
-          "params": {
-            "value": 0,
-            "unit": "min"
-          }
-        }
-      },
-      "wait": {
-        "raw": "FIFO (Receiving -> Stocking)"
-      },
-      "leadTimeMinutes": 6,
-      "leadTimeRaw": "Lead Time (m): 6",
-      "parallelProcedures": 3,
-      "workers": null,
-      "stationRaw": "station = 3",
-      "shiftCount": 1,
-      "lotSize": 1,
-      "sourceText": "C.T. (m): 10; C/O (M): 0"
-    },
-    {
-      "stepId": "stocking",
-      "equipmentType": "Stocking",
+      "stepId": "stage_a",
+      "equipmentType": "Provider pool",
       "productKey": "*",
       "ct": {
         "dist": "fixed",
@@ -138,30 +89,27 @@
         }
       },
       "changeover": {
-        "rule": "none",
-        "time": {
-          "dist": "fixed",
-          "params": {
-            "value": 0,
-            "unit": "min"
-          }
-        }
+        "rule": null,
+        "time": null
       },
       "wait": {
-        "raw": "FIFO (Stocking -> Pleating)"
+        "raw": "20 min"
       },
-      "leadTimeMinutes": 10,
-      "leadTimeRaw": "Lead Time (m): 10.00",
-      "parallelProcedures": 100,
+      "leadTimeMinutes": 20,
+      "leadTimeRaw": "20 min",
+      "parallelProcedures": null,
       "workers": null,
-      "stationRaw": "station = 100",
-      "shiftCount": 2,
-      "lotSize": 100,
-      "sourceText": "C.T. (m): 5.00; C/O (M): 0"
+      "resourcesRaw": "Provider pool (2), RN pool (5)",
+      "resourcePools": [
+        { "name": "Provider pool", "count": 2, "optional": false, "external": false },
+        { "name": "RN pool", "count": 5, "optional": false, "external": false }
+      ],
+      "sourcePtRaw": "5 min",
+      "sourceText": "PT 5 min; WT 20 min; Total 25 min"
     },
     {
-      "stepId": "pleating",
-      "equipmentType": "Pleating",
+      "stepId": "stage_b",
+      "equipmentType": "RN pool",
       "productKey": "*",
       "ct": {
         "dist": "fixed",
@@ -171,167 +119,32 @@
         }
       },
       "changeover": {
-        "rule": "product",
-        "time": {
-          "dist": "fixed",
-          "params": {
-            "value": 30,
-            "unit": "min"
-          }
-        }
+        "rule": null,
+        "time": null
       },
       "wait": {
-        "raw": "FIFO (Pleating -> Forming)"
+        "raw": "35 min"
       },
-      "leadTimeMinutes": 180,
-      "leadTimeRaw": "Lead Time (m): 180.00",
-      "parallelProcedures": 1,
+      "leadTimeMinutes": 35,
+      "leadTimeRaw": "35 min",
+      "parallelProcedures": null,
       "workers": null,
-      "stationRaw": "station = 1",
-      "shiftCount": 3,
-      "lotSize": 1,
-      "sourceText": "C.T. (m): 20.00; C/O (M): 30.00"
+      "resourcesRaw": "RN pool (5), Tech pool (2)",
+      "resourcePools": [
+        { "name": "RN pool", "count": 5, "optional": false, "external": false },
+        { "name": "Tech pool", "count": 2, "optional": false, "external": false }
+      ],
+      "sourcePtRaw": "20 min",
+      "sourceText": "PT 20 min; WT 35 min; Total 55 min"
     },
     {
-      "stepId": "forming",
-      "equipmentType": "Forming",
+      "stepId": "stage_c",
+      "equipmentType": "RN pool",
       "productKey": "*",
       "ct": {
         "dist": "fixed",
         "params": {
-          "value": 3,
-          "unit": "min"
-        }
-      },
-      "changeover": {
-        "rule": "product",
-        "time": {
-          "dist": "fixed",
-          "params": {
-            "value": 30,
-            "unit": "min"
-          }
-        }
-      },
-      "wait": {
-        "raw": null
-      },
-      "leadTimeMinutes": 1,
-      "leadTimeRaw": "Lead Time (m): 1.00",
-      "parallelProcedures": 2,
-      "workers": null,
-      "stationRaw": "station = 2",
-      "shiftCount": 1,
-      "lotSize": 50,
-      "sourceText": "C.T. (m): 3.00; C/O (M): 30.00"
-    },
-    {
-      "stepId": "capping",
-      "equipmentType": "Capping",
-      "productKey": "*",
-      "ct": {
-        "dist": "fixed",
-        "params": {
-          "value": 1,
-          "unit": "min"
-        }
-      },
-      "changeover": {
-        "rule": "product",
-        "time": {
-          "dist": "fixed",
-          "params": {
-            "value": 30,
-            "unit": "min"
-          }
-        }
-      },
-      "wait": {
-        "raw": null
-      },
-      "leadTimeMinutes": 2,
-      "leadTimeRaw": "Lead Time (m): 2.00",
-      "parallelProcedures": 1,
-      "workers": null,
-      "stationRaw": "station = 1",
-      "shiftCount": 1,
-      "lotSize": 50,
-      "sourceText": "C.T. (m): 1.00; C/O (M): 30.00"
-    },
-    {
-      "stepId": "testing",
-      "equipmentType": "Testing",
-      "productKey": "*",
-      "ct": {
-        "dist": "fixed",
-        "params": {
-          "value": 3,
-          "unit": "min"
-        }
-      },
-      "changeover": {
-        "rule": "product",
-        "time": {
-          "dist": "fixed",
-          "params": {
-            "value": 20,
-            "unit": "min"
-          }
-        }
-      },
-      "wait": {
-        "raw": "FIFO (Testing -> Packaging)"
-      },
-      "leadTimeMinutes": 4,
-      "leadTimeRaw": "Lead Time (m): 4.00",
-      "parallelProcedures": 2,
-      "workers": null,
-      "stationRaw": "station = 2",
-      "shiftCount": 1,
-      "lotSize": 25,
-      "sourceText": "C.T. (m): 3.00; C/O (M): 20.00"
-    },
-    {
-      "stepId": "packaging",
-      "equipmentType": "Packaging",
-      "productKey": "*",
-      "ct": {
-        "dist": "fixed",
-        "params": {
-          "value": 3,
-          "unit": "min"
-        }
-      },
-      "changeover": {
-        "rule": "product",
-        "time": {
-          "dist": "fixed",
-          "params": {
-            "value": 30,
-            "unit": "min"
-          }
-        }
-      },
-      "wait": {
-        "raw": null
-      },
-      "leadTimeMinutes": 10,
-      "leadTimeRaw": "Lead Time (m): 10.00",
-      "parallelProcedures": 2,
-      "workers": null,
-      "stationRaw": "station = 2",
-      "shiftCount": 1,
-      "lotSize": 50,
-      "sourceText": "C.T. (m): 3.00; C/O (M): 30.00"
-    },
-    {
-      "stepId": "palletizing",
-      "equipmentType": "Palletizing",
-      "productKey": "*",
-      "ct": {
-        "dist": "fixed",
-        "params": {
-          "value": 5,
+          "value": 22,
           "unit": "min"
         }
       },
@@ -340,25 +153,30 @@
         "time": null
       },
       "wait": {
-        "raw": "Inventory triangle (I) shown before Shipping; numeric wait not visible."
+        "raw": "60 min"
       },
-      "leadTimeMinutes": 10,
-      "leadTimeRaw": "Lead Time (m): 10.00",
-      "parallelProcedures": 1,
+      "leadTimeMinutes": 60,
+      "leadTimeRaw": "60 min",
+      "parallelProcedures": null,
       "workers": null,
-      "stationRaw": "station = 1",
-      "shiftCount": 1,
-      "lotSize": 50,
-      "sourceText": "C.T. (m): 5.00; C/O (M): --"
+      "resourcesRaw": "RN pool (5), Provider pool (2), Pharmacy pool (1), Case Manager pool (1)",
+      "resourcePools": [
+        { "name": "RN pool", "count": 5, "optional": false, "external": false },
+        { "name": "Provider pool", "count": 2, "optional": false, "external": false },
+        { "name": "Pharmacy pool", "count": 1, "optional": false, "external": false },
+        { "name": "Case Manager pool", "count": 1, "optional": false, "external": false }
+      ],
+      "sourcePtRaw": "22 min",
+      "sourceText": "PT 22 min; WT 60 min; Total 82 min"
     },
     {
-      "stepId": "shipping",
-      "equipmentType": "Shipping",
+      "stepId": "stage_d",
+      "equipmentType": "RN pool",
       "productKey": "*",
       "ct": {
         "dist": "fixed",
         "params": {
-          "value": 5,
+          "value": 23,
           "unit": "min"
         }
       },
@@ -367,48 +185,106 @@
         "time": null
       },
       "wait": {
-        "raw": null
+        "raw": "25 min"
       },
-      "leadTimeMinutes": 10,
-      "leadTimeRaw": "Lead Time (m): 10.00",
-      "parallelProcedures": 1,
+      "leadTimeMinutes": 25,
+      "leadTimeRaw": "25 min",
+      "parallelProcedures": null,
       "workers": null,
-      "stationRaw": "station = 1",
-      "shiftCount": 1,
-      "lotSize": 50,
-      "sourceText": "C.T. (m): 5.00; C/O (M): --"
+      "resourcesRaw": "RN pool (5), Unit Clerk pool (1)",
+      "resourcePools": [
+        { "name": "RN pool", "count": 5, "optional": false, "external": false },
+        { "name": "Unit Clerk pool", "count": 1, "optional": false, "external": false }
+      ],
+      "sourcePtRaw": "23 min",
+      "sourceText": "PT 23 min; WT 25 min; Total 48 min"
+    },
+    {
+      "stepId": "stage_e",
+      "equipmentType": "RN pool",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 10,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "30 min"
+      },
+      "leadTimeMinutes": 30,
+      "leadTimeRaw": "30 min",
+      "parallelProcedures": null,
+      "workers": null,
+      "resourcesRaw": "Patient/family, RN pool (5) if support needed",
+      "resourcePools": [
+        { "name": "Patient/family", "count": null, "optional": false, "external": true },
+        { "name": "RN pool", "count": 5, "optional": true, "external": false }
+      ],
+      "sourcePtRaw": "10 min",
+      "sourceText": "PT 10 min; WT 30 min; Total 40 min"
+    },
+    {
+      "stepId": "stage_f",
+      "equipmentType": "Transport pool",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 8,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": null,
+        "time": null
+      },
+      "wait": {
+        "raw": "25 min"
+      },
+      "leadTimeMinutes": 25,
+      "leadTimeRaw": "25 min",
+      "parallelProcedures": null,
+      "workers": null,
+      "resourcesRaw": "Transport pool (2), RN pool (5)",
+      "resourcePools": [
+        { "name": "Transport pool", "count": 2, "optional": false, "external": false },
+        { "name": "RN pool", "count": 5, "optional": false, "external": false }
+      ],
+      "sourcePtRaw": "8 min",
+      "sourceText": "PT 8 min; WT 25 min; Total 33 min"
     }
   ],
   "assumptions": [
     {
       "id": "strict-001",
       "severity": "warning",
-      "text": "Workers are not explicitly shown in the image; workers are set to null for all steps."
+      "text": "Changeover times are not shown anywhere in the source image, so changeover is null for all steps."
     },
     {
       "id": "strict-002",
       "severity": "warning",
-      "text": "FIFO markers are visible between selected steps, but no numeric wait durations or units are shown; waits are preserved as raw text."
+      "text": "Visible counts are shared pool sizes, not step-dedicated worker counts; workers are set to null for all steps."
     },
     {
       "id": "strict-003",
       "severity": "warning",
-      "text": "An inventory triangle marker is visible before Shipping, but no numeric wait value is shown."
+      "text": "The source image does not show explicit parallel procedures or dedicated stations per step; parallelProcedures is set to null in strict transcription."
     },
     {
       "id": "strict-004",
       "severity": "warning",
-      "text": "C/O is shown as '--' for Palletizing and Shipping, so changeover is null for those steps."
+      "text": "Patient/family is visible as a participant in Stage E but does not include a numeric staffed capacity count."
     },
     {
       "id": "strict-005",
-      "severity": "warning",
-      "text": "The image headers indicate C.T. (m), Lead Time (m), and C/O (M); all parsed numeric values are treated as minutes."
-    },
-    {
-      "id": "strict-006",
       "severity": "blocker",
-      "text": "Demand rate, product mix policy, uptime, and explicit shift-hour calendars are not visible in the image."
+      "text": "Demand rate, shift calendar, uptime, variability, and resource-sharing rules across stages are not visible in the source image."
     }
   ]
 }

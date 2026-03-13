@@ -1,6 +1,6 @@
 {
-  "appTitle": "Filter Making Line Forecast",
-  "subtitle": "LeanStorming Operational Stress Labs",
+  "appTitle": "Discharge Flow Forecast",
+  "subtitle": "",
   "parameterGroups": [
     {
       "groupId": "interventions",
@@ -76,7 +76,7 @@
           "label": "Mix Profile",
           "helpText": "Shifts the product or work mix toward earlier or later steps to see how changing mix moves the constraint.",
           "type": "dropdown",
-          "options": ["balanced", "family-A-heavy", "family-B-heavy"],
+          "options": ["balanced", "front-loaded", "midstream-heavy", "back-loaded"],
           "defaultValue": "balanced"
         }
       ]

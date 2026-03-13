@@ -1,25 +1,25 @@
 ## Operational Diagnosis
 
 **1. System Status**
-Pleating is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added.
+Discharge clearance and med processing is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added.
 
 **2. Primary Constraint**
-Pleating is the active choke point because work is arriving faster than that step can drain its queue.
+Discharge clearance and med processing is the current constraint, and downstream congestion at Education and paperwork completion is preventing that queue from clearing cleanly.
 
 **3. Constraint Mechanism**
-Pleating has enough average capacity on paper, but bunching is compressing work into peaks. That makes the queue spike faster than the step can recover between waves.
+Discharge clearance and med processing is not failing in isolation. Education and paperwork completion is also congested, so downstream WIP is not clearing fast enough and the blockage propagates back upstream.
 
 **4. Downstream Effects**
-The line is meeting demand with very little spare capacity, WIP has built to roughly 12 units, total lead time is now about 525.9 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.
+Throughput is running about 88% below required rate, WIP has built to roughly 460 units, total lead time is now about 2592.2 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.
 
 **5. Economic Interpretation**
-The main cost is delay rather than pure output loss. A large share of lead time is waiting, which ties up WIP, delays availability, and burns labor on chasing flow rather than moving product.
+This is creating hidden capacity loss of roughly 88% versus required output. The likely business impact is overtime pressure, slower inventory availability, and missed throughput that has to be recovered later.
 
 **6. Recommended Action**
-Reduce effective cycle time at Pleating with standard work, faster changeovers, or error removal before spending on larger structural changes.
+Stabilize the handoff between Discharge clearance and med processing and Education and paperwork completion first. Clear downstream WIP before releasing more work, and rebalance labor by queue pressure instead of fixed headcount.
 
 **7. Scenario Guidance**
-Scenario comparison is limited. Current outputs do not show a materially better tested scenario than the active case.
+The current relief scenario is directionally right. It improves throughput by about 0.119 units/hr, and it also changes bottleneck behavior to Education and paperwork completion -> Discharge clearance and med processing (low confidence).
 
 **AI Opportunity Lens**
 - Data already exists but is underused: Utilization, queue, WIP, and lead-time data already exist here but are usually reviewed as separate metrics instead of as one flow signal.
@@ -29,4 +29,4 @@ Scenario comparison is limited. Current outputs do not show a materially better 
 - Visibility gaps causing profit leakage: When operators cannot see where queue pressure will propagate next, the business leaks profit through avoidable delay, premium labor, and hidden capacity loss.
 
 **Confidence**
-low - Confidence is low because key inputs are incomplete. Missing or weak fields: demand rate/product mix, parallel procedures, changeover/setup times, lot-size policy.
+low - Confidence is low because key inputs are incomplete. Missing or weak fields: changeover/setup times, staffing/equipment counts, parallel procedures, demand rate/product mix, shift hours/uptime.

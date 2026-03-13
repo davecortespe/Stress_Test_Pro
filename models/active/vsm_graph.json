@@ -1,227 +1,120 @@
 {
   "metadata": {
-    "name": "Filter Making Line",
+    "name": "Discharge Flow Forecast",
     "units": "minutes",
-    "source": "User-provided VSM image (strict transcription, 2026-03-09)"
+    "source": "User-provided VSM image (strict transcription, 2026-03-12)"
   },
   "nodes": [
     {
-      "id": "receiving",
-      "label": "Receiving",
+      "id": "stage_a",
+      "label": "Order entry and RN awareness",
       "type": "process",
       "boxData": {
-        "ctRaw": "10",
-        "changeoverRaw": "0",
-        "waitRaw": null,
+        "ctRaw": "5 min",
+        "changeoverRaw": null,
+        "waitRaw": "20 min",
         "workersRaw": null,
-        "parallelProceduresRaw": "3",
+        "parallelProceduresRaw": null,
         "notesRaw": [
-          "Lead Time (m): 6",
-          "# of Lines: 3",
-          "# Shifts: 1",
-          "Lot Size: 1"
+          "Stage A",
+          "Resources: Provider pool (2), RN pool (5)",
+          "Total: 25 min"
         ]
       }
     },
     {
-      "id": "stocking",
-      "label": "Stocking",
+      "id": "stage_b",
+      "label": "RN review and patient clinical prep",
       "type": "process",
       "boxData": {
-        "ctRaw": "5.00",
-        "changeoverRaw": "0",
-        "waitRaw": null,
+        "ctRaw": "20 min",
+        "changeoverRaw": null,
+        "waitRaw": "35 min",
         "workersRaw": null,
-        "parallelProceduresRaw": "100",
+        "parallelProceduresRaw": null,
         "notesRaw": [
-          "Lead Time (m): 10.00",
-          "# of Lines: 100",
-          "# Shifts: 2.00",
-          "Lot Size: 100"
+          "Stage B",
+          "Resources: RN pool (5), Tech pool (2)",
+          "Total: 55 min"
         ]
       }
     },
     {
-      "id": "pleating",
-      "label": "Pleating",
+      "id": "stage_c",
+      "label": "Discharge clearance and med processing",
       "type": "process",
       "boxData": {
-        "ctRaw": "20.00",
-        "changeoverRaw": "30.00",
-        "waitRaw": null,
+        "ctRaw": "22 min",
+        "changeoverRaw": null,
+        "waitRaw": "60 min",
         "workersRaw": null,
-        "parallelProceduresRaw": "1.00",
+        "parallelProceduresRaw": null,
         "notesRaw": [
-          "Lead Time (m): 180.00",
-          "# of Lines: 1.00",
-          "# Shifts: 3.00",
-          "Lot Size: 1.00"
+          "Stage C",
+          "Resources: RN pool (5), Provider pool (2), Pharmacy pool (1), Case Manager pool (1)",
+          "Total: 82 min"
         ]
       }
     },
     {
-      "id": "forming",
-      "label": "Forming",
+      "id": "stage_d",
+      "label": "Education and paperwork completion",
       "type": "process",
       "boxData": {
-        "ctRaw": "3.00",
-        "changeoverRaw": "30.00",
-        "waitRaw": null,
+        "ctRaw": "23 min",
+        "changeoverRaw": null,
+        "waitRaw": "25 min",
         "workersRaw": null,
-        "parallelProceduresRaw": "2.00",
+        "parallelProceduresRaw": null,
         "notesRaw": [
-          "Lead Time (m): 1.00",
-          "# of Lines: 2.00",
-          "# Shifts: 1.00",
-          "Lot Size: 50.00"
+          "Stage D",
+          "Resources: RN pool (5), Unit Clerk pool (1)",
+          "Total: 48 min"
         ]
       }
     },
     {
-      "id": "capping",
-      "label": "Capping",
+      "id": "stage_e",
+      "label": "Patient/family departure prep",
       "type": "process",
       "boxData": {
-        "ctRaw": "1.00",
-        "changeoverRaw": "30.00",
-        "waitRaw": null,
+        "ctRaw": "10 min",
+        "changeoverRaw": null,
+        "waitRaw": "30 min",
         "workersRaw": null,
-        "parallelProceduresRaw": "1.00",
+        "parallelProceduresRaw": null,
         "notesRaw": [
-          "Lead Time (m): 2.00",
-          "# of Lines: 1.00",
-          "# Shifts: 1.00",
-          "Lot Size: 50.00"
+          "Stage E",
+          "Resources: Patient/family, RN pool (5) if support needed",
+          "Total: 40 min"
         ]
       }
     },
     {
-      "id": "testing",
-      "label": "Testing",
+      "id": "stage_f",
+      "label": "Transport and physical exit",
       "type": "process",
       "boxData": {
-        "ctRaw": "3.00",
-        "changeoverRaw": "20.00",
-        "waitRaw": null,
+        "ctRaw": "8 min",
+        "changeoverRaw": null,
+        "waitRaw": "25 min",
         "workersRaw": null,
-        "parallelProceduresRaw": "2.00",
+        "parallelProceduresRaw": null,
         "notesRaw": [
-          "Lead Time (m): 4.00",
-          "# of Lines: 2.00",
-          "Shifts: 1.00",
-          "Lot Size: 25.00"
-        ]
-      }
-    },
-    {
-      "id": "packaging",
-      "label": "Packaging",
-      "type": "process",
-      "boxData": {
-        "ctRaw": "3.00",
-        "changeoverRaw": "30.00",
-        "waitRaw": null,
-        "workersRaw": null,
-        "parallelProceduresRaw": "2.00",
-        "notesRaw": [
-          "Lead Time (m): 10.00",
-          "# of Lines: 2.00",
-          "Shifts: 1.00",
-          "Lot Size: 50.00"
-        ]
-      }
-    },
-    {
-      "id": "palletizing",
-      "label": "Palletizing",
-      "type": "process",
-      "boxData": {
-        "ctRaw": "5.00",
-        "changeoverRaw": "--",
-        "waitRaw": null,
-        "workersRaw": null,
-        "parallelProceduresRaw": "1.00",
-        "notesRaw": [
-          "Lead Time (m): 10.00",
-          "# of Lines: 1.00",
-          "Shifts: 1.00",
-          "Lot Size: 50.00"
-        ]
-      }
-    },
-    {
-      "id": "shipping",
-      "label": "Shipping",
-      "type": "process",
-      "boxData": {
-        "ctRaw": "5.00",
-        "changeoverRaw": "--",
-        "waitRaw": null,
-        "workersRaw": null,
-        "parallelProceduresRaw": "1.00",
-        "notesRaw": [
-          "Lead Time (m): 10.00",
-          "# of Lines: 1.00",
-          "Shifts: 1.00",
-          "Lot Size: 50.00"
+          "Stage F",
+          "Resources: Transport pool (2), RN pool (5)",
+          "Total: 33 min"
         ]
       }
     }
   ],
   "edges": [
-    {
-      "from": "receiving",
-      "to": "stocking",
-      "probability": 1,
-      "waitRaw": "FIFO"
-    },
-    {
-      "from": "stocking",
-      "to": "pleating",
-      "probability": 1,
-      "waitRaw": "FIFO"
-    },
-    {
-      "from": "pleating",
-      "to": "forming",
-      "probability": 1,
-      "waitRaw": "FIFO"
-    },
-    {
-      "from": "forming",
-      "to": "capping",
-      "probability": 1,
-      "waitRaw": null
-    },
-    {
-      "from": "capping",
-      "to": "testing",
-      "probability": 1,
-      "waitRaw": null
-    },
-    {
-      "from": "testing",
-      "to": "packaging",
-      "probability": 1,
-      "waitRaw": "FIFO"
-    },
-    {
-      "from": "packaging",
-      "to": "palletizing",
-      "probability": 1,
-      "waitRaw": null
-    },
-    {
-      "from": "palletizing",
-      "to": "shipping",
-      "probability": 1,
-      "waitRaw": "Inventory triangle (I) shown; numeric wait not visible."
-    }
+    { "from": "stage_a", "to": "stage_b", "probability": 1 },
+    { "from": "stage_b", "to": "stage_c", "probability": 1 },
+    { "from": "stage_c", "to": "stage_d", "probability": 1 },
+    { "from": "stage_d", "to": "stage_e", "probability": 1 },
+    { "from": "stage_e", "to": "stage_f", "probability": 1 }
   ],
-  "startNodes": [
-    "receiving"
-  ],
-  "endNodes": [
-    "shipping"
-  ]
+  "startNodes": ["stage_a"],
+  "endNodes": ["stage_f"]
 }

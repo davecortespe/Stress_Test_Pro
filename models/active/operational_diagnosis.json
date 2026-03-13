@@ -1,12 +1,12 @@
 {
   "status": "overloaded",
-  "statusSummary": "Pleating is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added.",
-  "primaryConstraint": "Pleating is the active choke point because work is arriving faster than that step can drain its queue.",
-  "constraintMechanism": "Pleating has enough average capacity on paper, but bunching is compressing work into peaks. That makes the queue spike faster than the step can recover between waves.",
-  "downstreamEffects": "The line is meeting demand with very little spare capacity, WIP has built to roughly 12 units, total lead time is now about 525.9 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.",
-  "economicInterpretation": "The main cost is delay rather than pure output loss. A large share of lead time is waiting, which ties up WIP, delays availability, and burns labor on chasing flow rather than moving product.",
-  "recommendedAction": "Reduce effective cycle time at Pleating with standard work, faster changeovers, or error removal before spending on larger structural changes.",
-  "scenarioGuidance": "Scenario comparison is limited. Current outputs do not show a materially better tested scenario than the active case.",
+  "statusSummary": "Discharge clearance and med processing is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added.",
+  "primaryConstraint": "Discharge clearance and med processing is the current constraint, and downstream congestion at Education and paperwork completion is preventing that queue from clearing cleanly.",
+  "constraintMechanism": "Discharge clearance and med processing is not failing in isolation. Education and paperwork completion is also congested, so downstream WIP is not clearing fast enough and the blockage propagates back upstream.",
+  "downstreamEffects": "Throughput is running about 88% below required rate, WIP has built to roughly 460 units, total lead time is now about 2592.2 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.",
+  "economicInterpretation": "This is creating hidden capacity loss of roughly 88% versus required output. The likely business impact is overtime pressure, slower inventory availability, and missed throughput that has to be recovered later.",
+  "recommendedAction": "Stabilize the handoff between Discharge clearance and med processing and Education and paperwork completion first. Clear downstream WIP before releasing more work, and rebalance labor by queue pressure instead of fixed headcount.",
+  "scenarioGuidance": "The current relief scenario is directionally right. It improves throughput by about 0.119 units/hr, and it also changes bottleneck behavior to Education and paperwork completion -> Discharge clearance and med processing (low confidence).",
   "aiOpportunityLens": {
     "dataAlreadyExists": "Utilization, queue, WIP, and lead-time data already exist here but are usually reviewed as separate metrics instead of as one flow signal.",
     "manualPatternDecisions": "Labor rebalance, release timing, and expediting decisions are still manual even though the patterns are repetitive and detectable from the same simulation outputs.",
@@ -15,5 +15,5 @@
     "visibilityGap": "When operators cannot see where queue pressure will propagate next, the business leaks profit through avoidable delay, premium labor, and hidden capacity loss."
   },
   "confidence": "low",
-  "confidenceNote": "Confidence is low because key inputs are incomplete. Missing or weak fields: demand rate/product mix, parallel procedures, changeover/setup times, lot-size policy."
+  "confidenceNote": "Confidence is low because key inputs are incomplete. Missing or weak fields: changeover/setup times, staffing/equipment counts, parallel procedures, demand rate/product mix, shift hours/uptime."
 }

@@ -182,7 +182,6 @@ export default function SimulatorApp() {
     importLibraryFile,
     saveCurrentScenario,
     loadScenarioEntry,
-    clearCurrentScenario,
     setSelectedScenarioId
   } = useScenarioLibrary({
     scenarioColumns: scenarioLibraryColumns,
@@ -260,7 +259,6 @@ export default function SimulatorApp() {
 
   const resetSimulationView = () => {
     resetSimulation();
-    clearCurrentScenario();
     setInspectorStepId(null);
     setInspectorAnchor(null);
   };
@@ -397,6 +395,7 @@ export default function SimulatorApp() {
     <div className="simulator-page">
       <div className="app-shell">
         <DashboardHeader
+          brandLabel="LeanStorming Operational Stress Labs"
           title={dashboardConfig.appTitle}
           subtitle={dashboardConfig.subtitle ?? "Fast bottleneck forecast cockpit"}
           resultsMode={resultsMode}

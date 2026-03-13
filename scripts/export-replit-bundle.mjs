@@ -43,6 +43,10 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
+function readJsonIfExists(filePath) {
+  return fs.existsSync(filePath) ? readJson(filePath) : null;
+}
+
 function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
@@ -73,7 +77,9 @@ function deriveDefaultScenario(compiledModel, dashboardConfig) {
 }
 
 function runBuild(repoRoot) {
-  const result = spawnSync("npm", ["run", "build"], {
+  const command = process.platform === "win32" ? (process.env.ComSpec || "cmd.exe") : "npm";
+  const args = process.platform === "win32" ? ["/d", "/s", "/c", "npm.cmd run build"] : ["run", "build"];
+  const result = spawnSync(command, args, {
     cwd: repoRoot,
     stdio: "inherit"
   });
@@ -260,6 +266,10 @@ const dashboardConfigPath = path.join(repoRoot, "models", "dashboard_config.json
 const vsmGraphPath = path.join(repoRoot, "models", "active", "vsm_graph.json");
 const masterDataPath = path.join(repoRoot, "models", "active", "master_data.json");
 const compiledPath = path.join(repoRoot, "models", "active", "compiled_forecast_model.json");
+const activeScenarioPath = path.join(repoRoot, "models", "active", "scenario_committed.json");
+const activeMetricsPath = path.join(repoRoot, "models", "active", "result_metrics.json");
+const activeDiagnosisJsonPath = path.join(repoRoot, "models", "active", "operational_diagnosis.json");
+const activeDiagnosisMdPath = path.join(repoRoot, "models", "active", "operational_diagnosis.md");
 
 const dashboardConfig = readJson(dashboardConfigPath);
 const vsmGraph = readJson(vsmGraphPath);
@@ -269,16 +279,22 @@ const compiledForecast = readJson(compiledPath);
 const scenarioPath = args.scenario ? path.resolve(String(args.scenario)) : null;
 const metricsPath = args.metrics ? path.resolve(String(args.metrics)) : null;
 
-const scenarioCommitted = scenarioPath
-  ? readJson(scenarioPath)
-  : deriveDefaultScenario(compiledForecast, dashboardConfig);
-const resultMetrics = metricsPath
-  ? readJson(metricsPath)
-  : {
-      globalMetrics: compiledForecast.baseline?.globalMetrics ?? {},
-      nodeMetrics: compiledForecast.baseline?.nodeMetrics ?? {}
-    };
-const operationalDiagnosis = buildOperationalDiagnosis(compiledForecast, resultMetrics, scenarioCommitted);
+const scenarioCommitted =
+  (scenarioPath ? readJson(scenarioPath) : null) ??
+  readJsonIfExists(activeScenarioPath) ??
+  deriveDefaultScenario(compiledForecast, dashboardConfig);
+const resultMetrics =
+  (metricsPath ? readJson(metricsPath) : null) ??
+  readJsonIfExists(activeMetricsPath) ?? {
+    globalMetrics: compiledForecast.baseline?.globalMetrics ?? {},
+    nodeMetrics: compiledForecast.baseline?.nodeMetrics ?? {}
+  };
+const operationalDiagnosis =
+  readJsonIfExists(activeDiagnosisJsonPath) ??
+  buildOperationalDiagnosis(compiledForecast, resultMetrics, scenarioCommitted);
+const operationalDiagnosisMarkdown = fs.existsSync(activeDiagnosisMdPath)
+  ? fs.readFileSync(activeDiagnosisMdPath, "utf8").trim()
+  : toOperationalDiagnosisMarkdown(operationalDiagnosis);
 
 fs.rmSync(targetPath, { recursive: true, force: true });
 fs.mkdirSync(targetPath, { recursive: true });
@@ -292,7 +308,7 @@ writeJson(path.join(targetPath, "result_metrics.json"), resultMetrics);
 writeJson(path.join(targetPath, "operational_diagnosis.json"), operationalDiagnosis);
 fs.writeFileSync(
   path.join(targetPath, "operational_diagnosis.md"),
-  `${toOperationalDiagnosisMarkdown(operationalDiagnosis)}\n`,
+  `${operationalDiagnosisMarkdown}\n`,
   "utf8"
 );
 writeJson(path.join(targetPath, "package.json"), buildReplitPackageJson());

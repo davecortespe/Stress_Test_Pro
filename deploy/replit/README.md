@@ -4,7 +4,7 @@ This folder is a stable deployment target for Replit, published on demand from t
 
 ## Publish target
 
-- Name: `sterile-brr-replit`
+- Name: `discharge-flow-replit`
 - Folder: `deploy/replit`
 
 ## Replit usage

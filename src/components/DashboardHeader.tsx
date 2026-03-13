@@ -11,6 +11,7 @@ const SPEED_OPTIONS: Array<{ value: SpeedMultiplier; label: string; hint?: strin
 ];
 
 interface DashboardHeaderProps {
+  brandLabel?: string;
   title: string;
   subtitle: string;
   resultsMode: SimulatorResultsMode;
@@ -31,6 +32,7 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({
+  brandLabel = "LeanStorming Operational Stress Labs",
   title,
   subtitle,
   resultsMode,
@@ -53,25 +55,59 @@ export function DashboardHeader({
     <header className="header-shell">
       <div className="header-left">
         <div className="header-title-block">
+          <p className="brand-mark">{brandLabel}</p>
           <h1>{title}</h1>
-          <p className="subtitle">{subtitle}</p>
+          {subtitle.trim().length > 0 ? <p className="subtitle">{subtitle}</p> : null}
         </div>
         <div className="header-toolbar">
-          <div className="header-control-card">
+          <div className="header-control-card actions-card">
             <p className="header-control-label">Actions</p>
-            <div className="header-controls">
+            <div className="header-controls actions-grid">
               <button className="primary" onClick={onStartPause}>
                 {isPaused ? "Start" : "Pause"}
               </button>
               <button className="secondary" onClick={onReset}>
-                Reset
+                Reset Time
               </button>
               <button type="button" className="secondary" onClick={onOpenLibraryCsv}>
-                Open Library CSV
+                Import Library CSV
               </button>
               <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
-                Save Current Scenario
+                Save Scenario
               </button>
+            </div>
+            <div className="actions-meta-row">
+              <div className="header-control-subsection compact speed-subsection">
+                <p className="header-subsection-label">Playback</p>
+                <div className="speed-group" role="group" aria-label="simulation speed">
+                  {SPEED_OPTIONS.map((speed) => (
+                    <button
+                      key={speed.value}
+                      type="button"
+                      className={`speed-pill ${speedMultiplier === speed.value ? "is-active" : ""}`}
+                      onClick={() => onSpeedChange(speed.value)}
+                      title={speed.hint}
+                    >
+                      {speed.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="header-control-subsection compact state-subsection">
+                <p className="header-subsection-label">State</p>
+                <div className="header-state-group">
+                  <div className={`live-pill ${isPaused ? "is-paused" : "is-live"}`}>
+                    <span className="dot" />
+                    {isPaused ? "Paused" : "Live"}
+                  </div>
+                  {isPaused && hasStagedChanges ? (
+                    <div className={`staged-chip ${hasStagedChanges ? "has-changes" : "no-changes"}`}>
+                      Staged changes
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -96,21 +132,6 @@ export function DashboardHeader({
               ))}
             </div>
           </div>
-
-          <div className="header-control-card header-state-card">
-            <p className="header-control-label">State</p>
-            <div className="header-state-group">
-              <div className={`live-pill ${isPaused ? "is-paused" : "is-live"}`}>
-                <span className="dot" />
-                {isPaused ? "Paused" : "Live"}
-              </div>
-              {isPaused && hasStagedChanges ? (
-                <div className={`staged-chip ${hasStagedChanges ? "has-changes" : "no-changes"}`}>
-                  Staged changes
-                </div>
-              ) : null}
-            </div>
-          </div>
         </div>
       </div>
       <div className="header-right">
@@ -131,22 +152,6 @@ export function DashboardHeader({
               <div className="sim-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={simProgressPct}>
                 <span className="sim-progress-fill" style={{ width: `${simProgressPct}%` }} />
               </div>
-            </div>
-          </div>
-          <div className="status-block speed-block">
-            <p className="header-control-label">Playback Speed</p>
-            <div className="speed-group" role="group" aria-label="simulation speed">
-              {SPEED_OPTIONS.map((speed) => (
-                <button
-                  key={speed.value}
-                  type="button"
-                  className={`speed-pill ${speedMultiplier === speed.value ? "is-active" : ""}`}
-                  onClick={() => onSpeedChange(speed.value)}
-                  title={speed.hint}
-                >
-                  {speed.label}
-                </button>
-              ))}
             </div>
           </div>
           <div className="status-block">

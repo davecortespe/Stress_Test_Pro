@@ -1,236 +1,153 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-03-10T21:26:32.609Z",
+  "version": "0.3.0",
+  "generatedAt": "2026-03-12T21:40:57.855Z",
   "metadata": {
-    "name": "Filter Making Line",
+    "name": "Discharge Flow Forecast",
     "units": "per-hour",
     "mode": "constraint-forecast-non-des"
   },
   "graph": {
     "metadata": {
-      "name": "Filter Making Line",
+      "name": "Discharge Flow Forecast",
       "units": "minutes",
-      "source": "User-provided VSM image (strict transcription, 2026-03-09)"
+      "source": "User-provided VSM image (strict transcription, 2026-03-12)"
     },
     "nodes": [
       {
-        "id": "receiving",
-        "label": "Receiving",
+        "id": "stage_a",
+        "label": "Order entry and RN awareness",
         "type": "process",
         "boxData": {
-          "ctRaw": "10",
-          "changeoverRaw": "0",
-          "waitRaw": null,
+          "ctRaw": "5 min",
+          "changeoverRaw": null,
+          "waitRaw": "20 min",
           "workersRaw": null,
-          "parallelProceduresRaw": "3",
+          "parallelProceduresRaw": null,
           "notesRaw": [
-            "Lead Time (m): 6",
-            "# of Lines: 3",
-            "# Shifts: 1",
-            "Lot Size: 1"
+            "Stage A",
+            "Resources: Provider pool (2), RN pool (5)",
+            "Total: 25 min"
           ]
         }
       },
       {
-        "id": "stocking",
-        "label": "Stocking",
+        "id": "stage_b",
+        "label": "RN review and patient clinical prep",
         "type": "process",
         "boxData": {
-          "ctRaw": "5.00",
-          "changeoverRaw": "0",
-          "waitRaw": null,
+          "ctRaw": "20 min",
+          "changeoverRaw": null,
+          "waitRaw": "35 min",
           "workersRaw": null,
-          "parallelProceduresRaw": "100",
+          "parallelProceduresRaw": null,
           "notesRaw": [
-            "Lead Time (m): 10.00",
-            "# of Lines: 100",
-            "# Shifts: 2.00",
-            "Lot Size: 100"
+            "Stage B",
+            "Resources: RN pool (5), Tech pool (2)",
+            "Total: 55 min"
           ]
         }
       },
       {
-        "id": "pleating",
-        "label": "Pleating",
+        "id": "stage_c",
+        "label": "Discharge clearance and med processing",
         "type": "process",
         "boxData": {
-          "ctRaw": "20.00",
-          "changeoverRaw": "30.00",
-          "waitRaw": null,
+          "ctRaw": "22 min",
+          "changeoverRaw": null,
+          "waitRaw": "60 min",
           "workersRaw": null,
-          "parallelProceduresRaw": "1.00",
+          "parallelProceduresRaw": null,
           "notesRaw": [
-            "Lead Time (m): 180.00",
-            "# of Lines: 1.00",
-            "# Shifts: 3.00",
-            "Lot Size: 1.00"
+            "Stage C",
+            "Resources: RN pool (5), Provider pool (2), Pharmacy pool (1), Case Manager pool (1)",
+            "Total: 82 min"
           ]
         }
       },
       {
-        "id": "forming",
-        "label": "Forming",
+        "id": "stage_d",
+        "label": "Education and paperwork completion",
         "type": "process",
         "boxData": {
-          "ctRaw": "3.00",
-          "changeoverRaw": "30.00",
-          "waitRaw": null,
+          "ctRaw": "23 min",
+          "changeoverRaw": null,
+          "waitRaw": "25 min",
           "workersRaw": null,
-          "parallelProceduresRaw": "2.00",
+          "parallelProceduresRaw": null,
           "notesRaw": [
-            "Lead Time (m): 1.00",
-            "# of Lines: 2.00",
-            "# Shifts: 1.00",
-            "Lot Size: 50.00"
+            "Stage D",
+            "Resources: RN pool (5), Unit Clerk pool (1)",
+            "Total: 48 min"
           ]
         }
       },
       {
-        "id": "capping",
-        "label": "Capping",
+        "id": "stage_e",
+        "label": "Patient/family departure prep",
         "type": "process",
         "boxData": {
-          "ctRaw": "1.00",
-          "changeoverRaw": "30.00",
-          "waitRaw": null,
+          "ctRaw": "10 min",
+          "changeoverRaw": null,
+          "waitRaw": "30 min",
           "workersRaw": null,
-          "parallelProceduresRaw": "1.00",
+          "parallelProceduresRaw": null,
           "notesRaw": [
-            "Lead Time (m): 2.00",
-            "# of Lines: 1.00",
-            "# Shifts: 1.00",
-            "Lot Size: 50.00"
+            "Stage E",
+            "Resources: Patient/family, RN pool (5) if support needed",
+            "Total: 40 min"
           ]
         }
       },
       {
-        "id": "testing",
-        "label": "Testing",
+        "id": "stage_f",
+        "label": "Transport and physical exit",
         "type": "process",
         "boxData": {
-          "ctRaw": "3.00",
-          "changeoverRaw": "20.00",
-          "waitRaw": null,
+          "ctRaw": "8 min",
+          "changeoverRaw": null,
+          "waitRaw": "25 min",
           "workersRaw": null,
-          "parallelProceduresRaw": "2.00",
+          "parallelProceduresRaw": null,
           "notesRaw": [
-            "Lead Time (m): 4.00",
-            "# of Lines: 2.00",
-            "Shifts: 1.00",
-            "Lot Size: 25.00"
-          ]
-        }
-      },
-      {
-        "id": "packaging",
-        "label": "Packaging",
-        "type": "process",
-        "boxData": {
-          "ctRaw": "3.00",
-          "changeoverRaw": "30.00",
-          "waitRaw": null,
-          "workersRaw": null,
-          "parallelProceduresRaw": "2.00",
-          "notesRaw": [
-            "Lead Time (m): 10.00",
-            "# of Lines: 2.00",
-            "Shifts: 1.00",
-            "Lot Size: 50.00"
-          ]
-        }
-      },
-      {
-        "id": "palletizing",
-        "label": "Palletizing",
-        "type": "process",
-        "boxData": {
-          "ctRaw": "5.00",
-          "changeoverRaw": "--",
-          "waitRaw": null,
-          "workersRaw": null,
-          "parallelProceduresRaw": "1.00",
-          "notesRaw": [
-            "Lead Time (m): 10.00",
-            "# of Lines: 1.00",
-            "Shifts: 1.00",
-            "Lot Size: 50.00"
-          ]
-        }
-      },
-      {
-        "id": "shipping",
-        "label": "Shipping",
-        "type": "process",
-        "boxData": {
-          "ctRaw": "5.00",
-          "changeoverRaw": "--",
-          "waitRaw": null,
-          "workersRaw": null,
-          "parallelProceduresRaw": "1.00",
-          "notesRaw": [
-            "Lead Time (m): 10.00",
-            "# of Lines: 1.00",
-            "Shifts: 1.00",
-            "Lot Size: 50.00"
+            "Stage F",
+            "Resources: Transport pool (2), RN pool (5)",
+            "Total: 33 min"
           ]
         }
       }
     ],
     "edges": [
       {
-        "from": "receiving",
-        "to": "stocking",
-        "probability": 1,
-        "waitRaw": "FIFO"
+        "from": "stage_a",
+        "to": "stage_b",
+        "probability": 1
       },
       {
-        "from": "stocking",
-        "to": "pleating",
-        "probability": 1,
-        "waitRaw": "FIFO"
+        "from": "stage_b",
+        "to": "stage_c",
+        "probability": 1
       },
       {
-        "from": "pleating",
-        "to": "forming",
-        "probability": 1,
-        "waitRaw": "FIFO"
+        "from": "stage_c",
+        "to": "stage_d",
+        "probability": 1
       },
       {
-        "from": "forming",
-        "to": "capping",
-        "probability": 1,
-        "waitRaw": null
+        "from": "stage_d",
+        "to": "stage_e",
+        "probability": 1
       },
       {
-        "from": "capping",
-        "to": "testing",
-        "probability": 1,
-        "waitRaw": null
-      },
-      {
-        "from": "testing",
-        "to": "packaging",
-        "probability": 1,
-        "waitRaw": "FIFO"
-      },
-      {
-        "from": "packaging",
-        "to": "palletizing",
-        "probability": 1,
-        "waitRaw": null
-      },
-      {
-        "from": "palletizing",
-        "to": "shipping",
-        "probability": 1,
-        "waitRaw": "Inventory triangle (I) shown; numeric wait not visible."
+        "from": "stage_e",
+        "to": "stage_f",
+        "probability": 1
       }
     ],
     "startNodes": [
-      "receiving"
+      "stage_a"
     ],
     "endNodes": [
-      "shipping"
+      "stage_f"
     ]
   },
   "inputs": [
@@ -250,8 +167,9 @@
       "defaultValue": "balanced",
       "options": [
         "balanced",
-        "station-1-heavy",
-        "final-step-heavy"
+        "front-loaded",
+        "midstream-heavy",
+        "back-loaded"
       ]
     },
     {
@@ -276,7 +194,7 @@
       "key": "unplannedDowntimePct",
       "label": "Unplanned Downtime",
       "type": "number",
-      "defaultValue": 7,
+      "defaultValue": 0,
       "min": 0,
       "max": 35,
       "step": 0.5
@@ -295,7 +213,7 @@
       "label": "Setup Penalty",
       "type": "number",
       "defaultValue": 1,
-      "min": 0.5,
+      "min": 0,
       "max": 1.8,
       "step": 0.05
     },
@@ -312,7 +230,7 @@
       "key": "simulationHorizonHours",
       "label": "Simulation Horizon",
       "type": "select",
-      "defaultValue": "8",
+      "defaultValue": "24",
       "options": [
         {
           "label": "8 hrs",
@@ -376,83 +294,60 @@
     }
   ],
   "inputDefaults": {
-    "demandRatePerHour": 16.2,
+    "demandRatePerHour": 21.6,
     "demandMultiplier": 1,
     "mixProfile": "balanced",
     "staffingMultiplier": 1,
     "equipmentMultiplier": 1,
-    "unplannedDowntimePct": 7,
+    "unplannedDowntimePct": 0,
     "ctMultiplier": 1,
     "setupPenaltyMultiplier": 1,
     "variabilityMultiplier": 1,
-    "simulationHorizonHours": "8",
+    "simulationHorizonHours": "24",
     "activeShiftCount": "3",
     "bottleneckReliefUnits": 1,
     "sellingPricePerUnit": 0
   },
   "stepModels": [
     {
-      "stepId": "receiving",
-      "label": "Receiving",
-      "equipmentType": "Receiving",
+      "stepId": "stage_a",
+      "label": "Order entry and RN awareness",
+      "equipmentType": "Provider pool",
       "workerCount": 0,
       "parallelProcedures": 1,
-      "effectiveUnits": 3,
-      "ctMinutes": 10,
-      "changeoverMinutes": 0,
-      "changeoverPenaltyPerUnitMinutes": 0,
-      "leadTimeMinutes": 6,
+      "effectiveUnits": 2,
+      "ctMinutes": 5,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 20,
       "variabilityCv": 0.18,
-      "effectiveCtMinutes": 10,
-      "effectiveCapacityPerHour": 18,
+      "effectiveCtMinutes": 5,
+      "effectiveCapacityPerHour": 24,
       "baseline": {
-        "demandRatePerHour": 16.2,
+        "demandRatePerHour": 21.6,
         "utilization": 0.9,
         "headroom": 0.1,
-        "queueRisk": 0.8353,
-        "bottleneckIndex": 0.6803,
+        "queueRisk": 0.81,
+        "bottleneckIndex": 0.675,
         "status": "risk"
       }
     },
     {
-      "stepId": "stocking",
-      "label": "Stocking",
-      "equipmentType": "Stocking",
+      "stepId": "stage_b",
+      "label": "RN review and patient clinical prep",
+      "equipmentType": "RN pool",
       "workerCount": 0,
       "parallelProcedures": 1,
-      "effectiveUnits": 100,
-      "ctMinutes": 5,
-      "changeoverMinutes": 0,
-      "changeoverPenaltyPerUnitMinutes": 0,
-      "leadTimeMinutes": 10,
-      "variabilityCv": 0.18,
-      "effectiveCtMinutes": 5,
-      "effectiveCapacityPerHour": 1200,
-      "baseline": {
-        "demandRatePerHour": 16.2,
-        "utilization": 0.0135,
-        "headroom": 0.9865,
-        "queueRisk": 0,
-        "bottleneckIndex": 0.0067,
-        "status": "healthy"
-      }
-    },
-    {
-      "stepId": "pleating",
-      "label": "Pleating",
-      "equipmentType": "Pleating",
-      "workerCount": 0,
-      "parallelProcedures": 1,
-      "effectiveUnits": 1,
+      "effectiveUnits": 2,
       "ctMinutes": 20,
-      "changeoverMinutes": 30,
-      "changeoverPenaltyPerUnitMinutes": 0.75,
-      "leadTimeMinutes": 180,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 35,
       "variabilityCv": 0.18,
-      "effectiveCtMinutes": 20.75,
-      "effectiveCapacityPerHour": 2.8916,
+      "effectiveCtMinutes": 20,
+      "effectiveCapacityPerHour": 6,
       "baseline": {
-        "demandRatePerHour": 16.2,
+        "demandRatePerHour": 21.6,
         "utilization": 1.35,
         "headroom": 0,
         "queueRisk": 1,
@@ -461,278 +356,194 @@
       }
     },
     {
-      "stepId": "forming",
-      "label": "Forming",
-      "equipmentType": "Forming",
-      "workerCount": 0,
-      "parallelProcedures": 1,
-      "effectiveUnits": 2,
-      "ctMinutes": 3,
-      "changeoverMinutes": 30,
-      "changeoverPenaltyPerUnitMinutes": 0.75,
-      "leadTimeMinutes": 1,
-      "variabilityCv": 0.18,
-      "effectiveCtMinutes": 3.75,
-      "effectiveCapacityPerHour": 32,
-      "baseline": {
-        "demandRatePerHour": 16.2,
-        "utilization": 0.5062,
-        "headroom": 0.4938,
-        "queueRisk": 0.0535,
-        "bottleneckIndex": 0.2661,
-        "status": "healthy"
-      }
-    },
-    {
-      "stepId": "capping",
-      "label": "Capping",
-      "equipmentType": "Capping",
+      "stepId": "stage_c",
+      "label": "Discharge clearance and med processing",
+      "equipmentType": "RN pool",
       "workerCount": 0,
       "parallelProcedures": 1,
       "effectiveUnits": 1,
-      "ctMinutes": 1,
-      "changeoverMinutes": 30,
-      "changeoverPenaltyPerUnitMinutes": 0.75,
-      "leadTimeMinutes": 2,
-      "variabilityCv": 0.18,
-      "effectiveCtMinutes": 1.75,
-      "effectiveCapacityPerHour": 34.2857,
-      "baseline": {
-        "demandRatePerHour": 16.2,
-        "utilization": 0.4725,
-        "headroom": 0.5275,
-        "queueRisk": 0.0436,
-        "bottleneckIndex": 0.2466,
-        "status": "healthy"
-      }
-    },
-    {
-      "stepId": "testing",
-      "label": "Testing",
-      "equipmentType": "Testing",
-      "workerCount": 0,
-      "parallelProcedures": 1,
-      "effectiveUnits": 2,
-      "ctMinutes": 3,
-      "changeoverMinutes": 20,
-      "changeoverPenaltyPerUnitMinutes": 0.5,
-      "leadTimeMinutes": 4,
-      "variabilityCv": 0.18,
-      "effectiveCtMinutes": 3.5,
-      "effectiveCapacityPerHour": 34.2857,
-      "baseline": {
-        "demandRatePerHour": 16.2,
-        "utilization": 0.4725,
-        "headroom": 0.5275,
-        "queueRisk": 0.0436,
-        "bottleneckIndex": 0.2466,
-        "status": "healthy"
-      }
-    },
-    {
-      "stepId": "packaging",
-      "label": "Packaging",
-      "equipmentType": "Packaging",
-      "workerCount": 0,
-      "parallelProcedures": 1,
-      "effectiveUnits": 2,
-      "ctMinutes": 3,
-      "changeoverMinutes": 30,
-      "changeoverPenaltyPerUnitMinutes": 0.75,
-      "leadTimeMinutes": 10,
-      "variabilityCv": 0.18,
-      "effectiveCtMinutes": 3.75,
-      "effectiveCapacityPerHour": 32,
-      "baseline": {
-        "demandRatePerHour": 16.2,
-        "utilization": 0.5062,
-        "headroom": 0.4938,
-        "queueRisk": 0.0535,
-        "bottleneckIndex": 0.2661,
-        "status": "healthy"
-      }
-    },
-    {
-      "stepId": "palletizing",
-      "label": "Palletizing",
-      "equipmentType": "Palletizing",
-      "workerCount": 0,
-      "parallelProcedures": 1,
-      "effectiveUnits": 1,
-      "ctMinutes": 5,
+      "ctMinutes": 22,
       "changeoverMinutes": null,
       "changeoverPenaltyPerUnitMinutes": null,
-      "leadTimeMinutes": 10,
+      "leadTimeMinutes": 60,
       "variabilityCv": 0.18,
-      "effectiveCtMinutes": 5,
-      "effectiveCapacityPerHour": 12,
+      "effectiveCtMinutes": 22,
+      "effectiveCapacityPerHour": 2.7273,
       "baseline": {
-        "demandRatePerHour": 16.2,
+        "demandRatePerHour": 21.6,
         "utilization": 1.35,
         "headroom": 0,
         "queueRisk": 1,
-        "bottleneckIndex": 0.935,
+        "bottleneckIndex": 1,
         "status": "critical"
       }
     },
     {
-      "stepId": "shipping",
-      "label": "Shipping",
-      "equipmentType": "Shipping",
+      "stepId": "stage_d",
+      "label": "Education and paperwork completion",
+      "equipmentType": "RN pool",
       "workerCount": 0,
       "parallelProcedures": 1,
       "effectiveUnits": 1,
-      "ctMinutes": 5,
+      "ctMinutes": 23,
       "changeoverMinutes": null,
       "changeoverPenaltyPerUnitMinutes": null,
-      "leadTimeMinutes": 10,
+      "leadTimeMinutes": 25,
       "variabilityCv": 0.18,
-      "effectiveCtMinutes": 5,
-      "effectiveCapacityPerHour": 12,
+      "effectiveCtMinutes": 23,
+      "effectiveCapacityPerHour": 2.6087,
       "baseline": {
-        "demandRatePerHour": 16.2,
+        "demandRatePerHour": 21.6,
         "utilization": 1.35,
         "headroom": 0,
         "queueRisk": 1,
-        "bottleneckIndex": 0.935,
+        "bottleneckIndex": 1,
+        "status": "critical"
+      }
+    },
+    {
+      "stepId": "stage_e",
+      "label": "Patient/family departure prep",
+      "equipmentType": "RN pool",
+      "workerCount": 0,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 10,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 30,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 10,
+      "effectiveCapacityPerHour": 6,
+      "baseline": {
+        "demandRatePerHour": 21.6,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "bottleneckIndex": 1,
+        "status": "critical"
+      }
+    },
+    {
+      "stepId": "stage_f",
+      "label": "Transport and physical exit",
+      "equipmentType": "Transport pool",
+      "workerCount": 0,
+      "parallelProcedures": 1,
+      "effectiveUnits": 2,
+      "ctMinutes": 8,
+      "changeoverMinutes": null,
+      "changeoverPenaltyPerUnitMinutes": null,
+      "leadTimeMinutes": 25,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 8,
+      "effectiveCapacityPerHour": 15,
+      "baseline": {
+        "demandRatePerHour": 21.6,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "bottleneckIndex": 0.944,
         "status": "critical"
       }
     }
   ],
   "baseline": {
-    "demandRatePerHour": 16.2,
-    "lineCapacityPerHour": 2.8916,
-    "bottleneckStepId": "pleating",
+    "demandRatePerHour": 21.6,
+    "lineCapacityPerHour": 2.6087,
+    "bottleneckStepId": "stage_d",
     "globalMetrics": {
-      "throughput": 2.8916,
-      "forecastThroughput": 2.8916,
+      "throughput": 2.6087,
+      "globalThroughput": 2.6087,
+      "forecastThroughput": 2.6087,
       "throughputDelta": 0,
       "bottleneckMigration": "baseline only",
       "bottleneckIndex": 1,
-      "brittleness": 0.7729,
-      "avgQueueRisk": 0.4477,
-      "totalWipQty": 266.8404,
-      "worstCaseTouchTime": 55,
-      "totalLeadTimeMinutes": 1456.8885,
+      "brittleness": 1,
+      "avgQueueRisk": 0.9683,
+      "totalWipQty": 2037.2753,
+      "worstCaseTouchTime": 88,
+      "totalLeadTimeMinutes": 3907.7593,
       "leadTimeDeltaMinutes": 0,
-      "waitSharePct": 0.1599,
-      "leadTimeTopContributor": "Pleating"
+      "waitSharePct": 0.0499,
+      "leadTimeTopContributor": "Education and paperwork completion"
     },
     "nodeMetrics": {
-      "receiving": {
+      "stage_a": {
         "utilization": 0.9,
         "headroom": 0.1,
-        "queueRisk": 0.8353,
-        "queueDepth": 11.4237,
-        "wipQty": 11.4237,
+        "queueRisk": 0.81,
+        "queueDepth": 11.26,
+        "wipQty": 11.26,
         "completedQty": 0,
-        "leadTimeMinutes": 54.0792,
-        "capacityPerHour": 18,
-        "bottleneckIndex": 0.6803,
+        "leadTimeMinutes": 53.15,
+        "capacityPerHour": 24,
+        "bottleneckIndex": 0.675,
         "bottleneckFlag": false,
         "status": "risk"
       },
-      "stocking": {
-        "utilization": 0.0135,
-        "headroom": 0.9865,
-        "queueRisk": 0,
-        "queueDepth": 0.0002,
-        "wipQty": 0.0002,
-        "completedQty": 0,
-        "leadTimeMinutes": 15,
-        "capacityPerHour": 1200,
-        "bottleneckIndex": 0.0067,
-        "bottleneckFlag": false,
-        "status": "healthy"
-      },
-      "pleating": {
+      "stage_b": {
         "utilization": 1.35,
         "headroom": 0,
         "queueRisk": 1,
-        "queueDepth": 46.317,
-        "wipQty": 152.7842,
+        "queueDepth": 32.44,
+        "wipQty": 406.84,
         "completedQty": 0,
-        "leadTimeMinutes": 1161.0674,
-        "capacityPerHour": 2.8916,
+        "leadTimeMinutes": 379.4,
+        "capacityPerHour": 6,
+        "bottleneckIndex": 1,
+        "bottleneckFlag": false,
+        "status": "critical"
+      },
+      "stage_c": {
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "queueDepth": 62.6794,
+        "wipQty": 515.6242,
+        "completedQty": 0,
+        "leadTimeMinutes": 1460.934,
+        "capacityPerHour": 2.7273,
+        "bottleneckIndex": 1,
+        "bottleneckFlag": false,
+        "status": "critical"
+      },
+      "stage_d": {
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "queueDepth": 65.1999,
+        "wipQty": 520.9911,
+        "completedQty": 0,
+        "leadTimeMinutes": 1547.5953,
+        "capacityPerHour": 2.6087,
         "bottleneckIndex": 1,
         "bottleneckFlag": true,
         "status": "critical"
       },
-      "forming": {
-        "utilization": 0.5062,
-        "headroom": 0.4938,
-        "queueRisk": 0.0535,
-        "queueDepth": 0.6423,
-        "wipQty": 0.6423,
-        "completedQty": 0,
-        "leadTimeMinutes": 5.2044,
-        "capacityPerHour": 32,
-        "bottleneckIndex": 0.2661,
-        "bottleneckFlag": false,
-        "status": "healthy"
-      },
-      "capping": {
-        "utilization": 0.4725,
-        "headroom": 0.5275,
-        "queueRisk": 0.0436,
-        "queueDepth": 0.5238,
-        "wipQty": 0.5238,
-        "completedQty": 0,
-        "leadTimeMinutes": 3.9166,
-        "capacityPerHour": 34.2857,
-        "bottleneckIndex": 0.2466,
-        "bottleneckFlag": false,
-        "status": "healthy"
-      },
-      "testing": {
-        "utilization": 0.4725,
-        "headroom": 0.5275,
-        "queueRisk": 0.0436,
-        "queueDepth": 0.5238,
-        "wipQty": 0.5238,
-        "completedQty": 0,
-        "leadTimeMinutes": 7.9166,
-        "capacityPerHour": 34.2857,
-        "bottleneckIndex": 0.2466,
-        "bottleneckFlag": false,
-        "status": "healthy"
-      },
-      "packaging": {
-        "utilization": 0.5062,
-        "headroom": 0.4938,
-        "queueRisk": 0.0535,
-        "queueDepth": 0.6423,
-        "wipQty": 0.6423,
-        "completedQty": 0,
-        "leadTimeMinutes": 14.2044,
-        "capacityPerHour": 32,
-        "bottleneckIndex": 0.2661,
-        "bottleneckFlag": false,
-        "status": "healthy"
-      },
-      "palletizing": {
+      "stage_e": {
         "utilization": 1.35,
         "headroom": 0,
         "queueRisk": 1,
-        "queueDepth": 16.55,
-        "wipQty": 50.15,
+        "queueDepth": 32.44,
+        "wipQty": 406.84,
         "completedQty": 0,
-        "leadTimeMinutes": 97.75,
-        "capacityPerHour": 12,
-        "bottleneckIndex": 0.935,
+        "leadTimeMinutes": 364.4,
+        "capacityPerHour": 6,
+        "bottleneckIndex": 1,
         "bottleneckFlag": false,
         "status": "critical"
       },
-      "shipping": {
+      "stage_f": {
         "utilization": 1.35,
         "headroom": 0,
         "queueRisk": 1,
-        "queueDepth": 16.55,
-        "wipQty": 50.15,
+        "queueDepth": 17.32,
+        "wipQty": 175.72,
         "completedQty": 0,
-        "leadTimeMinutes": 97.75,
-        "capacityPerHour": 12,
-        "bottleneckIndex": 0.935,
+        "leadTimeMinutes": 102.28,
+        "capacityPerHour": 15,
+        "bottleneckIndex": 0.944,
         "bottleneckFlag": false,
         "status": "critical"
       }
@@ -740,39 +551,59 @@
   },
   "assumptions": [
     {
+      "id": "strict-001",
+      "severity": "warning",
+      "text": "Changeover times are not shown anywhere in the source image, so changeover is null for all steps."
+    },
+    {
+      "id": "strict-002",
+      "severity": "warning",
+      "text": "Visible counts are shared pool sizes, not step-dedicated worker counts; workers are set to null for all steps."
+    },
+    {
+      "id": "strict-003",
+      "severity": "warning",
+      "text": "The source image does not show explicit parallel procedures or dedicated stations per step; parallelProcedures is set to null in strict transcription."
+    },
+    {
+      "id": "strict-004",
+      "severity": "warning",
+      "text": "Patient/family is visible as a participant in Stage E but does not include a numeric staffed capacity count."
+    },
+    {
+      "id": "strict-005",
+      "severity": "blocker",
+      "text": "Demand rate, shift calendar, uptime, variability, and resource-sharing rules across stages are not visible in the source image."
+    },
+    {
       "id": "compile-001",
       "severity": "warning",
-      "text": "Demand rate is not shown in the VSM image; baseline demandRatePerHour is set to 90% of computed release capacity at start steps."
+      "text": "Demand rate is not shown in the source image; baseline demandRatePerHour is seeded at 90% of computed release capacity from the start step."
     },
     {
       "id": "compile-002",
       "severity": "warning",
-      "text": "Station=n text is interpreted as effective parallel units during forecast compilation."
+      "text": "The source image does not show a shift calendar; activeShiftCount defaults to 3 so runtime capacity reflects continuous daily availability unless the user overrides it."
     },
     {
       "id": "compile-003",
       "severity": "warning",
-      "text": "A lot-size assumption of 40 units is used to convert visible C/O minutes into per-unit setup penalty."
+      "text": "Step-level variability is not shown in the source image; baseline variabilityCv defaults to 0.18 for all steps."
     },
     {
       "id": "compile-004",
       "severity": "warning",
-      "text": "Where C/O is null or ambiguous in strict transcription, setup penalty contribution is set to zero in forecast equations."
+      "text": "Where explicit parallel procedures are not shown, forecast capacity uses the minimum visible required shared-pool count at that step as the concurrency assumption."
     },
     {
       "id": "compile-005",
       "severity": "warning",
-      "text": "Default variability CV is set to 0.18 for all steps because step-level variability is not shown in the image."
+      "text": "Where no explicit parallel procedure count is shown and visible resources are optional or external, forecast capacity assumes one concurrent service unit for that step."
     },
     {
       "id": "compile-006",
-      "severity": "warning",
-      "text": "Step lead time values not visible in the image are stored as null in master data and treated as 0 minutes in aggregate lead-time calculations."
-    },
-    {
-      "id": "compile-007",
       "severity": "info",
-      "text": "Queue risk, bottleneck index, brittleness, and migration outputs are deterministic non-DES heuristics for rapid forecast recompute."
+      "text": "Queue risk, bottleneck index, brittleness, and migration outputs are deterministic non-DES forecast heuristics for rapid recompute."
     }
   ]
 }
