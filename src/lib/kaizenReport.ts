@@ -341,79 +341,361 @@ function buildOpportunity(
   };
 }
 
-function buildFishboneCategory(
+function impactFactorByCategory(category: KaizenFishboneCategoryKey): {
+  queue: number;
+  leadTime: number;
+  throughput: number;
+  stabilityEffect: string;
+} {
+  switch (category) {
+    case "manpower":
+      return {
+        queue: 0.24,
+        leadTime: 0.12,
+        throughput: 0.58,
+        stabilityEffect: "Reduces staffing-driven queue spikes and handoff starvation."
+      };
+    case "machine":
+      return {
+        queue: 0.28,
+        leadTime: 0.14,
+        throughput: 0.62,
+        stabilityEffect: "Removes stop-start behavior that keeps the bottleneck pinned."
+      };
+    case "method":
+      return {
+        queue: 0.3,
+        leadTime: 0.18,
+        throughput: 0.52,
+        stabilityEffect: "Cuts bunching, re-sequencing, and migration between near-constraints."
+      };
+    case "material":
+      return {
+        queue: 0.22,
+        leadTime: 0.16,
+        throughput: 0.42,
+        stabilityEffect: "Reduces blocked waiting and keeps work release synchronized to readiness."
+      };
+    case "measurement":
+      return {
+        queue: 0.14,
+        leadTime: 0.08,
+        throughput: 0.24,
+        stabilityEffect: "Improves early intervention so queues are corrected before they cascade."
+      };
+    default:
+      return {
+        queue: 0.2,
+        leadTime: 0.1,
+        throughput: 0.3,
+        stabilityEffect: "Improves control around the active constraint."
+      };
+  }
+}
+
+function roundMetric(value: number | null, digits = 1): number | null {
+  if (value === null || !Number.isFinite(value)) {
+    return null;
+  }
+  const scale = 10 ** digits;
+  return Math.round(value * scale) / scale;
+}
+
+function buildObservedCondition(category: KaizenFishboneCategoryKey, fact: StepFact): string {
+  if (category === "manpower") {
+    return `${fact.stepName} is running at ${pct(fact.utilization)} utilization with ${minutes(fact.queueDelayMinutes)} of queue delay, ${fixed(fact.wipQty, 1)} units of WIP, and ${fact.workerCount} modeled operators. Headroom is ${pct(fact.headroom)}.`;
+  }
+  if (category === "machine") {
+    return `${fact.stepName} is carrying ${pct(fact.utilization)} utilization with ${fixed(fact.downtimePct, 0)}% downtime, ${fixed(fact.effectiveUnits, 1)} effective units, ${minutes(fact.queueDelayMinutes)} of queue delay, and ${fixed(fact.wipQty, 1)} units of WIP.`;
+  }
+  if (category === "method") {
+    return `${fact.stepName} shows ${minutes(fact.changeoverPenaltyMinutes)} of changeover drag per unit, ${minutes(fact.queueDelayMinutes)} of queue delay, ${minutes(fact.leadTimeMinutes)} total lead time, and ${pct(fact.queueRisk)} queue risk.`;
+  }
+  if (category === "material") {
+    return `${fact.stepName} is carrying ${minutes(fact.explicitLeadTimeMinutes)} of explicit wait before work can move, ${fixed(fact.wipQty, 1)} units of WIP, ${minutes(fact.queueDelayMinutes)} of queue delay, and ${pct(fact.queueRisk)} queue risk.`;
+  }
+  return `${fact.stepName} is showing ${fixed(fact.variabilityCv, 2)} variation, ${pct(fact.queueRisk)} queue risk, ${minutes(fact.leadTimeMinutes)} lead time, and ${fact.assumptionCount} open assumptions${fact.missingCt || fact.missingLeadTime ? " with missing time signals" : ""}.`;
+}
+
+function buildFailureModes(category: KaizenFishboneCategoryKey, fact: StepFact): string[] {
+  if (category === "manpower") {
+    return [
+      `Hourly staffing is likely misaligned to arrival peaks, so ${fact.stepName} falls behind during the surge window.`,
+      fact.workerCount <= 1
+        ? `${fact.stepName} is exposed to single-operator dependence; breaks, coaching, or rework immediately turn into queue growth.`
+        : `${fact.stepName} likely has cross-training or role-balance gaps; work waits for the right person instead of flowing.`,
+      "Handoff and standard-work differences are probably adding hidden cycle-time loss at the constraint."
+    ];
+  }
+  if (category === "machine") {
+    return [
+      `Short uptime losses at ${fact.stepName} are likely removing the small amount of capacity margin that still exists.`,
+      `Recovery after stops is likely too slow for a step with only ${fixed(fact.effectiveUnits, 1)} effective units.`,
+      "The bottleneck is probably experiencing minor stops, changeover stalls, or equipment readiness delays that do not show up as one large failure."
+    ];
+  }
+  if (category === "method") {
+    return [
+      `Batching and sequencing rules are likely forcing work to wait before ${fact.stepName} can process it.`,
+      `Setup discipline is likely weak enough that ${minutes(fact.changeoverPenaltyMinutes)} of changeover drag is converting directly into queue growth.`,
+      "Supervisors are probably fighting the queue with expedites instead of a stable release and WIP rule."
+    ];
+  }
+  if (category === "material") {
+    return [
+      `Jobs are likely being released before material, paperwork, approvals, or upstream prep are fully ready.`,
+      `Input shortages or information gaps are likely causing stop-start flow at ${fact.stepName} rather than steady feed.`,
+      "Queue is probably being created by readiness failures upstream, not only by local process speed."
+    ];
+  }
+  return [
+    "Queue growth is likely being detected too late because reason codes, trigger thresholds, or live control charts are weak or missing.",
+    fact.missingCt || fact.missingLeadTime
+      ? "Critical time signals are missing, so the team is likely debating symptoms instead of confirming the actual mechanism."
+      : "Signals may exist, but the floor likely does not have a tight trigger for when to intervene before the queue runs away.",
+    "Variation is high enough that average metrics are hiding the moment the line becomes unstable."
+  ];
+}
+
+function buildCauseEffectChain(
   category: KaizenFishboneCategoryKey,
-  opportunity: KaizenOpportunity,
-  fact: StepFact
-): KaizenFishboneCategory {
-  const commonLine = `${fact.stepName} currently shows ${pct(fact.utilization)} utilization, ${pct(fact.queueRisk)} queue risk, and ${minutes(fact.leadTimeMinutes)} lead time.`;
+  fact: StepFact,
+  primaryConstraintLabel: string,
+  isDirectConstraint: boolean
+): string {
+  const constraintPhrase = isDirectConstraint
+    ? `${fact.stepName} stays pinned as the system bottleneck`
+    : `${fact.stepName} feeds instability into ${primaryConstraintLabel}, which keeps the system bottleneck from recovering`;
 
   if (category === "manpower") {
-    return {
-      key: category,
-      label: categoryLabel(category),
-      headline: "People and staffing may be part of the bottleneck.",
-      priorityScore: opportunity.score,
-      likelyCauses: [
-        commonLine,
-        `There are ${fact.workerCount} workers tied to this step, so balancing and cross-training may help more than adding complexity.`,
-        `This step has very little extra capacity to absorb variation.`
-      ]
-    };
+    return `When coverage or role balance slips at ${fact.stepName}, effective service rate drops below arrivals. Queue delay rises to ${minutes(fact.queueDelayMinutes)} and WIP builds to ${fixed(fact.wipQty, 1)} units, so ${constraintPhrase}.`;
   }
-
   if (category === "machine") {
-    return {
-      key: category,
-      label: categoryLabel(category),
-      headline: "Equipment or uptime issues may be causing extra delay.",
-      priorityScore: opportunity.score,
-      likelyCauses: [
-        `Modeled downtime at ${fact.stepName} is ${fixed(fact.downtimePct, 0)}%.`,
-        `This step has ${fixed(fact.effectiveUnits, 1)} effective units, so small stops can have a big effect.`,
-        `When this step is unstable, queues grow downstream.`
-      ]
-    };
+    return `Each uptime loss at ${fact.stepName} removes capacity from a step already running at ${pct(fact.utilization)} utilization. Because there are only ${fixed(fact.effectiveUnits, 1)} effective units, even short stops expand the queue quickly and ${constraintPhrase}.`;
   }
-
   if (category === "method") {
-    return {
-      key: category,
-      label: categoryLabel(category),
-      headline: "The way work flows may be creating avoidable waiting.",
-      priorityScore: opportunity.score,
-      likelyCauses: [
-        commonLine,
-        `Setup or changeover drag is ${minutes(fact.changeoverPenaltyMinutes)} per unit.`,
-        `Queue delay at this step is ${minutes(fact.queueDelayMinutes)}.`
-      ]
-    };
+    return `Changeovers, batching, and weak release rules add non-value time before units clear ${fact.stepName}. That inflates queue delay to ${minutes(fact.queueDelayMinutes)}, stretches lead time to ${minutes(fact.leadTimeMinutes)}, and ${constraintPhrase}.`;
   }
-
   if (category === "material") {
-    return {
-      key: category,
-      label: categoryLabel(category),
-      headline: "Inputs may not be ready when work reaches this step.",
-      priorityScore: opportunity.score,
-      likelyCauses: [
-        `Known wait time before or around ${fact.stepName} is ${minutes(fact.explicitLeadTimeMinutes)}.`,
-        `WIP near this step is ${fixed(fact.wipQty, 1)}.`,
-        "Inputs can mean materials, information, approvals, or prep work."
-      ]
-    };
+    return `If work reaches ${fact.stepName} before inputs are ready, the step alternates between waiting and surging. That creates hidden starvation and then queue spikes, which leaves ${fixed(fact.wipQty, 1)} units trapped in front of the bottleneck and ${constraintPhrase}.`;
   }
+  return `Without timely signals, the floor reacts after queue growth is already visible instead of when variation first appears. The line then carries ${pct(fact.queueRisk)} queue risk and ${minutes(fact.leadTimeMinutes)} lead time before anyone intervenes, so ${constraintPhrase}.`;
+}
 
+function buildAuditChecks(
+  category: KaizenFishboneCategoryKey,
+  fact: StepFact
+): KaizenFishboneCategory["auditChecks"] {
+  if (category === "manpower") {
+    return [
+      {
+        check: `Compare scheduled versus actual headcount by hour at ${fact.stepName} for the last 5 shifts.`,
+        source: "shift roster, time clock, labor-move log",
+        successSignal: "Peak arrival windows have full coverage and no repeated break or absence gaps."
+      },
+      {
+        check: `Observe one full cycle at ${fact.stepName} and count wait-for-person events, handoffs, and role interruptions.`,
+        source: "floor observation, supervisor notes",
+        successSignal: "Operators can complete the cycle without waiting for another person or role approval."
+      },
+      {
+        check: `Review cross-training and relief coverage for ${fact.stepName}.`,
+        source: "skills matrix, relief assignment sheet",
+        successSignal: "At least one trained backup can cover the constraint during breaks, meetings, and troubleshooting."
+      }
+    ];
+  }
+  if (category === "machine") {
+    return [
+      {
+        check: `Pull stop logs for ${fact.stepName} and sort downtime by cause and duration.`,
+        source: "downtime log, CMMS, machine event history",
+        successSignal: "Top stop causes and recovery times are known by shift and by operator."
+      },
+      {
+        check: `Verify actual available units versus planned units at ${fact.stepName}.`,
+        source: "equipment schedule, maintenance status board",
+        successSignal: "All modeled units are truly available during the peak load window."
+      },
+      {
+        check: `Watch two recoveries from a stop and time restart-to-first-good-unit.`,
+        source: "floor observation, line lead timing",
+        successSignal: "Recovery is repeatable and does not create extended restart lag."
+      }
+    ];
+  }
+  if (category === "method") {
+    return [
+      {
+        check: `Review the actual dispatching and batching rule used at ${fact.stepName} during the last 3 shifts.`,
+        source: "schedule board, ERP/MES queue, supervisor notes",
+        successSignal: "Work is sequenced by a stable rule instead of repeated expedites."
+      },
+      {
+        check: `Time changeovers and compare actual versus standard at ${fact.stepName}.`,
+        source: "setup log, observation sheet",
+        successSignal: "Changeover loss is within standard and not drifting by team or product family."
+      },
+      {
+        check: `Measure queue age in front of ${fact.stepName}, not just queue count.`,
+        source: "WIP board, timestamps in system",
+        successSignal: "Older jobs are not repeatedly bypassed while new work is released."
+      }
+    ];
+  }
+  if (category === "material") {
+    return [
+      {
+        check: `Audit the last 10 jobs released to ${fact.stepName} for missing materials, paperwork, approvals, or prep.`,
+        source: "job packet, ERP/MES release record, traveler",
+        successSignal: "Jobs are released only when all required inputs are complete."
+      },
+      {
+        check: `Compare explicit wait before ${fact.stepName} with upstream completion timestamps.`,
+        source: "system timestamps, staging log",
+        successSignal: "Upstream completion and downstream readiness are synchronized, with no repeated hold time."
+      },
+      {
+        check: `Walk the queue physically and confirm whether queued work is truly ready to run.`,
+        source: "floor observation, material staging area",
+        successSignal: "Queued jobs are executable now, not waiting on hidden readiness issues."
+      }
+    ];
+  }
+  return [
+    {
+      check: `Verify whether ${fact.stepName} has live queue, WIP, downtime, and variation triggers visible to the floor.`,
+      source: "tier board, dashboard, shift huddle sheet",
+      successSignal: "The team can see the queue turning bad before the bottleneck is fully saturated."
+    },
+    {
+      check: `Review the last 5 escalations and confirm whether the first signal was measured or anecdotal.`,
+      source: "escalation log, supervisor notes",
+      successSignal: "Most interventions are triggered by data, not by late visual backlog discovery."
+    },
+    {
+      check: `Close missing CT/LT assumptions tied to ${fact.stepName}.`,
+      source: "VSM data set, time study, ERP/MES timestamps",
+      successSignal: "The constraint mechanism can be explained with measured times instead of defaults."
+    }
+  ];
+}
+
+function buildTargetedFixes(category: KaizenFishboneCategoryKey, fact: StepFact): string[] {
+  if (category === "manpower") {
+    return [
+      `Move one trained operator-equivalent into ${fact.stepName} during the peak arrival window before adding broader labor.`,
+      `Standardize the handoff at ${fact.stepName} so the operator does not wait on role clarification or approvals.`,
+      "Create explicit relief coverage for breaks, troubleshooting, and short absences at the constraint."
+    ];
+  }
+  if (category === "machine") {
+    return [
+      `Attack the top downtime cause at ${fact.stepName} first and shorten restart-to-first-good-unit.`,
+      `Protect one unit at ${fact.stepName} from non-critical interruptions during the peak queue window.`,
+      "Pre-stage tools, parts, and settings so minor stops do not become extended capacity loss."
+    ];
+  }
+  if (category === "method") {
+    return [
+      `Enforce one dispatch rule into ${fact.stepName} and stop re-prioritizing unless the reason is explicit.`,
+      `Reduce setup loss at ${fact.stepName} with prep-offline work and family sequencing.`,
+      "Set a local WIP cap and queue-age trigger so the line cannot flood the constraint unchecked."
+    ];
+  }
+  if (category === "material") {
+    return [
+      `Gate release into ${fact.stepName} on material and information readiness, not calendar promise alone.`,
+      `Add a short pre-release check for missing paperwork, approvals, or prep that currently creates hidden waiting.`,
+      "Separate not-ready jobs from runnable jobs so the queue only contains executable work."
+    ];
+  }
+  return [
+    `Add live trigger points for queue age, queue depth, and downtime at ${fact.stepName}.`,
+    "Require one reason code whenever work is expedited around the constraint so the true mechanism becomes visible.",
+    "Close the highest-impact missing time signals before the next improvement event."
+  ];
+}
+
+function buildExpectedImpact(
+  category: KaizenFishboneCategoryKey,
+  fact: StepFact,
+  score: number,
+  primaryConstraintId: string,
+  forecast: ReturnType<typeof createConstraintForecast>
+): KaizenFishboneCategory["expectedImpact"] {
+  const categoryFactor = impactFactorByCategory(category);
+  const isDirectConstraint = fact.stepId === primaryConstraintId;
+  const severityFactor = clamp(score / 100, 0.45, 1);
+  const relationshipFactor = isDirectConstraint ? 1 : 0.78;
+  const recoverableThroughput = Math.max(
+    forecast.relief.throughput - forecast.baseline.throughput,
+    forecast.baseline.lineDemand - forecast.baseline.throughput,
+    forecast.baseline.throughput * 0.03,
+    0.1
+  );
+
+  return {
+    queueReductionMinutes:
+      fact.queueDelayMinutes === null
+        ? null
+        : roundMetric(
+            fact.queueDelayMinutes * categoryFactor.queue * severityFactor * relationshipFactor,
+            1
+          ),
+    leadTimeReductionMinutes:
+      fact.leadTimeMinutes === null
+        ? null
+        : roundMetric(
+            fact.leadTimeMinutes * categoryFactor.leadTime * severityFactor * relationshipFactor,
+            1
+          ),
+    throughputGainUnitsPerHour: roundMetric(
+      recoverableThroughput * categoryFactor.throughput * severityFactor * relationshipFactor,
+      2
+    ),
+    stabilityEffect: categoryFactor.stabilityEffect
+  };
+}
+
+function buildFishboneCategory(
+  category: KaizenFishboneCategoryKey,
+  fact: StepFact,
+  score: number,
+  primaryConstraintId: string,
+  primaryConstraintLabel: string,
+  forecast: ReturnType<typeof createConstraintForecast>
+): KaizenFishboneCategory {
   return {
     key: category,
     label: categoryLabel(category),
-    headline: "The team may need better signals to see problems earlier.",
-    priorityScore: opportunity.score,
-    likelyCauses: [
-      `Variation at ${fact.stepName} is ${fixed(fact.variabilityCv, 2)} and there are ${fact.assumptionCount} open assumptions tied to the step.`,
-      "Missing time data lowers confidence in the root cause.",
-      "Daily control may need clearer trigger points and reason tracking."
-    ]
+    focusStep: fact.stepName,
+    priorityScore: score,
+    observedCondition: buildObservedCondition(category, fact),
+    failureModes: buildFailureModes(category, fact),
+    causeEffectChain: buildCauseEffectChain(
+      category,
+      fact,
+      primaryConstraintLabel,
+      fact.stepId === primaryConstraintId
+    ),
+    auditChecks: buildAuditChecks(category, fact),
+    targetedFixes: buildTargetedFixes(category, fact),
+    expectedImpact: buildExpectedImpact(category, fact, score, primaryConstraintId, forecast),
+    confidence: confidenceForStep(fact),
+    metrics: {
+      utilization: fact.utilization,
+      queueRisk: fact.queueRisk,
+      queueDelayMinutes: fact.queueDelayMinutes,
+      leadTimeMinutes: fact.leadTimeMinutes,
+      wipQty: fact.wipQty,
+      downtimePct: fact.downtimePct,
+      variabilityCv: fact.variabilityCv,
+      changeoverPenaltyMinutes: fact.changeoverPenaltyMinutes,
+      workerCount: fact.workerCount,
+      effectiveUnits: fact.effectiveUnits,
+      bottleneckIndex: fact.bottleneckIndex
+    }
   };
 }
 
@@ -423,13 +705,14 @@ export function buildKaizenReport(
   output: SimulationOutput
 ): KaizenReportResult {
   const facts = buildStepFacts(model, scenario, output);
-  const primaryConstraint =
+  const forecast = createConstraintForecast(model, scenario);
+  const primaryConstraintId =
     Object.entries(output.nodeMetrics).find(([, metrics]) => metrics.bottleneckFlag)?.[0] ??
     model.baseline.bottleneckStepId ??
     model.stepModels[0]?.stepId ??
     "";
   const primaryConstraintLabel =
-    model.stepModels.find((step) => step.stepId === primaryConstraint)?.label ??
+    model.stepModels.find((step) => step.stepId === primaryConstraintId)?.label ??
     output.globalMetrics.leadTimeTopContributor?.toString() ??
     "Current constraint";
   const maxima = {
@@ -453,7 +736,16 @@ export function buildKaizenReport(
     return {
       category,
       fact,
-      opportunity: buildOpportunity(category, fact, score, primaryConstraintLabel)
+      score,
+      opportunity: buildOpportunity(category, fact, score, primaryConstraintLabel),
+      audit: buildFishboneCategory(
+        category,
+        fact,
+        score,
+        primaryConstraintId,
+        primaryConstraintLabel,
+        forecast
+      )
     };
   });
 
@@ -466,29 +758,31 @@ export function buildKaizenReport(
     }));
 
   const fishboneCategories = byCategory
-    .map((entry) => buildFishboneCategory(entry.category, entry.opportunity, entry.fact))
+    .map((entry) => entry.audit)
     .sort((a, b) => b.priorityScore - a.priorityScore);
 
   const missingSignals = buildMissingSignals(model);
   const confidence =
     missingSignals.length >= 8 ? "low" : missingSignals.length >= 5 ? "medium" : "high";
-  const topOpportunity = topOpportunities[0];
+  const topCategory = fishboneCategories[0];
 
   return {
     scenarioLabel: model.metadata.name || "Current Scenario",
     primaryConstraint: primaryConstraintLabel,
-    headline: `${primaryConstraintLabel} is the best place to start, but the biggest win will likely come from fixing the surrounding causes that keep feeding the bottleneck.`,
-    practitionerSummary: "This report highlights the best Kaizen opportunities based on where pressure, delay, and instability are showing up in the current forecast.",
-    selectionBasis: "The list is based on how busy each step is, how much waiting builds up around it, how unstable it is, and how complete the data is.",
+    headline: `${primaryConstraintLabel} is the active constraint. Use the 5M audit below to verify which mechanism is actually pinning flow before launching a broader Kaizen event.`,
+    practitionerSummary:
+      "This is a strict Fishbone root-cause audit. Each category states the observed condition, the failure mode to confirm, the floor checks to run, and the smallest fix that should move flow.",
+    selectionBasis:
+      "Categories are ranked by how strongly their measured signals explain queue growth, lead-time expansion, throughput loss, and instability around the active constraint.",
     confidence,
     topOpportunities,
     fishboneCategories,
     missingSignals,
     kpiSummary: {
-      topOpportunity: topOpportunity?.stepName ?? primaryConstraintLabel,
-      topOpportunityScore: topOpportunity?.score ?? 0,
-      opportunityCount: topOpportunities.length,
-      fishboneFocus: categoryLabel(topOpportunity?.fishboneCategory ?? "method"),
+      topOpportunity: topCategory?.focusStep ?? primaryConstraintLabel,
+      topOpportunityScore: topCategory?.priorityScore ?? 0,
+      opportunityCount: fishboneCategories.length,
+      fishboneFocus: topCategory?.label ?? categoryLabel("method"),
       missingSignalsCount: missingSignals.length
     }
   };

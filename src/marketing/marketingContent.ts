@@ -38,7 +38,7 @@ export const heroMockData: {
   metrics: HeroMetric[];
 } = {
   metrics: [
-    { label: "Report Views", value: "5 analytics modes", tone: "good" },
+    { label: "Report Views", value: "6 analytics modes", tone: "good" },
     { label: "Scenario Controls", value: "Demand, labor, shifts, downtime", tone: "neutral" },
     { label: "Decision Focus", value: "Constraint, cost, waste, kaizen", tone: "alert" }
   ]
@@ -119,6 +119,21 @@ export const reportShowcase: ReportShowcaseItem[] = [
     ],
     proofLabel: "Best for",
     proofValue: "Finding where delay compounds"
+  },
+  {
+    id: "assumptions",
+    label: "ASSUMPTIONS",
+    eyebrow: "Trust and data quality",
+    title: "Show what the model assumed before people act on the result",
+    summary:
+      "The assumptions report turns hidden defaults and estimated inputs into a plain-language checklist so end users know what is solid, what needs review, and what to verify first.",
+    bullets: [
+      "Trust level summary for the current scenario",
+      "Plain-language explanation of estimated or defaulted inputs",
+      "Priority checks before using the report for bigger decisions"
+    ],
+    proofLabel: "Best for",
+    proofValue: "Seeing how much to trust the result"
   }
 ];
 

@@ -8,6 +8,9 @@ interface GraphCanvasProps {
   nodeCardFields: string[];
   showProbabilities: boolean;
   animateEdges: boolean;
+  viewportStorageKey?: string;
+  parameterToggleLabel?: string;
+  onParameterToggle?: () => void;
   onNodeDoubleClick?: (nodeId: string, anchor: { x: number; y: number }) => void;
   resetViewSignal?: number;
 }
@@ -183,6 +186,9 @@ export function GraphCanvas({
   nodeCardFields,
   showProbabilities,
   animateEdges,
+  viewportStorageKey,
+  parameterToggleLabel,
+  onParameterToggle,
   onNodeDoubleClick,
   resetViewSignal
 }: GraphCanvasProps) {
@@ -238,24 +244,94 @@ export function GraphCanvas({
     };
   }, [graph.nodes, positions]);
 
+  const persistViewport = useCallback(
+    (nextZoom: number, nextOffset: { x: number; y: number }) => {
+      if (!viewportStorageKey || typeof window === "undefined") {
+        return;
+      }
+
+      try {
+        window.localStorage.setItem(
+          viewportStorageKey,
+          JSON.stringify({
+            zoom: nextZoom,
+            offset: nextOffset
+          })
+        );
+      } catch {
+        // Ignore storage failures and keep the canvas usable.
+      }
+    },
+    [viewportStorageKey]
+  );
+
+  const readSavedViewport = useCallback(() => {
+    if (!viewportStorageKey || typeof window === "undefined") {
+      return null;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(viewportStorageKey);
+      if (!raw) {
+        return null;
+      }
+      const parsed = JSON.parse(raw) as { zoom?: number; offset?: { x?: number; y?: number } };
+      if (
+        typeof parsed.zoom !== "number" ||
+        !Number.isFinite(parsed.zoom) ||
+        typeof parsed.offset?.x !== "number" ||
+        typeof parsed.offset?.y !== "number"
+      ) {
+        return null;
+      }
+      return {
+        zoom: clamp(parsed.zoom, ZOOM_MIN, ZOOM_MAX),
+        offset: {
+          x: parsed.offset.x,
+          y: parsed.offset.y
+        }
+      };
+    } catch {
+      return null;
+    }
+  }, [viewportStorageKey]);
+
   const fitToGraph = useCallback(() => {
-    const padding = 56;
+    const paddingX = 18;
+    const paddingY = 18;
     const nextZoom = clamp(
       Math.min(
-        (VIEWBOX_WIDTH - padding * 2) / Math.max(1, graphBounds.width),
-        (VIEWBOX_HEIGHT - padding * 2) / Math.max(1, graphBounds.height)
+        (VIEWBOX_WIDTH - paddingX * 2) / Math.max(1, graphBounds.width),
+        (VIEWBOX_HEIGHT - paddingY * 2) / Math.max(1, graphBounds.height)
       ),
       ZOOM_MIN,
       ZOOM_MAX
     );
-    const graphCenterX = (graphBounds.left + graphBounds.right) / 2;
-    const graphCenterY = (graphBounds.top + graphBounds.bottom) / 2;
+    const leftMargin = 18;
+    const topMargin = 18;
+    const nextOffset = {
+      x: leftMargin - graphBounds.left * nextZoom,
+      y: topMargin - graphBounds.top * nextZoom
+    };
     setZoom(nextZoom);
-    setOffset({
-      x: VIEWBOX_WIDTH / 2 - graphCenterX * nextZoom,
-      y: VIEWBOX_HEIGHT / 2 - graphCenterY * nextZoom
-    });
-  }, [graphBounds]);
+    setOffset(nextOffset);
+    persistViewport(nextZoom, nextOffset);
+  }, [graphBounds, persistViewport]);
+
+  const focusStartLane = useCallback(() => {
+    const preferredZoom = clamp(
+      Math.min((VIEWBOX_HEIGHT - 132) / Math.max(nodeCardHeight, graphBounds.height), 0.72),
+      0.58,
+      0.72
+    );
+    const nextOffset = {
+      x: 28 - graphBounds.left * preferredZoom,
+      y: 94 - graphBounds.top * preferredZoom
+    };
+    setZoom(preferredZoom);
+    setOffset(nextOffset);
+    persistViewport(preferredZoom, nextOffset);
+  }, [graphBounds.height, graphBounds.left, graphBounds.top, nodeCardHeight, persistViewport]);
 
   const zoomAround = useCallback(
     (nextZoomRaw: number, focalPoint = { x: VIEWBOX_WIDTH / 2, y: VIEWBOX_HEIGHT / 2 }) => {
@@ -263,21 +339,35 @@ export function GraphCanvas({
       const worldX = (focalPoint.x - offset.x) / zoom;
       const worldY = (focalPoint.y - offset.y) / zoom;
       setZoom(nextZoom);
-      setOffset({
+      const nextOffset = {
         x: focalPoint.x - worldX * nextZoom,
         y: focalPoint.y - worldY * nextZoom
-      });
+      };
+      setOffset(nextOffset);
+      persistViewport(nextZoom, nextOffset);
     },
-    [offset.x, offset.y, zoom]
+    [offset.x, offset.y, persistViewport, zoom]
   );
 
   useEffect(() => {
-    fitToGraph();
-  }, [fitToGraph, graph.nodes.length, graph.edges.length, resetViewSignal]);
+    const savedViewport = readSavedViewport();
+    if (savedViewport) {
+      setZoom(savedViewport.zoom);
+      setOffset(savedViewport.offset);
+      return;
+    }
+
+    focusStartLane();
+  }, [focusStartLane, graph.nodes.length, graph.edges.length, resetViewSignal, readSavedViewport]);
 
   return (
     <section className="graph-stage">
       <div className="graph-toolbar">
+        {parameterToggleLabel && onParameterToggle ? (
+          <button type="button" onClick={onParameterToggle}>
+            {parameterToggleLabel}
+          </button>
+        ) : null}
         <button type="button" onClick={() => zoomAround(zoom + 0.12)}>
           +
         </button>
@@ -290,8 +380,7 @@ export function GraphCanvas({
         <button
           type="button"
           onClick={() => {
-            setZoom(1);
-            setOffset({ x: 0, y: 0 });
+            focusStartLane();
           }}
         >
           Reset
@@ -345,12 +434,14 @@ export function GraphCanvas({
           if (dragState?.pointerId === event.pointerId) {
             event.currentTarget.releasePointerCapture(event.pointerId);
             setDragState(null);
+            persistViewport(zoom, offset);
           }
         }}
         onPointerCancel={(event) => {
           if (dragState?.pointerId === event.pointerId) {
             event.currentTarget.releasePointerCapture(event.pointerId);
             setDragState(null);
+            persistViewport(zoom, offset);
           }
         }}
       >

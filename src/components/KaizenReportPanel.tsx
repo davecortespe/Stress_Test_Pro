@@ -1,8 +1,4 @@
-import type {
-  KaizenFishboneCategory,
-  KaizenOpportunity,
-  KaizenReportResult
-} from "../types/contracts";
+import type { KaizenFishboneCategory, KaizenReportResult } from "../types/contracts";
 
 interface KaizenReportPanelProps {
   report: KaizenReportResult;
@@ -26,21 +22,11 @@ function formatMinutes(value: number | null | undefined): string {
   return `${value.toFixed(1)} min`;
 }
 
-function categoryLabel(category: KaizenOpportunity["fishboneCategory"] | KaizenFishboneCategory["key"]): string {
-  switch (category) {
-    case "manpower":
-      return "Manpower";
-    case "machine":
-      return "Machine";
-    case "method":
-      return "Method";
-    case "material":
-      return "Material / Information";
-    case "measurement":
-      return "Measurement";
-    default:
-      return "Kaizen";
+function formatUnits(value: number | null | undefined, digits = 1): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "--";
   }
+  return value.toFixed(digits);
 }
 
 function confidenceTone(confidence: KaizenReportResult["confidence"]): string {
@@ -53,12 +39,43 @@ function confidenceTone(confidence: KaizenReportResult["confidence"]): string {
   return "efficiency-low";
 }
 
+function categorySignal(category: KaizenFishboneCategory): { label: string; value: string } {
+  if (category.key === "machine") {
+    return {
+      label: "Downtime",
+      value: `${formatUnits(category.metrics.downtimePct, 0)}%`
+    };
+  }
+  if (category.key === "method") {
+    return {
+      label: "Changeover",
+      value: formatMinutes(category.metrics.changeoverPenaltyMinutes)
+    };
+  }
+  if (category.key === "material") {
+    return {
+      label: "Queue Risk",
+      value: formatPct(category.metrics.queueRisk)
+    };
+  }
+  if (category.key === "measurement") {
+    return {
+      label: "Variation",
+      value: formatUnits(category.metrics.variabilityCv, 2)
+    };
+  }
+  return {
+    label: "Operators",
+    value: formatUnits(category.metrics.workerCount, 0)
+  };
+}
+
 export function KaizenReportPanel({ report }: KaizenReportPanelProps) {
   return (
     <section className="throughput-panel kaizen-panel">
       <div className="throughput-toolbar">
         <div>
-          <p className="throughput-eyebrow">Kaizen Report</p>
+          <p className="throughput-eyebrow">Fishbone Root Cause Audit</p>
           <h2>{report.scenarioLabel}</h2>
           <p className="throughput-meta">{report.practitionerSummary}</p>
         </div>
@@ -68,7 +85,7 @@ export function KaizenReportPanel({ report }: KaizenReportPanelProps) {
             <strong>{report.confidence}</strong>
           </div>
           <div className="efficiency-badge">
-            <span>Top Event Score</span>
+            <span>Top Audit Score</span>
             <strong>{formatScore(report.kpiSummary.topOpportunityScore)}</strong>
           </div>
         </div>
@@ -76,36 +93,36 @@ export function KaizenReportPanel({ report }: KaizenReportPanelProps) {
 
       <div className="throughput-summary-shell">
         <article className="throughput-hero-card">
-          <h3>Quick Read</h3>
+          <h3>Constraint Read</h3>
           <dl>
             <div>
-              <dt>Main bottleneck</dt>
+              <dt>Primary constraint</dt>
               <dd>{report.primaryConstraint}</dd>
             </div>
             <div>
-              <dt>Best first Kaizen</dt>
-              <dd>{report.topOpportunities[0]?.title ?? "n/a"}</dd>
-            </div>
-            <div>
-              <dt>Main cause area</dt>
+              <dt>Strongest audit path</dt>
               <dd>{report.kpiSummary.fishboneFocus}</dd>
             </div>
             <div>
-              <dt>Missing inputs</dt>
+              <dt>First step to verify</dt>
+              <dd>{report.kpiSummary.topOpportunity}</dd>
+            </div>
+            <div>
+              <dt>Missing signals</dt>
               <dd>{report.kpiSummary.missingSignalsCount}</dd>
             </div>
           </dl>
         </article>
 
         <article className="throughput-insights-card">
-          <h3>What This Means</h3>
+          <h3>Audit Framing</h3>
           <div className="throughput-insights-grid">
             <article className="throughput-insight">
-              <h4>Summary</h4>
+              <h4>Mechanism</h4>
               <p>{report.headline}</p>
             </article>
             <article className="throughput-insight">
-              <h4>Why These Were Picked</h4>
+              <h4>Ranking logic</h4>
               <p>{report.selectionBasis}</p>
             </article>
           </div>
@@ -113,79 +130,109 @@ export function KaizenReportPanel({ report }: KaizenReportPanelProps) {
       </div>
 
       <article className="throughput-table-card">
-        <h3>Fishbone Diagram (5M)</h3>
+        <h3>5M Diagnostic Audit</h3>
         <div className="kaizen-fishbone-grid">
-          {report.fishboneCategories.map((category) => (
-            <article key={category.key} className={`kaizen-fishbone-card category-${category.key}`}>
-              <div className="kaizen-fishbone-header">
-                <p className="throughput-eyebrow">{category.label}</p>
-                <strong>{formatScore(category.priorityScore)}</strong>
-              </div>
-              <h4>{category.headline}</h4>
-              <ul>
-                {category.likelyCauses.map((cause) => (
-                  <li key={cause}>{cause}</li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-      </article>
+          {report.fishboneCategories.map((category) => {
+            const signal = categorySignal(category);
+            return (
+              <article key={category.key} className={`kaizen-fishbone-card category-${category.key}`}>
+                <div className="kaizen-fishbone-header">
+                  <div>
+                    <p className="throughput-eyebrow">{category.label}</p>
+                    <h4>{category.focusStep}</h4>
+                  </div>
+                  <strong>{formatScore(category.priorityScore)}</strong>
+                </div>
 
-      <article className="throughput-table-card">
-        <h3>Top 5 Kaizen Opportunities</h3>
-        <div className="kaizen-opportunity-grid">
-          {report.topOpportunities.map((opportunity) => (
-            <article
-              key={`${opportunity.fishboneCategory}-${opportunity.stepId ?? "system"}`}
-              className={`kaizen-opportunity-card category-${opportunity.fishboneCategory}`}
-            >
-              <div className="kaizen-opportunity-header">
-                <div>
-                  <p className="kaizen-rank">Event {opportunity.rank}</p>
-                  <h4>{opportunity.title}</h4>
+                <div className="kaizen-audit-metrics">
+                  <div>
+                    <span>Utilization</span>
+                    <strong>{formatPct(category.metrics.utilization)}</strong>
+                  </div>
+                  <div>
+                    <span>Queue Delay</span>
+                    <strong>{formatMinutes(category.metrics.queueDelayMinutes)}</strong>
+                  </div>
+                  <div>
+                    <span>WIP</span>
+                    <strong>{formatUnits(category.metrics.wipQty, 1)}</strong>
+                  </div>
+                  <div>
+                    <span>{signal.label}</span>
+                    <strong>{signal.value}</strong>
+                  </div>
                 </div>
-                <div className="kaizen-score-badge">
-                  <span>{categoryLabel(opportunity.fishboneCategory)}</span>
-                  <strong>{formatScore(opportunity.score)}</strong>
-                </div>
-              </div>
 
-              <p className="kaizen-copy">{opportunity.rationale}</p>
+                <div className="kaizen-audit-section">
+                  <h5>Observed Condition</h5>
+                  <p>{category.observedCondition}</p>
+                </div>
 
-              <div className="kaizen-evidence-grid">
-                <div>
-                  <span>Busy</span>
-                  <strong>{formatPct(opportunity.evidence.utilization)}</strong>
+                <div className="kaizen-audit-section">
+                  <h5>Failure Modes</h5>
+                  <ul className="kaizen-audit-list">
+                    {category.failureModes.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
                 </div>
-                <div>
-                  <span>Queue</span>
-                  <strong>{formatPct(opportunity.evidence.queueRisk)}</strong>
-                </div>
-                <div>
-                  <span>Delay</span>
-                  <strong>{formatMinutes(opportunity.evidence.leadTimeMinutes)}</strong>
-                </div>
-                <div>
-                  <span>Pressure</span>
-                  <strong>{typeof opportunity.evidence.bottleneckIndex === "number" ? opportunity.evidence.bottleneckIndex.toFixed(2) : "--"}</strong>
-                </div>
-              </div>
 
-              <div className="kaizen-detail-block">
-                <h5>Why This Is Happening</h5>
-                <p>{opportunity.likelyRootCause}</p>
-              </div>
-              <div className="kaizen-detail-block">
-                <h5>What Gets Better</h5>
-                <p>{opportunity.expectedImpact}</p>
-              </div>
-              <div className="kaizen-detail-block">
-                <h5>Suggested Kaizen Event</h5>
-                <p>{opportunity.recommendedEvent}</p>
-              </div>
-            </article>
-          ))}
+                <div className="kaizen-audit-section">
+                  <h5>Cause And Effect</h5>
+                  <p>{category.causeEffectChain}</p>
+                </div>
+
+                <div className="kaizen-audit-section">
+                  <h5>Audit Checks</h5>
+                  <ul className="kaizen-check-list">
+                    {category.auditChecks.map((check) => (
+                      <li key={check.check}>
+                        <strong>{check.check}</strong>
+                        <span>Source: {check.source}</span>
+                        <span>Pass: {check.successSignal}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="kaizen-audit-section">
+                  <h5>Targeted Fixes</h5>
+                  <ul className="kaizen-audit-list">
+                    {category.targetedFixes.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="kaizen-audit-section">
+                  <h5>Expected Impact</h5>
+                  <div className="kaizen-impact-grid">
+                    <div>
+                      <span>Queue</span>
+                      <strong>{formatMinutes(category.expectedImpact.queueReductionMinutes)}</strong>
+                    </div>
+                    <div>
+                      <span>Lead Time</span>
+                      <strong>{formatMinutes(category.expectedImpact.leadTimeReductionMinutes)}</strong>
+                    </div>
+                    <div>
+                      <span>Throughput</span>
+                      <strong>
+                        {typeof category.expectedImpact.throughputGainUnitsPerHour === "number"
+                          ? `${category.expectedImpact.throughputGainUnitsPerHour.toFixed(2)} /hr`
+                          : "--"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Confidence</span>
+                      <strong>{category.confidence}</strong>
+                    </div>
+                  </div>
+                  <p className="kaizen-impact-note">{category.expectedImpact.stabilityEffect}</p>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </article>
 

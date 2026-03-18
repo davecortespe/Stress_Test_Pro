@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AssumptionsReportPanel } from "../components/AssumptionsReportPanel";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { GraphCanvas } from "../components/GraphCanvas";
 import { KaizenReportPanel } from "../components/KaizenReportPanel";
@@ -9,6 +10,7 @@ import { ScenarioLibraryPanel } from "../components/ScenarioLibraryPanel";
 import { StepInspector } from "../components/StepInspector";
 import { ThroughputAnalysisPanel } from "../components/ThroughputAnalysisPanel";
 import { WasteAnalysisPanel } from "../components/WasteAnalysisPanel";
+import { buildAssumptionsReport } from "../lib/assumptionsReport";
 import { createBottleneckForecastOutput } from "../lib/bottleneckForecast";
 import {
   buildOperationalDiagnosis
@@ -50,6 +52,15 @@ interface ExportNotice {
   tone: "success" | "error";
   text: string;
 }
+
+const RESULTS_MODE_LABELS: Record<SimulatorResultsMode, string> = {
+  flow: "Live Flow Map",
+  diagnosis: "Operational Diagnosis",
+  kaizen: "Fishbone Audit",
+  throughput: "Throughput Economics",
+  waste: "Waste Analysis",
+  assumptions: "Assumptions Review"
+};
 
 const throughputKpis: KpiConfig[] = [
   {
@@ -141,6 +152,36 @@ const kaizenKpis: KpiConfig[] = [
   }
 ];
 
+const assumptionsKpis: KpiConfig[] = [
+  {
+    key: "trustLevel",
+    label: "Trust Level",
+    helpText: "Overall confidence based on how many important inputs were assumed or defaulted.",
+    format: "text"
+  },
+  {
+    key: "totalAssumptions",
+    label: "Assumptions Logged",
+    helpText: "Total number of documented assumptions in the current model.",
+    format: "number",
+    decimals: 0
+  },
+  {
+    key: "needsReview",
+    label: "Need Review",
+    helpText: "Assumptions that could materially change the conclusion if they are wrong.",
+    format: "number",
+    decimals: 0
+  },
+  {
+    key: "priorityChecks",
+    label: "Priority Checks",
+    helpText: "Best confirmations to collect before using the report for bigger decisions.",
+    format: "number",
+    decimals: 0
+  }
+];
+
 function downloadTextFile(fileName: string, contents: string, mimeType = "text/plain;charset=utf-8"): void {
   const blob = new Blob([contents], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -181,6 +222,23 @@ export default function SimulatorApp() {
     () => buildScenarioLibraryStepColumns(forecastModel.stepModels),
     [forecastModel.stepModels]
   );
+  const simulationHorizonField = useMemo(
+    () =>
+      boundParameterGroups
+        .flatMap((group) => group.fields)
+        .find((field) => field.key === "simulationHorizonHours"),
+    [boundParameterGroups]
+  );
+  const sidebarParameterGroups = useMemo(
+    () =>
+      boundParameterGroups
+        .map((group) => ({
+          ...group,
+          fields: group.fields.filter((field) => field.key !== "simulationHorizonHours")
+        }))
+        .filter((group) => group.fields.length > 0),
+    [boundParameterGroups]
+  );
 
   const {
     committedScenario,
@@ -204,6 +262,7 @@ export default function SimulatorApp() {
   const [appNotice, setAppNotice] = useState<ExportNotice | null>(null);
   const [resultsMode, setResultsMode] = useState<SimulatorResultsMode>("flow");
   const [isScenarioLibraryOpen, setIsScenarioLibraryOpen] = useState(false);
+  const [isParameterRailOpen, setIsParameterRailOpen] = useState(true);
   const {
     libraryEntries,
     selectedScenarioId,
@@ -263,6 +322,14 @@ export default function SimulatorApp() {
     () => buildKaizenReport(forecastModel, committedScenario, output),
     [forecastModel, committedScenario, output]
   );
+  const flowViewportStorageKey = useMemo(
+    () => `${forecastModel.metadata.name ?? dashboardConfig.appTitle}-flow-viewport-v4`,
+    [dashboardConfig.appTitle, forecastModel.metadata.name]
+  );
+  const assumptionsReport = useMemo(
+    () => buildAssumptionsReport(forecastModel),
+    [forecastModel]
+  );
 
   const inspectorStep = useMemo(
     () => forecastModel.stepModels.find((step) => step.stepId === inspectorStepId) ?? null,
@@ -314,9 +381,12 @@ export default function SimulatorApp() {
       ? throughputKpis
       : resultsMode === "kaizen"
         ? kaizenKpis
-      : resultsMode === "waste"
-        ? wasteKpis
-        : dashboardConfig.kpis;
+        : resultsMode === "assumptions"
+          ? assumptionsKpis
+          : resultsMode === "waste"
+            ? wasteKpis
+          : dashboardConfig.kpis;
+  const isFlowMode = resultsMode === "flow";
   const simProgressPct = useMemo(() => {
     if (!Number.isFinite(simHorizonHours) || simHorizonHours <= 0) {
       return 0;
@@ -337,6 +407,15 @@ export default function SimulatorApp() {
       missingSignalsCount: kaizenReport.kpiSummary.missingSignalsCount
     }),
     [kaizenReport.kpiSummary]
+  );
+  const assumptionsMetrics = useMemo<Record<string, number | string>>(
+    () => ({
+      trustLevel: assumptionsReport.trustLevel,
+      totalAssumptions: assumptionsReport.counts.total,
+      needsReview: assumptionsReport.counts.warning + assumptionsReport.counts.blocker,
+      priorityChecks: assumptionsReport.priorityChecks.length
+    }),
+    [assumptionsReport]
   );
   const activeMetrics = useMemo(() => {
     if (resultsMode === "throughput") {
@@ -363,8 +442,52 @@ export default function SimulatorApp() {
       return kaizenMetrics;
     }
 
+    if (resultsMode === "assumptions") {
+      return assumptionsMetrics;
+    }
+
     return output.globalMetrics;
-  }, [kaizenMetrics, output.globalMetrics, resultsMode, throughputAnalysis.summary, wasteAnalysis.summary]);
+  }, [
+    assumptionsMetrics,
+    kaizenMetrics,
+    output.globalMetrics,
+    resultsMode,
+    throughputAnalysis.summary,
+    wasteAnalysis.summary
+  ]);
+  const flowOverlayKpis = useMemo<KpiConfig[]>(
+    () => [
+      {
+        key: "forecastThroughput",
+        label: "Forecast Output / hr",
+        helpText: "Estimated completed output rate per hour under the current scenario settings and elapsed-time state.",
+        format: "number",
+        decimals: 1
+      },
+      {
+        key: "bottleneckIndex",
+        label: "Constraint Pressure",
+        helpText: "Constraint pressure score (0-100%). Higher values mean tighter capacity and higher risk of flow breakage.",
+        format: "percent",
+        decimals: 0
+      },
+      {
+        key: "totalWipQty",
+        label: "WIP Load",
+        helpText: "Total work-in-process currently in the system (queue plus in-process load across all steps).",
+        format: "number",
+        decimals: 0
+      },
+      {
+        key: "totalCompletedOutputPieces",
+        label: "Total Completed Lots",
+        helpText: "Cumulative completed lots produced by the flow at the current elapsed time.",
+        format: "number",
+        decimals: 1
+      }
+    ],
+    []
+  );
 
   const openScenarioLibraryCsv = async () => {
     try {
@@ -451,11 +574,17 @@ export default function SimulatorApp() {
           brandLabel="LeanStorming Operational Stress Labs"
           title={dashboardConfig.appTitle}
           subtitle={dashboardConfig.subtitle ?? "Fast bottleneck forecast cockpit"}
+          primaryConstraint={operationalDiagnosis.primaryConstraint}
+          statusSummary={operationalDiagnosis.statusSummary}
+          recommendedAction={operationalDiagnosis.recommendedAction}
+          diagnosisStatus={operationalDiagnosis.status}
           resultsMode={resultsMode}
           isPaused={isPaused}
           hasStagedChanges={hasStagedChanges}
           simElapsedHours={simElapsedHours}
           simHorizonHours={simHorizonHours}
+          simHorizonValue={activeScenario.simulationHorizonHours ?? simHorizonHours}
+          simHorizonOptions={simulationHorizonField?.options ?? []}
           simProgressPct={simProgressPct}
           scenarioCount={libraryEntries.length}
           speedMultiplier={speedMultiplier}
@@ -463,9 +592,10 @@ export default function SimulatorApp() {
           onSpeedChange={(speed) => setSpeedMultiplier(speed)}
           onStartPause={startPauseWithInspectorReset}
           onReset={resetSimulationView}
-          onOpenLibraryCsv={openScenarioLibraryCsv}
           onSaveCurrentScenario={saveCommittedScenarioToLibrary}
-          onToggleScenarioLibrary={() => setIsScenarioLibraryOpen(true)}
+          onToggleScenarioLibrary={() => setIsScenarioLibraryOpen((current) => !current)}
+          onFocusConstraint={() => setResultsMode("diagnosis")}
+          onSimHorizonChange={(value) => updateScenarioValue("simulationHorizonHours", value)}
         />
 
         {isPaused && hasStagedChanges ? (
@@ -480,29 +610,65 @@ export default function SimulatorApp() {
           </div>
         ) : null}
 
-        <KpiRow kpis={activeKpis} metrics={activeMetrics} />
-
-        <div className="content-shell">
+        <div className={`content-shell ${isParameterRailOpen ? "rail-open" : "rail-collapsed"}`}>
           <aside className="left-rail">
             <ParameterSidebar
-              groups={boundParameterGroups}
+              groups={sidebarParameterGroups}
               scenario={activeScenario}
               editable
+              isRailOpen={isParameterRailOpen}
+              onToggleRail={() => setIsParameterRailOpen((current) => !current)}
               onChange={updateScenarioValue}
             />
           </aside>
 
-          <main className="center-stage">
+          <main className={`center-stage ${isFlowMode ? "center-stage-flow" : ""}`}>
+            {!isFlowMode ? (
+              <>
+                <div className="stage-toolbar">
+                  <div className="stage-title-block">
+                    <p className="stage-eyebrow">Primary Workspace</p>
+                    <h2>{RESULTS_MODE_LABELS[resultsMode]}</h2>
+                  </div>
+                  <div className="stage-toolbar-actions">
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => setIsParameterRailOpen((current) => !current)}
+                    >
+                      {isParameterRailOpen ? "Hide Parameters" : "Show Parameters"}
+                    </button>
+                  </div>
+                </div>
+                <KpiRow
+                  kpis={activeKpis}
+                  metrics={activeMetrics}
+                  featuredKey={activeKpis[0]?.key}
+                  variant="compact"
+                />
+              </>
+            ) : null}
             {resultsMode === "flow" ? (
-              <GraphCanvas
-                graph={forecastModel.graph}
-                output={output}
-                nodeCardFields={dashboardConfig.nodeCardFields}
-                showProbabilities={dashboardConfig.graphStyle?.showProbabilities ?? true}
-                animateEdges={dashboardConfig.graphStyle?.edgeAnimation !== "none" && !isPaused}
-                resetViewSignal={resetViewSignal}
-                onNodeDoubleClick={(nodeId, anchor) => openStepInspector(nodeId, anchor)}
-              />
+              <div className="flow-stage-shell">
+                <KpiRow
+                  kpis={flowOverlayKpis}
+                  metrics={output.globalMetrics}
+                  featuredKey={flowOverlayKpis[0]?.key}
+                  variant="overlay"
+                />
+                <GraphCanvas
+                  graph={forecastModel.graph}
+                  output={output}
+                  nodeCardFields={dashboardConfig.nodeCardFields}
+                  showProbabilities={dashboardConfig.graphStyle?.showProbabilities ?? true}
+                  animateEdges={dashboardConfig.graphStyle?.edgeAnimation !== "none" && !isPaused}
+                  resetViewSignal={resetViewSignal}
+                  viewportStorageKey={flowViewportStorageKey}
+                  parameterToggleLabel={isParameterRailOpen ? "Hide Parameters" : "Show Parameters"}
+                  onParameterToggle={() => setIsParameterRailOpen((current) => !current)}
+                  onNodeDoubleClick={(nodeId, anchor) => openStepInspector(nodeId, anchor)}
+                />
+              </div>
             ) : null}
 
             {resultsMode === "diagnosis" ? (
@@ -557,6 +723,10 @@ export default function SimulatorApp() {
                   )
                 }
               />
+            ) : null}
+
+            {resultsMode === "assumptions" ? (
+              <AssumptionsReportPanel report={assumptionsReport} />
             ) : null}
           </main>
         </div>

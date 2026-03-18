@@ -157,7 +157,7 @@ export interface DashboardConfig {
   };
 }
 
-export type SimulatorResultsMode = "flow" | "diagnosis" | "kaizen" | "throughput" | "waste";
+export type SimulatorResultsMode = "flow" | "diagnosis" | "kaizen" | "throughput" | "waste" | "assumptions";
 
 export interface ChecklistItem {
   severity: "warning" | "critical";
@@ -452,9 +452,37 @@ export interface KaizenOpportunity {
 export interface KaizenFishboneCategory {
   key: KaizenFishboneCategoryKey;
   label: string;
-  headline: string;
+  focusStep: string;
   priorityScore: number;
-  likelyCauses: string[];
+  observedCondition: string;
+  failureModes: string[];
+  causeEffectChain: string;
+  auditChecks: Array<{
+    check: string;
+    source: string;
+    successSignal: string;
+  }>;
+  targetedFixes: string[];
+  expectedImpact: {
+    queueReductionMinutes: number | null;
+    leadTimeReductionMinutes: number | null;
+    throughputGainUnitsPerHour: number | null;
+    stabilityEffect: string;
+  };
+  confidence: "high" | "medium" | "low";
+  metrics: {
+    utilization: number | null;
+    queueRisk: number | null;
+    queueDelayMinutes: number | null;
+    leadTimeMinutes: number | null;
+    wipQty: number | null;
+    downtimePct: number | null;
+    variabilityCv: number | null;
+    changeoverPenaltyMinutes: number | null;
+    workerCount: number;
+    effectiveUnits: number | null;
+    bottleneckIndex: number | null;
+  };
 }
 
 export interface KaizenKpiSummary {
@@ -476,6 +504,33 @@ export interface KaizenReportResult {
   fishboneCategories: KaizenFishboneCategory[];
   missingSignals: string[];
   kpiSummary: KaizenKpiSummary;
+}
+
+export interface AssumptionsReportItem {
+  id: string;
+  severity: "info" | "warning" | "blocker";
+  category: string;
+  title: string;
+  plainLanguage: string;
+  whyItMatters: string;
+  recommendedCheck: string;
+}
+
+export interface AssumptionsReportResult {
+  scenarioLabel: string;
+  trustLevel: "high" | "medium" | "low";
+  headline: string;
+  summary: string;
+  safeToUseFor: string[];
+  useCautionFor: string[];
+  priorityChecks: string[];
+  items: AssumptionsReportItem[];
+  counts: {
+    total: number;
+    info: number;
+    warning: number;
+    blocker: number;
+  };
 }
 
 export interface ScenarioLibraryEntry {

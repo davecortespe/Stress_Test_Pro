@@ -4,6 +4,8 @@ import type { KpiConfig } from "../types/contracts";
 interface KpiRowProps {
   kpis: KpiConfig[];
   metrics: Record<string, number | string>;
+  featuredKey?: string;
+  variant?: "default" | "compact" | "overlay";
 }
 
 const KPI_HELP_FALLBACK: Record<string, string> = {
@@ -78,12 +80,21 @@ function formatValue(value: number | string, format?: KpiConfig["format"], decim
   return value.toFixed(decimals);
 }
 
-function KpiCard({ kpi, rawValue }: { kpi: KpiConfig; rawValue: number | string }) {
+function KpiCard({
+  kpi,
+  rawValue,
+  isFeatured,
+  variant
+}: {
+  kpi: KpiConfig;
+  rawValue: number | string;
+  isFeatured: boolean;
+  variant: "default" | "compact" | "overlay";
+}) {
   const prevRef = useRef<number | string>(rawValue);
   const [trend, setTrend] = useState<"flat" | "up" | "down">("flat");
   const numericTarget = typeof rawValue === "number" ? rawValue : 0;
   const animatedNumeric = useAnimatedNumber(numericTarget);
-  const isFeatured = kpi.key === "totalCompletedOutputPieces";
 
   useEffect(() => {
     const prev = prevRef.current;
@@ -107,12 +118,18 @@ function KpiCard({ kpi, rawValue }: { kpi: KpiConfig; rawValue: number | string 
       : formatValue(rawValue, kpi.format, kpi.decimals ?? 1);
   const helpText = kpi.helpText ?? KPI_HELP_FALLBACK[kpi.key] ?? "";
   const tooltipId = `kpi-help-${kpi.key.replace(/[^a-z0-9_-]/gi, "-").toLowerCase()}`;
+  const showHelp = variant !== "overlay";
+  const isTotalCompletedLots = kpi.key === "totalCompletedOutputPieces";
 
   return (
-    <article className={`kpi-card kpi-${trend} ${isFeatured ? "kpi-featured-output" : ""}`}>
+    <article
+      className={`kpi-card kpi-${trend} kpi-${variant} ${isFeatured ? "kpi-featured" : ""} ${
+        isTotalCompletedLots ? "kpi-magenta-outline" : ""
+      }`}
+    >
       <div className="kpi-label-row">
         <p>{kpi.label}</p>
-        {helpText ? (
+        {showHelp && helpText ? (
           <span className="kpi-help-wrap">
             <button
               type="button"
@@ -133,11 +150,18 @@ function KpiCard({ kpi, rawValue }: { kpi: KpiConfig; rawValue: number | string 
   );
 }
 
-export function KpiRow({ kpis, metrics }: KpiRowProps) {
+export function KpiRow({ kpis, metrics, featuredKey, variant = "default" }: KpiRowProps) {
+  const featuredMetricKey = featuredKey ?? kpis[0]?.key;
   return (
-    <section className="kpi-row">
+    <section className={`kpi-row kpi-row-${variant}`}>
       {kpis.map((kpi) => (
-        <KpiCard key={kpi.key} kpi={kpi} rawValue={metrics[kpi.key] ?? 0} />
+        <KpiCard
+          key={kpi.key}
+          kpi={kpi}
+          rawValue={metrics[kpi.key] ?? 0}
+          isFeatured={kpi.key === featuredMetricKey}
+          variant={variant}
+        />
       ))}
     </section>
   );

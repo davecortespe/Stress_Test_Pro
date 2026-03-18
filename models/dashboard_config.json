@@ -163,51 +163,37 @@
   "kpis": [
     {
       "key": "forecastThroughput",
-      "label": "Forecast Throughput / hr",
+      "label": "Forecast Output / hr",
       "helpText": "Estimated completed output rate per hour under the current scenario settings and elapsed-time state.",
       "format": "number",
       "decimals": 1
     },
     {
-      "key": "bottleneckMigration",
-      "label": "Bottleneck Migration",
-      "helpText": "Shows where the active constraint is predicted to move after applying current relief settings.",
-      "format": "text"
-    },
-    {
       "key": "bottleneckIndex",
-      "label": "Bottleneck Index",
+      "label": "Constraint Pressure",
       "helpText": "Constraint pressure score (0-100%). Higher values mean tighter capacity and higher risk of flow breakage.",
       "format": "percent",
       "decimals": 0
     },
     {
-      "key": "brittleness",
-      "label": "Brittleness",
-      "helpText": "System fragility score (0-100%) combining queue risk, saturation, WIP pressure, and migration instability.",
-      "format": "percent",
-      "decimals": 0
-    },
-    {
-      "key": "throughputDelta",
-      "label": "Relief Delta / hr",
-      "helpText": "Change in throughput per hour versus baseline after applying bottleneck relief settings.",
-      "format": "delta",
-      "decimals": 1
-    },
-    {
       "key": "totalWipQty",
-      "label": "Total WIP",
+      "label": "WIP Load",
       "helpText": "Total work-in-process currently in the system (queue plus in-process load across all steps).",
       "format": "number",
       "decimals": 0
     },
     {
-      "key": "totalCompletedOutputPieces",
-      "label": "Total Completed Output Pieces",
-      "helpText": "Cumulative completed units at the end of the flow for the current elapsed simulation time.",
-      "format": "number",
-      "decimals": 0
+      "key": "throughputDelta",
+      "label": "Relief vs Baseline",
+      "helpText": "Change in throughput per hour versus baseline after applying bottleneck relief settings.",
+      "format": "delta",
+      "decimals": 1
+    },
+    {
+      "key": "bottleneckMigration",
+      "label": "Bottleneck Move",
+      "helpText": "Shows where the active constraint is predicted to move after applying current relief settings.",
+      "format": "text"
     }
   ],
   "nodeCardFields": ["utilization", "wipQty", "completedQty", "status"],

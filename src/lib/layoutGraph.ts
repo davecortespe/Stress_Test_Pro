@@ -55,13 +55,13 @@ export function computeNodeLayout(graph: VsmGraph): Record<string, NodePosition>
   }
 
   const positions: Record<string, NodePosition> = {};
+  const leftMargin = 56;
+  const topMargin = 78;
   for (const [row, ids] of [...byLevel.entries()].sort((a, b) => a[0] - b[0])) {
-    const blockHeight = ids.length * maxNodeHeight + (ids.length - 1) * yGap;
-    const firstY = Math.max(50, 290 - blockHeight / 2);
     ids.forEach((id, index) => {
       positions[id] = {
-        x: 90 + row * (maxNodeWidth + xGap),
-        y: firstY + index * (maxNodeHeight + yGap)
+        x: leftMargin + row * (maxNodeWidth + xGap),
+        y: topMargin + index * (maxNodeHeight + yGap)
       };
     });
   }

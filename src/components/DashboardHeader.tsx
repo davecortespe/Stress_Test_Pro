@@ -1,4 +1,5 @@
-import type { SimulatorResultsMode } from "../types/contracts";
+import { useState } from "react";
+import type { OperationalSystemStatus, SelectOption, SimulatorResultsMode } from "../types/contracts";
 import type { SpeedMultiplier } from "../simulator/scenarioState";
 
 const SPEED_OPTIONS: Array<{ value: SpeedMultiplier; label: string; hint?: string }> = [
@@ -13,28 +14,33 @@ const SPEED_OPTIONS: Array<{ value: SpeedMultiplier; label: string; hint?: strin
 const RESULTS_MODES: Array<{ key: SimulatorResultsMode; label: string; description: string }> = [
   {
     key: "flow",
-    label: "FLOW MAP",
+    label: "Flow",
     description: "Shows the live step-by-step flow, where work is piling up, and which step is acting as the bottleneck right now."
   },
   {
     key: "diagnosis",
-    label: "DIAGNOSIS",
+    label: "Diagnosis",
     description: "Explains what is breaking, why it is happening, what it causes downstream, and the best move to stabilize the system."
   },
   {
     key: "kaizen",
-    label: "KAIZEN",
+    label: "Kaizen",
     description: "Highlights the strongest improvement opportunities, likely root causes, and where a Kaizen event can make the biggest difference."
   },
   {
     key: "throughput",
-    label: "THROUGHPUT",
+    label: "Throughput",
     description: "Shows how the current bottleneck affects output, cost, and profit so you can see where added capacity creates the most value."
   },
   {
     key: "waste",
-    label: "WASTE",
+    label: "Waste",
     description: "Compares lead time with touch time to show where delay and non-value-added time are building up across the flow."
+  },
+  {
+    key: "assumptions",
+    label: "Assumptions",
+    description: "Shows which inputs were estimated or defaulted so end users can quickly see how much to trust the current report."
   }
 ];
 
@@ -42,11 +48,17 @@ interface DashboardHeaderProps {
   brandLabel?: string;
   title: string;
   subtitle: string;
+  primaryConstraint: string;
+  statusSummary: string;
+  recommendedAction: string;
+  diagnosisStatus: OperationalSystemStatus;
   resultsMode: SimulatorResultsMode;
   isPaused: boolean;
   hasStagedChanges: boolean;
   simElapsedHours: number;
   simHorizonHours: number;
+  simHorizonValue: number | string;
+  simHorizonOptions: Array<string | SelectOption>;
   simProgressPct: number;
   scenarioCount: number;
   speedMultiplier: SpeedMultiplier;
@@ -54,20 +66,35 @@ interface DashboardHeaderProps {
   onSpeedChange: (speed: SpeedMultiplier) => void;
   onStartPause: () => void;
   onReset: () => void;
-  onOpenLibraryCsv: () => void;
   onSaveCurrentScenario: () => void;
   onToggleScenarioLibrary: () => void;
+  onFocusConstraint: () => void;
+  onSimHorizonChange: (value: string) => void;
+}
+
+function getOptionValue(option: string | SelectOption): string {
+  return typeof option === "string" ? option : option.value;
+}
+
+function getOptionLabel(option: string | SelectOption): string {
+  return typeof option === "string" ? option : option.label;
 }
 
 export function DashboardHeader({
   brandLabel = "LeanStorming Operational Stress Labs",
   title,
   subtitle,
+  primaryConstraint,
+  statusSummary,
+  recommendedAction,
+  diagnosisStatus,
   resultsMode,
   isPaused,
   hasStagedChanges,
   simElapsedHours,
   simHorizonHours,
+  simHorizonValue,
+  simHorizonOptions,
   simProgressPct,
   scenarioCount,
   speedMultiplier,
@@ -75,60 +102,133 @@ export function DashboardHeader({
   onSpeedChange,
   onStartPause,
   onReset,
-  onOpenLibraryCsv,
   onSaveCurrentScenario,
-  onToggleScenarioLibrary
+  onToggleScenarioLibrary,
+  onFocusConstraint,
+  onSimHorizonChange
 }: DashboardHeaderProps) {
+  const [isRecommendedMoveOpen, setIsRecommendedMoveOpen] = useState(false);
+
   return (
     <header className="header-shell">
-      <div className="header-left">
+      <div className="header-top-row">
         <div className="header-title-block">
           <p className="brand-mark">{brandLabel}</p>
           <h1>{title}</h1>
           {subtitle.trim().length > 0 ? <p className="subtitle">{subtitle}</p> : null}
         </div>
-        <div className="header-toolbar">
-          <div className="header-control-card actions-card">
-            <p className="header-control-label">Actions</p>
-            <div className="header-controls actions-grid">
-              <button className="primary" onClick={onStartPause}>
-                {isPaused ? "Start" : "Pause"}
-              </button>
-              <button className="secondary" onClick={onReset}>
-                Reset Time
-              </button>
-              <button type="button" className="secondary" onClick={onOpenLibraryCsv}>
-                Import Library CSV
-              </button>
-              <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
-                Save Scenario
+        <div className="header-meta-row" aria-label="simulation status">
+          <div className="status-chip timer-chip is-active">
+            <div className="timer-chip-main">
+              <span className="status-chip-label">Sim Time</span>
+              <span className="status-chip-value">
+                {simElapsedHours.toFixed(2)} / {simHorizonHours} h
+              </span>
+            </div>
+            <label className="timer-chip-horizon">
+              <span className="timer-chip-horizon-label">Horizon</span>
+              <select
+                value={String(simHorizonValue)}
+                onChange={(event) => onSimHorizonChange(event.target.value)}
+                disabled={!isPaused}
+                aria-label="Simulation horizon"
+              >
+                {simHorizonOptions.map((option) => (
+                  <option key={getOptionValue(option)} value={getOptionValue(option)}>
+                    {getOptionLabel(option)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="meta-progress-chip">
+            <div className="sim-progress-meta">
+              <span>Progress</span>
+              <strong>{simProgressPct.toFixed(1)}%</strong>
+            </div>
+            <div
+              className="sim-progress-track"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={simProgressPct}
+            >
+              <span className="sim-progress-fill" style={{ width: `${simProgressPct}%` }} />
+            </div>
+          </div>
+          <div className={`live-pill ${isPaused ? "is-paused" : "is-live"}`}>
+            <span className="dot" />
+            {isPaused ? "Paused" : "Live"}
+          </div>
+          <button type="button" className="status-chip scenario-chip-button" onClick={onToggleScenarioLibrary}>
+            <span className="status-chip-value">Scenarios {scenarioCount}</span>
+          </button>
+        </div>
+      </div>
+
+      <section className="header-control-card actions-card actions-card-promoted" aria-label="actions">
+        <p className="header-control-label">Actions</p>
+        <div className="header-controls actions-grid actions-grid-compact">
+          <button className="primary" onClick={onStartPause}>
+            {isPaused ? "Start" : "Pause"}
+          </button>
+          <button className="secondary" onClick={onReset}>
+            Reset Time
+          </button>
+          <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
+            Save Scenario
+          </button>
+        </div>
+        <div className="actions-meta-row actions-meta-row-compact">
+          <div className="header-control-subsection compact speed-subsection">
+            <p className="header-subsection-label">Playback</p>
+            <div className="speed-group speed-group-compact" role="group" aria-label="simulation speed">
+              {SPEED_OPTIONS.map((speed) => (
+                <button
+                  key={speed.value}
+                  type="button"
+                  className={`speed-pill ${speedMultiplier === speed.value ? "is-active" : ""}`}
+                  onClick={() => onSpeedChange(speed.value)}
+                  title={speed.hint}
+                >
+                  {speed.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="header-bottom-row header-bottom-row-promoted">
+        <section className="decision-card decision-card-compact decision-card-deemphasized" aria-label="recommended action">
+          <div className="decision-card-top">
+            <div>
+              <p className="header-control-label">Recommended move</p>
+              <h2>{primaryConstraint}</h2>
+            </div>
+            <div className="decision-card-top-actions">
+              <div className={`decision-status status-${diagnosisStatus}`}>
+                {diagnosisStatus.charAt(0).toUpperCase() + diagnosisStatus.slice(1)}
+              </div>
+              <button
+                type="button"
+                className="decision-more-toggle"
+                onClick={() => setIsRecommendedMoveOpen((current) => !current)}
+                aria-expanded={isRecommendedMoveOpen}
+              >
+                {isRecommendedMoveOpen ? "less" : "more"}
               </button>
             </div>
-            <div className="actions-meta-row">
-              <div className="header-control-subsection compact speed-subsection">
-                <p className="header-subsection-label">Playback</p>
-                <div className="speed-group" role="group" aria-label="simulation speed">
-                  {SPEED_OPTIONS.map((speed) => (
-                    <button
-                      key={speed.value}
-                      type="button"
-                      className={`speed-pill ${speedMultiplier === speed.value ? "is-active" : ""}`}
-                      onClick={() => onSpeedChange(speed.value)}
-                      title={speed.hint}
-                    >
-                      {speed.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="header-control-subsection compact state-subsection">
-                <p className="header-subsection-label">State</p>
-                <div className="header-state-group">
-                  <div className={`live-pill ${isPaused ? "is-paused" : "is-live"}`}>
-                    <span className="dot" />
-                    {isPaused ? "Paused" : "Live"}
-                  </div>
+          </div>
+          {isRecommendedMoveOpen ? (
+            <>
+              <p className="decision-summary">{statusSummary}</p>
+              <div className="decision-action-row">
+                <p className="decision-action-copy">{recommendedAction}</p>
+                <div className="decision-actions">
+                  <button type="button" className="primary" onClick={onFocusConstraint}>
+                    Focus constraint
+                  </button>
                   {isPaused && hasStagedChanges ? (
                     <div className={`staged-chip ${hasStagedChanges ? "has-changes" : "no-changes"}`}>
                       Staged changes
@@ -136,60 +236,26 @@ export function DashboardHeader({
                   ) : null}
                 </div>
               </div>
-            </div>
-          </div>
+            </>
+          ) : null}
+        </section>
 
-          <div className="header-control-card">
-            <p className="header-control-label">View</p>
-            <div className="results-mode-group" role="group" aria-label="results panel mode">
-              {RESULTS_MODES.map((mode) => (
-                <div key={mode.key} className="results-mode-item">
-                  <button
-                    type="button"
-                    className={`secondary mode-toggle-btn ${resultsMode === mode.key ? "is-active" : ""}`}
-                    onClick={() => onResultsModeChange(mode.key)}
-                    aria-pressed={resultsMode === mode.key}
-                    aria-describedby={`results-mode-help-${mode.key}`}
-                  >
-                    <span className="mode-toggle-label">{mode.label}</span>
-                    <span className="mode-toggle-info" aria-hidden="true">
-                      i
-                    </span>
-                  </button>
-                  <div id={`results-mode-help-${mode.key}`} className="results-mode-tooltip" role="tooltip">
-                    {mode.description}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="header-right">
-        <div className="status-strip" aria-label="simulation status">
-          <div className="status-block">
-            <p className="header-control-label">Simulation</p>
-            <div className="status-chip timer-chip is-active">
-              <span className="status-chip-label">Sim Time</span>
-              <span className="status-chip-value">
-                {simElapsedHours.toFixed(2)} / {simHorizonHours} h
-              </span>
-            </div>
-            <div className="sim-progress" aria-label="simulation progress">
-              <div className="sim-progress-meta">
-                <span>Progress</span>
-                <strong>{simProgressPct.toFixed(1)}%</strong>
+        <div className="header-control-card">
+          <p className="header-control-label">View</p>
+          <div className="results-mode-group" aria-label="results panel mode">
+            {RESULTS_MODES.map((mode) => (
+              <div key={mode.key} className="results-mode-item">
+                <button
+                  type="button"
+                  className={`secondary mode-toggle-btn ${resultsMode === mode.key ? "is-active" : ""}`}
+                  onClick={() => onResultsModeChange(mode.key)}
+                  aria-pressed={resultsMode === mode.key}
+                  title={mode.description}
+                >
+                  <span className="mode-toggle-label">{mode.label}</span>
+                </button>
               </div>
-              <div className="sim-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={simProgressPct}>
-                <span className="sim-progress-fill" style={{ width: `${simProgressPct}%` }} />
-              </div>
-            </div>
-          </div>
-          <div className="status-block">
-            <p className="header-control-label">Library</p>
-            <button type="button" className="status-chip scenario-chip-button" onClick={onToggleScenarioLibrary}>
-              <span className="status-chip-value">Scenarios {scenarioCount}</span>
-            </button>
+            ))}
           </div>
         </div>
       </div>
