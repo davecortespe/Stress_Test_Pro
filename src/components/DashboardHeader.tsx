@@ -6,9 +6,9 @@ const SPEED_OPTIONS: Array<{ value: SpeedMultiplier; label: string; hint?: strin
   { value: 1, label: "x1" },
   { value: 2, label: "x2" },
   { value: 5, label: "x5" },
-  { value: 50, label: "x50" },
+  { value: 100, label: "x100" },
   { value: 200, label: "x200" },
-  { value: 1440, label: "5s/mo", hint: "Run a 720-hour horizon in about 5 seconds." }
+  { value: 1000, label: "x1000", hint: "Rapid replay for long horizons." }
 ];
 
 const RESULTS_MODES: Array<{ key: SimulatorResultsMode; label: string; description: string }> = [

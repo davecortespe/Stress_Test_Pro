@@ -2,6 +2,7 @@ import type { KaizenFishboneCategory, KaizenReportResult } from "../types/contra
 
 interface KaizenReportPanelProps {
   report: KaizenReportResult;
+  onOpenPdf: () => void;
 }
 
 function formatScore(score: number): string {
@@ -70,7 +71,7 @@ function categorySignal(category: KaizenFishboneCategory): { label: string; valu
   };
 }
 
-export function KaizenReportPanel({ report }: KaizenReportPanelProps) {
+export function KaizenReportPanel({ report, onOpenPdf }: KaizenReportPanelProps) {
   return (
     <section className="throughput-panel kaizen-panel">
       <div className="throughput-toolbar">
@@ -80,6 +81,9 @@ export function KaizenReportPanel({ report }: KaizenReportPanelProps) {
           <p className="throughput-meta">{report.practitionerSummary}</p>
         </div>
         <div className="throughput-toolbar-actions">
+          <button type="button" className="secondary" onClick={onOpenPdf}>
+            Open PDF
+          </button>
           <div className={`efficiency-badge ${confidenceTone(report.confidence)}`}>
             <span>Confidence</span>
             <strong>{report.confidence}</strong>

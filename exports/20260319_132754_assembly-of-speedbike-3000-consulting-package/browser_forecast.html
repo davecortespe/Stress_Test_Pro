@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forecast Export Cockpit</title>
+  <style>
+    :root {
+      --bg-top: #071423;
+      --bg-bottom: #040b15;
+      --surface: rgba(10, 24, 40, 0.9);
+      --surface-2: rgba(8, 19, 33, 0.93);
+      --ink: #e8f7ff;
+      --ink-muted: #8eb7c8;
+      --line: rgba(116, 170, 197, 0.25);
+      --accent: #14c4c9;
+      --critical: #ff4f72;
+      --risk: #ffbc6a;
+      --healthy: #1cc2af;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; font-family: Arial, sans-serif; color: var(--ink); }
+    body {
+      background:
+        radial-gradient(circle at 16% -8%, rgba(20, 196, 201, 0.18), transparent 34%),
+        radial-gradient(circle at 82% 0%, rgba(240, 91, 120, 0.12), transparent 28%),
+        linear-gradient(170deg, var(--bg-top), var(--bg-bottom));
+      padding: 14px;
+    }
+    .app { display: grid; gap: 12px; }
+    .header {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .title { margin: 0; font-size: 28px; font-weight: 700; }
+    .subtitle { margin: 4px 0 0; color: var(--ink-muted); font-size: 14px; }
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    button {
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 7px 11px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .primary { background: linear-gradient(135deg, #11bbc0, #0d8aa8); border-color: transparent; }
+    .pill { border-radius: 999px; padding: 7px 12px; border: 1px solid var(--line); }
+    .timer { font-family: monospace; font-size: 18px; }
+    .speed button { min-width: 40px; }
+    .speed .active { border-color: rgba(20, 196, 201, 0.8); box-shadow: 0 0 10px rgba(20, 196, 201, 0.24); }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      min-height: 72px;
+    }
+    .kpi .label { color: var(--ink-muted); font-size: 12px; }
+    .kpi .value { margin-top: 6px; font-size: 32px; font-family: monospace; font-weight: 700; line-height: 1.05; }
+    .layout {
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      gap: 12px;
+      min-height: 500px;
+    }
+    .diagnosis {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .diagnosis-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .diagnosis-card {
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .diagnosis-card h3 {
+      margin: 0 0 6px;
+      color: #bfe8f3;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .diagnosis-card p, .diagnosis ul {
+      margin: 0;
+      line-height: 1.45;
+      color: var(--ink);
+    }
+    .diagnosis ul {
+      padding-left: 18px;
+    }
+    .params {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      max-height: calc(100vh - 220px);
+      overflow: auto;
+    }
+    .group-title { margin: 12px 0 8px; font-size: 18px; color: #bfe8f3; }
+    .field {
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+    .field label { display: block; font-size: 14px; margin-bottom: 6px; }
+    .field .value { font-family: monospace; color: var(--ink-muted); margin-bottom: 6px; }
+    .field input, .field select {
+      width: 100%;
+      background: rgba(4, 12, 22, 0.95);
+      border: 1px solid rgba(114, 167, 194, 0.35);
+      color: var(--ink);
+      border-radius: 6px;
+      padding: 6px;
+    }
+    .canvas {
+      background:
+        linear-gradient(180deg, #081729 0%, #050d1a 100%);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      overflow: auto;
+      position: relative;
+    }
+    .canvas::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(119, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(119, 163, 184, 0.08) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+    .flow {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      min-height: 440px;
+      padding: 20px;
+      min-width: max-content;
+    }
+    .arrow {
+      color: #33bac0;
+      font-size: 22px;
+      font-family: monospace;
+      opacity: 0.85;
+      white-space: nowrap;
+      position: relative;
+      min-width: 74px;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+    .flow.live .arrow::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #bfffff 0%, #1cc2af 55%, #0d7e92 100%);
+      box-shadow: 0 0 10px rgba(20, 196, 201, 0.7);
+      transform: translate(-10px, -50%);
+      opacity: 0;
+      animation: token-travel 1.25s linear infinite;
+      animation-delay: var(--delay, 0s);
+    }
+    .node {
+      width: 220px;
+      background: rgba(11, 36, 54, 0.95);
+      border: 2px solid rgba(28, 194, 175, 0.8);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: 0 12px 22px rgba(0, 0, 0, 0.28);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+      will-change: transform;
+    }
+    .node::before {
+      content: "";
+      position: absolute;
+      inset: -40% -30%;
+      background: linear-gradient(
+        120deg,
+        rgba(255, 255, 255, 0) 28%,
+        rgba(255, 255, 255, 0.14) 48%,
+        rgba(255, 255, 255, 0) 68%
+      );
+      transform: translateX(-120%);
+      pointer-events: none;
+    }
+    .flow.live .node::before {
+      animation: node-sheen 2.8s linear infinite;
+      animation-delay: var(--delay, 0s);
+    }
+    .flow.live .node {
+      animation: node-breathe var(--pulse, 2s) ease-in-out infinite;
+    }
+    .flow.live .node.critical {
+      animation: node-pressure 0.85s ease-in-out infinite;
+    }
+    .node.risk { border-color: var(--risk); }
+    .node.critical { border-color: var(--critical); box-shadow: 0 0 14px rgba(255, 79, 114, 0.3); }
+    .node h4 { margin: 0 0 8px; font-size: 30px; }
+    .node p { margin: 3px 0; font-family: monospace; font-size: 22px; }
+    .node .wip-bar {
+      margin-top: 8px;
+      height: 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(116, 170, 197, 0.28);
+      background: rgba(8, 24, 40, 0.7);
+      overflow: hidden;
+    }
+    .node .wip-fill {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #12c2c8 0%, #f7c063 55%, #ff4f72 100%);
+      box-shadow: 0 0 10px rgba(18, 194, 200, 0.45);
+      transition: width 260ms ease;
+    }
+    @keyframes token-travel {
+      0% { transform: translate(-10px, -50%); opacity: 0; }
+      15% { opacity: 1; }
+      100% { transform: translate(58px, -50%); opacity: 0; }
+    }
+    @keyframes node-breathe {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(calc(-2px - 2px * var(--util, 0))); }
+    }
+    @keyframes node-pressure {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-2px) scale(1.01); }
+    }
+    @keyframes node-sheen {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(120%); }
+    }
+    .muted { color: var(--ink-muted); }
+    @media (max-width: 1080px) { .layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="header">
+      <div>
+        <h1 id="title" class="title"></h1>
+        <p id="subtitle" class="subtitle"></p>
+      </div>
+      <div class="header-actions">
+        <button id="startPause" class="primary">Start</button>
+        <button id="resetBtn">Reset</button>
+        <span id="livePill" class="pill">Paused</span>
+        <span class="pill timer">SIM TIME <span id="simTime">0.00 / 8 h</span></span>
+        <span class="pill speed">
+          <button data-speed="1" class="active">x1</button>
+          <button data-speed="2">x2</button>
+          <button data-speed="5">x5</button>
+          <button data-speed="100">x100</button>
+          <button data-speed="200">x200</button>
+          <button data-speed="1000">x1000</button>
+        </span>
+      </div>
+    </section>
+
+    <section id="kpiRow" class="kpis"></section>
+
+    <section class="diagnosis">
+      <div id="diagnosis"></div>
+    </section>
+
+    <section class="layout">
+      <aside id="params" class="params"></aside>
+      <main class="canvas">
+        <div id="flow" class="flow"></div>
+      </main>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const DASHBOARD_CONFIG = {"appTitle":"Assembly of SpeedBike 3000","subtitle":"Non-DES bottleneck forecast cockpit","parameterGroups":[{"groupId":"interventions","label":"Interventions","fields":[{"key":"sellingPricePerUnit","label":"Transfer Price / Unit","helpText":"Scenario-level transfer price used by the Throughput Analysis module. Missing or zero transfer price blocks throughput economics.","type":"number","min":0,"max":100000,"step":0.01,"unit":"$","defaultValue":0},{"key":"simulationHorizonHours","label":"Simulation Horizon","helpText":"Calendar time the model will simulate. The clock keeps advancing across working and non-working hours until this horizon is reached.","type":"dropdown","options":[{"label":"8 hrs","value":"8"},{"label":"16 hrs","value":"16"},{"label":"24 hrs","value":"24"},{"label":"1 week","value":"168"},{"label":"1 month","value":"720"}],"unit":"hr","defaultValue":"24"},{"key":"activeShiftCount","label":"Operating Shifts","helpText":"Defines how many 8-hour shifts the operation runs each day. One shift runs 8 hours then stops for 16; two shifts run 16 then stop for 8; three shifts run continuously.","type":"dropdown","options":[{"label":"1 shift","value":"1"},{"label":"2 shifts","value":"2"},{"label":"3 shifts","value":"3"}],"defaultValue":"1"},{"key":"bottleneckReliefUnits","label":"Bottleneck Relief (+units)","helpText":"Temporary added capacity applied to the current constraint so you can estimate whether extra people, equipment, or parallel slots would stabilize flow.","type":"number","min":0,"max":6,"step":1,"defaultValue":1}]},{"groupId":"demand","label":"Demand","fields":[{"key":"demandMultiplier","label":"Demand Multiplier","helpText":"Scales incoming demand versus the baseline plan. Use it to test demand surges or lighter-than-expected loading.","type":"slider","min":0.6,"max":1.6,"step":0.05,"unit":"x","defaultValue":1},{"key":"mixProfile","label":"Mix Profile","helpText":"Shifts the product or work mix toward earlier or later steps to see how changing mix moves the constraint.","type":"dropdown","options":["balanced","front-loaded","midstream-heavy","back-loaded"],"defaultValue":"balanced"}]},{"groupId":"capacity","label":"Capacity","fields":[{"key":"staffingMultiplier","label":"Staffing Multiplier","helpText":"Scales labor capacity across the line relative to baseline staffing.","type":"slider","min":0.7,"max":1.3,"step":0.05,"unit":"x","defaultValue":1},{"key":"equipmentMultiplier","label":"Equipment Multiplier","helpText":"Scales available equipment capacity across the line relative to the baseline number of active assets.","type":"slider","min":0.7,"max":1.4,"step":0.05,"unit":"x","defaultValue":1},{"key":"unplannedDowntimePct","label":"Unplanned Downtime","helpText":"Percent of time capacity is lost to breakdowns, interruptions, or other unplanned stops.","type":"number","min":0,"max":40,"step":0.5,"unit":"%","defaultValue":7},{"key":"setupPenaltyMultiplier","label":"Setup Penalty","helpText":"Increases or decreases setup-related time loss. Use it to test the impact of more frequent changeovers or improved setup control.","type":"slider","min":0.7,"max":1.8,"step":0.05,"unit":"x","defaultValue":1}]},{"groupId":"process-behavior","label":"Process Behavior","fields":[{"key":"ctMultiplier","label":"Cycle Time Multiplier","helpText":"Scales process cycle times up or down across the model relative to baseline.","type":"slider","min":0.75,"max":1.6,"step":0.05,"unit":"x","defaultValue":1},{"key":"variabilityMultiplier","label":"Variability","helpText":"Scales process variability. Higher variability makes queues and unstable flow more likely even when average capacity looks acceptable.","type":"slider","min":0.6,"max":1.7,"step":0.05,"unit":"x","defaultValue":1}]}],"kpis":[{"key":"forecastThroughput","label":"Forecast Output / hr","helpText":"Estimated completed output rate per hour under the current scenario settings and elapsed-time state.","format":"number","decimals":1},{"key":"bottleneckIndex","label":"Constraint Pressure","helpText":"Constraint pressure score (0-100%). Higher values mean tighter capacity and higher risk of flow breakage.","format":"percent","decimals":0},{"key":"totalWipQty","label":"WIP Load","helpText":"Total work-in-process currently in the system (queue plus in-process load across all steps).","format":"number","decimals":0},{"key":"throughputDelta","label":"Relief vs Baseline","helpText":"Change in throughput per hour versus baseline after applying bottleneck relief settings.","format":"delta","decimals":1},{"key":"bottleneckMigration","label":"Bottleneck Move","helpText":"Shows where the active constraint is predicted to move after applying current relief settings.","format":"text"}],"nodeCardFields":["utilization","wipQty","completedQty","status"],"graphStyle":{"edgeAnimation":"flow","showProbabilities":true}};
+      const MODEL = {"version":"0.3.0","generatedAt":"2026-03-19T17:06:47.505Z","metadata":{"name":"Assembly of SpeedBike 3000","units":"per-hour","mode":"constraint-forecast-non-des"},"graph":{"metadata":{"name":"Assembly of SpeedBike 3000","units":"minutes","source":"User-provided VSM image (strict transcription, 2026-03-19)"},"nodes":[{"id":"frame_kit_prep","label":"Frame Kit Prep","type":"process","boxData":{"stageRaw":"A","stepDescriptionRaw":"Pick frame, fork, seat post, handlebars, hardware kit","ctRaw":"3","changeoverRaw":"10","waitRaw":"20","equipmentCountRaw":"1","peopleNeededRaw":"1","shiftCountRaw":"1","lotSizeRaw":"10","reworkPctRaw":"1%","equipmentReliabilityRaw":"98%","notesRaw":["Material availability matters"]}},{"id":"wheel_assembly","label":"Wheel Assembly","type":"process","boxData":{"stageRaw":"B","stepDescriptionRaw":"Assemble front and rear wheel sets","ctRaw":"6","changeoverRaw":"15","waitRaw":"45","equipmentCountRaw":"2","peopleNeededRaw":"2","shiftCountRaw":"1","lotSizeRaw":"10","reworkPctRaw":"2%","equipmentReliabilityRaw":"96%","notesRaw":["Moderate labor content"]}},{"id":"drivetrain_assembly","label":"Drivetrain Assembly","type":"process","boxData":{"stageRaw":"C","stepDescriptionRaw":"Prepare crankset, chain, pedals, derailleur set","ctRaw":"5","changeoverRaw":"12","waitRaw":"35","equipmentCountRaw":"1","peopleNeededRaw":"1","shiftCountRaw":"1","lotSizeRaw":"10","reworkPctRaw":"2%","equipmentReliabilityRaw":"97%","notesRaw":["Small parts shortages possible"]}},{"id":"frame_sub_assembly","label":"Frame Sub-Assembly","type":"process","boxData":{"stageRaw":"D","stepDescriptionRaw":"Install fork, headset, handlebars, seat post","ctRaw":"7","changeoverRaw":"8","waitRaw":"50","equipmentCountRaw":"2","peopleNeededRaw":"2","shiftCountRaw":"1","lotSizeRaw":"10","reworkPctRaw":"3%","equipmentReliabilityRaw":"95%","notesRaw":["Fit-up variability starts here"]}},{"id":"final_mechanical_assembly","label":"Final Mechanical Assembly","type":"process","boxData":{"stageRaw":"E","stepDescriptionRaw":"Join wheels, drivetrain, brakes, cables, chain","ctRaw":"9","changeoverRaw":"20","waitRaw":"80","equipmentCountRaw":"2","peopleNeededRaw":"2","shiftCountRaw":"1","lotSizeRaw":"10","reworkPctRaw":"4%","equipmentReliabilityRaw":"94%","notesRaw":["Good bottleneck candidate"]}},{"id":"brake_and_gear_adjustment","label":"Brake and Gear Adjustment","type":"process","boxData":{"stageRaw":"F","stepDescriptionRaw":"Tune shifting, brakes, torque verification","ctRaw":"8","changeoverRaw":"5","waitRaw":"60","equipmentCountRaw":"1","peopleNeededRaw":"1","shiftCountRaw":"1","lotSizeRaw":"10","reworkPctRaw":"6%","equipmentReliabilityRaw":"97%","notesRaw":["Another likely bottleneck / rework loop"]}},{"id":"inspection_and_touch_up","label":"Inspection and Touch-Up","type":"process","boxData":{"stageRaw":"G","stepDescriptionRaw":"Visual inspection, road-test stand, touch-up fixes","ctRaw":"4","changeoverRaw":"0","waitRaw":"30","equipmentCountRaw":"1","peopleNeededRaw":"1","shiftCountRaw":"1","lotSizeRaw":"10","reworkPctRaw":"5%","equipmentReliabilityRaw":"98%","notesRaw":["Feeds rework back to F or E"]}},{"id":"packaging_and_staging","label":"Packaging and Staging","type":"process","boxData":{"stageRaw":"H","stepDescriptionRaw":"Box bike, label, palletize, stage for shipment","ctRaw":"3.5","changeoverRaw":"10","waitRaw":"25","equipmentCountRaw":"1","peopleNeededRaw":"1","shiftCountRaw":"1","lotSizeRaw":"10","reworkPctRaw":"1%","equipmentReliabilityRaw":"99%","notesRaw":["End of line"]}}],"edges":[{"from":"frame_kit_prep","to":"wheel_assembly","probability":1},{"from":"wheel_assembly","to":"drivetrain_assembly","probability":1},{"from":"drivetrain_assembly","to":"frame_sub_assembly","probability":1},{"from":"frame_sub_assembly","to":"final_mechanical_assembly","probability":1},{"from":"final_mechanical_assembly","to":"brake_and_gear_adjustment","probability":1},{"from":"brake_and_gear_adjustment","to":"inspection_and_touch_up","probability":1},{"from":"inspection_and_touch_up","to":"packaging_and_staging","probability":1}],"startNodes":["frame_kit_prep"],"endNodes":["packaging_and_staging"]},"inputs":[{"key":"demandMultiplier","label":"Demand Multiplier","type":"number","defaultValue":1,"min":0.6,"max":1.8,"step":0.05},{"key":"mixProfile","label":"Mix Profile","type":"select","defaultValue":"balanced","options":["balanced","front-loaded","midstream-heavy","back-loaded"]},{"key":"staffingMultiplier","label":"Staffing Multiplier","type":"number","defaultValue":1,"min":0.7,"max":1.4,"step":0.05},{"key":"equipmentMultiplier","label":"Equipment Multiplier","type":"number","defaultValue":1,"min":0.7,"max":1.4,"step":0.05},{"key":"unplannedDowntimePct","label":"Unplanned Downtime","type":"number","defaultValue":0,"min":0,"max":35,"step":0.5},{"key":"ctMultiplier","label":"Cycle Time Multiplier","type":"number","defaultValue":1,"min":0.75,"max":1.6,"step":0.05},{"key":"setupPenaltyMultiplier","label":"Setup Penalty","type":"number","defaultValue":1,"min":0,"max":1.8,"step":0.05},{"key":"variabilityMultiplier","label":"Variability Multiplier","type":"number","defaultValue":1,"min":0.6,"max":1.8,"step":0.05},{"key":"simulationHorizonHours","label":"Simulation Horizon","type":"select","defaultValue":"24","options":[{"label":"8 hrs","value":"8"},{"label":"16 hrs","value":"16"},{"label":"24 hrs","value":"24"},{"label":"1 week","value":"168"},{"label":"1 month","value":"720"}]},{"key":"activeShiftCount","label":"Operating Shifts","type":"select","defaultValue":"1","options":[{"label":"1 shift","value":"1"},{"label":"2 shifts","value":"2"},{"label":"3 shifts","value":"3"}]},{"key":"bottleneckReliefUnits","label":"Bottleneck Relief (+units)","type":"number","defaultValue":1,"min":0,"max":6,"step":1},{"key":"sellingPricePerUnit","label":"Selling Price / Unit","type":"number","defaultValue":0,"min":0,"max":100000,"step":0.01}],"inputDefaults":{"demandRatePerHour":13.5,"demandMultiplier":1,"mixProfile":"balanced","staffingMultiplier":1,"equipmentMultiplier":1,"unplannedDowntimePct":0,"ctMultiplier":1,"setupPenaltyMultiplier":1,"variabilityMultiplier":1,"simulationHorizonHours":"24","activeShiftCount":"1","bottleneckReliefUnits":1,"sellingPricePerUnit":0},"stepModels":[{"stepId":"frame_kit_prep","label":"Frame Kit Prep","equipmentType":"Frame Kit Prep","workerCount":1,"parallelProcedures":1,"effectiveUnits":1,"ctMinutes":3,"changeoverMinutes":10,"changeoverPenaltyPerUnitMinutes":1,"leadTimeMinutes":20,"variabilityCv":0.18,"effectiveCtMinutes":4,"effectiveCapacityPerHour":15,"baseline":{"demandRatePerHour":13.5,"utilization":0.9,"headroom":0.1,"queueRisk":0.81,"bottleneckIndex":0.675,"status":"risk"}},{"stepId":"wheel_assembly","label":"Wheel Assembly","equipmentType":"Wheel Assembly","workerCount":2,"parallelProcedures":2,"effectiveUnits":2,"ctMinutes":6,"changeoverMinutes":15,"changeoverPenaltyPerUnitMinutes":1.5,"leadTimeMinutes":45,"variabilityCv":0.18,"effectiveCtMinutes":7.5,"effectiveCapacityPerHour":16,"baseline":{"demandRatePerHour":13.5,"utilization":0.8438,"headroom":0.1563,"queueRisk":0.4556,"bottleneckIndex":0.5417,"status":"healthy"}},{"stepId":"drivetrain_assembly","label":"Drivetrain Assembly","equipmentType":"Drivetrain Assembly","workerCount":1,"parallelProcedures":1,"effectiveUnits":1,"ctMinutes":5,"changeoverMinutes":12,"changeoverPenaltyPerUnitMinutes":1.2,"leadTimeMinutes":35,"variabilityCv":0.18,"effectiveCtMinutes":6.2,"effectiveCapacityPerHour":9.6774,"baseline":{"demandRatePerHour":13.5,"utilization":1.35,"headroom":0,"queueRisk":1,"bottleneckIndex":0.9395,"status":"critical"}},{"stepId":"frame_sub_assembly","label":"Frame Sub-Assembly","equipmentType":"Frame Sub-Assembly","workerCount":2,"parallelProcedures":2,"effectiveUnits":2,"ctMinutes":7,"changeoverMinutes":8,"changeoverPenaltyPerUnitMinutes":0.8,"leadTimeMinutes":50,"variabilityCv":0.18,"effectiveCtMinutes":7.8,"effectiveCapacityPerHour":15.3846,"baseline":{"demandRatePerHour":13.5,"utilization":0.8775,"headroom":0.1225,"queueRisk":0.6286,"bottleneckIndex":0.6098,"status":"risk"}},{"stepId":"final_mechanical_assembly","label":"Final Mechanical Assembly","equipmentType":"Final Mechanical Assembly","workerCount":2,"parallelProcedures":2,"effectiveUnits":2,"ctMinutes":9,"changeoverMinutes":20,"changeoverPenaltyPerUnitMinutes":2,"leadTimeMinutes":80,"variabilityCv":0.18,"effectiveCtMinutes":11,"effectiveCapacityPerHour":10.9091,"baseline":{"demandRatePerHour":13.5,"utilization":1.2375,"headroom":0,"queueRisk":1,"bottleneckIndex":0.9177,"status":"critical"}},{"stepId":"brake_and_gear_adjustment","label":"Brake and Gear Adjustment","equipmentType":"Brake and Gear Adjustment","workerCount":1,"parallelProcedures":1,"effectiveUnits":1,"ctMinutes":8,"changeoverMinutes":5,"changeoverPenaltyPerUnitMinutes":0.5,"leadTimeMinutes":60,"variabilityCv":0.18,"effectiveCtMinutes":8.5,"effectiveCapacityPerHour":7.0588,"baseline":{"demandRatePerHour":13.5,"utilization":1.35,"headroom":0,"queueRisk":1,"bottleneckIndex":0.9913,"status":"critical"}},{"stepId":"inspection_and_touch_up","label":"Inspection and Touch-Up","equipmentType":"Inspection and Touch-Up","workerCount":1,"parallelProcedures":1,"effectiveUnits":1,"ctMinutes":4,"changeoverMinutes":0,"changeoverPenaltyPerUnitMinutes":0,"leadTimeMinutes":30,"variabilityCv":0.18,"effectiveCtMinutes":4,"effectiveCapacityPerHour":15,"baseline":{"demandRatePerHour":13.5,"utilization":0.9,"headroom":0.1,"queueRisk":0.81,"bottleneckIndex":0.675,"status":"risk"}},{"stepId":"packaging_and_staging","label":"Packaging and Staging","equipmentType":"Packaging and Staging","workerCount":1,"parallelProcedures":1,"effectiveUnits":1,"ctMinutes":3.5,"changeoverMinutes":10,"changeoverPenaltyPerUnitMinutes":1,"leadTimeMinutes":25,"variabilityCv":0.18,"effectiveCtMinutes":4.5,"effectiveCapacityPerHour":13.3333,"baseline":{"demandRatePerHour":13.5,"utilization":1.0125,"headroom":0,"queueRisk":1,"bottleneckIndex":0.7873,"status":"critical"}}],"baseline":{"demandRatePerHour":13.5,"lineCapacityPerHour":7.0588,"bottleneckStepId":"brake_and_gear_adjustment","globalMetrics":{"throughput":7.0588,"globalThroughput":7.0588,"forecastThroughput":7.0588,"throughputDelta":0,"bottleneckMigration":"baseline only","bottleneckIndex":0.9913,"brittleness":0.8513,"avgQueueRisk":0.838,"totalWipQty":418.4354,"worstCaseTouchTime":45.5,"totalLeadTimeMinutes":972.8947,"leadTimeDeltaMinutes":0,"waitSharePct":0.3546,"leadTimeTopContributor":"Brake and Gear Adjustment"},"nodeMetrics":{"frame_kit_prep":{"utilization":0.9,"headroom":0.1,"queueRisk":0.81,"queueDepth":11.26,"wipQty":11.26,"completedQty":0,"leadTimeMinutes":68.04,"capacityPerHour":15,"bottleneckIndex":0.675,"bottleneckFlag":false,"status":"risk"},"wheel_assembly":{"utilization":0.8438,"headroom":0.1563,"queueRisk":0.4556,"queueDepth":6.6138,"wipQty":6.6138,"completedQty":0,"leadTimeMinutes":75.8016,"capacityPerHour":16,"bottleneckIndex":0.5417,"bottleneckFlag":false,"status":"healthy"},"drivetrain_assembly":{"utilization":1.35,"headroom":0,"queueRisk":1,"queueDepth":17.005,"wipQty":108.7474,"completedQty":0,"leadTimeMinutes":145.4313,"capacityPerHour":9.6774,"bottleneckIndex":0.9395,"bottleneckFlag":false,"status":"critical"},"frame_sub_assembly":{"utilization":0.8775,"headroom":0.1225,"queueRisk":0.6286,"queueDepth":8.9255,"wipQty":8.9255,"completedQty":0,"leadTimeMinutes":91.8095,"capacityPerHour":15.3846,"bottleneckIndex":0.6098,"bottleneckFlag":false,"status":"risk"},"final_mechanical_assembly":{"utilization":1.2375,"headroom":0,"queueRisk":1,"queueDepth":15.9025,"wipQty":78.0841,"completedQty":0,"leadTimeMinutes":176.4636,"capacityPerHour":10.9091,"bottleneckIndex":0.9177,"bottleneckFlag":false,"status":"critical"},"brake_and_gear_adjustment":{"utilization":1.35,"headroom":0,"queueRisk":1,"queueDepth":20.6275,"wipQty":175.2163,"completedQty":0,"leadTimeMinutes":243.3347,"capacityPerHour":7.0588,"bottleneckIndex":0.9913,"bottleneckFlag":true,"status":"critical"},"inspection_and_touch_up":{"utilization":0.9,"headroom":0.1,"queueRisk":0.81,"queueDepth":11.26,"wipQty":11.26,"completedQty":0,"leadTimeMinutes":79.04,"capacityPerHour":15,"bottleneckIndex":0.675,"bottleneckFlag":false,"status":"risk"},"packaging_and_staging":{"utilization":1.0125,"headroom":0,"queueRisk":1,"queueDepth":14.3275,"wipQty":18.3283,"completedQty":0,"leadTimeMinutes":92.974,"capacityPerHour":13.3333,"bottleneckIndex":0.7873,"bottleneckFlag":false,"status":"critical"}}},"assumptions":[{"id":"strict-001","severity":"warning","text":"The VSM title is not visible in the image; model metadata was inferred as Assembly of SpeedBike 3000."},{"id":"strict-002","severity":"info","text":"People Needed was mapped directly to workers because that is the visible staffing field in the image."},{"id":"strict-003","severity":"info","text":"# of Equipment was mapped directly to parallelProcedures / effectiveUnits because that is the visible concurrency field in the image."},{"id":"strict-004","severity":"warning","text":"Hours per shift are not visible in the image, so the forecast calendar still assumes 8 hours per shift when converting shift count to active capacity."},{"id":"strict-005","severity":"warning","text":"Demand rate and product mix are not visible in the image; baseline demand will be inferred in phase 2 from the start-step release capacity."},{"id":"compile-001","severity":"warning","text":"Demand rate is not shown in the source image; baseline demandRatePerHour is seeded at 90% of computed release capacity from the start step."},{"id":"compile-002","severity":"warning","text":"The source image shows a consistent visible shift count of 1; activeShiftCount defaults to that value so runtime capacity aligns with the VSM."},{"id":"compile-003","severity":"warning","text":"Step-level variability is not shown in the source image; baseline variabilityCv defaults to 0.18 for all steps."},{"id":"compile-004","severity":"info","text":"Queue risk, bottleneck index, brittleness, and migration outputs are deterministic non-DES forecast heuristics for rapid recompute."}]};
+      const BASE_SCENARIO = {"demandRatePerHour":13.5,"demandMultiplier":1,"mixProfile":"balanced","staffingMultiplier":1,"equipmentMultiplier":1,"unplannedDowntimePct":0,"ctMultiplier":1,"setupPenaltyMultiplier":1,"variabilityMultiplier":1,"simulationHorizonHours":"24","activeShiftCount":"1","bottleneckReliefUnits":1,"sellingPricePerUnit":0};
+      const DIAGNOSIS = {"status":"overloaded","statusSummary":"Drivetrain Assembly is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added.","primaryConstraint":"Drivetrain Assembly is saturated; effective service capacity is capped near 3.2 units/hr.","constraintMechanism":"Drivetrain Assembly is taking demand at about 13.5 units/hr but only clearing about 3.2 units/hr, so arrivals are outrunning service and the queue cannot normalize.","downstreamEffects":"Throughput is running about 83% below required rate, WIP has built to roughly 268 units, total lead time is now about 3884.5 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.","economicInterpretation":"This is creating hidden capacity loss of roughly 83% versus required output. The likely business impact is overtime pressure, slower inventory availability, and missed throughput that has to be recovered later.","recommendedAction":"Reduce effective cycle time at Drivetrain Assembly with standard work, faster changeovers, or error removal before spending on larger structural changes.","scenarioGuidance":"The current relief scenario is directionally right. It improves throughput by about 0.873 units/hr, and it also changes bottleneck behavior to Brake and Gear Adjustment -> Drivetrain Assembly (low confidence).","aiOpportunityLens":{"dataAlreadyExists":"Utilization, queue, WIP, and lead-time data already exist here but are usually reviewed as separate metrics instead of as one flow signal.","manualPatternDecisions":"Labor rebalance, release timing, and expediting decisions are still manual even though the patterns are repetitive and detectable from the same simulation outputs.","predictiveGap":"Most current reporting is backward-looking. The diagnosis should be used to flag where the next queue spike or throughput miss is likely before the floor feels it.","tribalKnowledge":"If step recovery depends on supervisor memory, shift handoff notes, or email threads, that is acting like an unstructured operating database.","visibilityGap":"When operators cannot see where queue pressure will propagate next, the business leaks profit through avoidable delay, premium labor, and hidden capacity loss."},"confidence":"medium","confidenceNote":"Confidence is medium because key inputs are incomplete. Missing or weak fields: shift hours/uptime, demand rate/product mix."};
+      const BASE_SIM_HOURS_PER_SECOND = 0.1;
+
+      function num(value, fallback) {
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        if (typeof value === "string" && value.trim().length > 0) {
+          const parsed = Number(value);
+          if (Number.isFinite(parsed)) return parsed;
+        }
+        return fallback;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function normalizeOutgoing(edges) {
+        if (edges.length === 0) return [];
+        const explicitTotal = edges.reduce(function (sum, edge) {
+          return sum + (typeof edge.probability === "number" ? edge.probability : 0);
+        }, 0);
+        const missingCount = edges.filter(function (edge) { return typeof edge.probability !== "number"; }).length;
+        const remaining = Math.max(0, 1 - explicitTotal);
+        const implied = missingCount > 0 ? (remaining > 0 ? remaining / missingCount : 1 / edges.length) : 0;
+        const provisional = edges.map(function (edge) {
+          return { to: edge.to, probability: typeof edge.probability === "number" ? num(edge.probability, 0) : implied };
+        });
+        const total = provisional.reduce(function (sum, edge) { return sum + edge.probability; }, 0);
+        if (total <= 0) {
+          const uniform = 1 / edges.length;
+          return edges.map(function (edge) { return { to: edge.to, probability: uniform }; });
+        }
+        return provisional.map(function (edge) { return { to: edge.to, probability: edge.probability / total }; });
+      }
+
+      function computeVisitFactors(graph) {
+        const nodeIds = graph.nodes.map(function (node) { return node.id; });
+        const outgoingRaw = new Map();
+        const outgoing = new Map();
+        nodeIds.forEach(function (id) { outgoingRaw.set(id, []); outgoing.set(id, []); });
+        graph.edges.forEach(function (edge) {
+          const list = outgoingRaw.get(edge.from) || [];
+          list.push(edge);
+          outgoingRaw.set(edge.from, list);
+        });
+        outgoingRaw.forEach(function (edges, id) { outgoing.set(id, normalizeOutgoing(edges)); });
+
+        const startNodes = Array.isArray(graph.startNodes) && graph.startNodes.length > 0 ? graph.startNodes : (nodeIds[0] ? [nodeIds[0]] : []);
+        const base = new Map();
+        nodeIds.forEach(function (id) { base.set(id, 0); });
+        const perStart = 1 / Math.max(1, startNodes.length);
+        startNodes.forEach(function (id) { base.set(id, (base.get(id) || 0) + perStart); });
+        let visits = new Map(base);
+        for (let i = 0; i < 350; i += 1) {
+          const next = new Map(base);
+          nodeIds.forEach(function (id) {
+            const from = visits.get(id) || 0;
+            if (from <= 0) return;
+            (outgoing.get(id) || []).forEach(function (edge) {
+              next.set(edge.to, (next.get(edge.to) || 0) + from * edge.probability);
+            });
+          });
+          let maxDelta = 0;
+          nodeIds.forEach(function (id) {
+            maxDelta = Math.max(maxDelta, Math.abs((next.get(id) || 0) - (visits.get(id) || 0)));
+          });
+          visits = next;
+          if (maxDelta < 1e-8) break;
+        }
+        const result = {};
+        nodeIds.forEach(function (id) { result[id] = clamp(num(visits.get(id), 0), 0.01, 12); });
+        return result;
+      }
+
+      function mixModifier(stepId, index, total, mixProfile) {
+        void stepId;
+        if (mixProfile === "front-loaded") return index < Math.ceil(total / 3) ? 1.12 : 0.94;
+        if (mixProfile === "midstream-heavy") {
+          const start = Math.floor(total / 3);
+          const end = Math.ceil((total * 2) / 3);
+          return index >= start && index < end ? 1.12 : 0.94;
+        }
+        if (mixProfile === "back-loaded") return index >= Math.floor((total * 2) / 3) ? 1.12 : 0.94;
+        return 1;
+      }
+
+      function readActiveShiftCount(scenario) {
+        return clamp(Math.round(num(scenario.activeShiftCount, 3)), 1, 3);
+      }
+
+      function getActiveHoursPerDay(shiftCount) {
+        return clamp(shiftCount, 1, 3) * 8;
+      }
+
+      function activeHoursBetween(startHour, endHour, activeHoursPerDay) {
+        if (endHour <= startHour || activeHoursPerDay <= 0) return 0;
+        if (activeHoursPerDay >= 24) return endHour - startHour;
+        let cursor = startHour;
+        let activeHours = 0;
+        while (cursor < endHour - 1e-9) {
+          const dayIndex = Math.floor(cursor / 24);
+          const dayStart = dayIndex * 24;
+          const activeWindowEnd = dayStart + activeHoursPerDay;
+          const nextBoundary = Math.min(endHour, dayStart + 24);
+          if (cursor < activeWindowEnd) {
+            activeHours += Math.max(0, Math.min(nextBoundary, activeWindowEnd) - cursor);
+          }
+          cursor = nextBoundary;
+        }
+        return activeHours;
+      }
+
+      function topologicalOrder(graph) {
+        const indegree = new Map();
+        const outgoing = new Map();
+        const nodeIds = graph.nodes.map(function (node) { return node.id; });
+        nodeIds.forEach(function (nodeId) {
+          indegree.set(nodeId, 0);
+          outgoing.set(nodeId, []);
+        });
+        graph.edges.forEach(function (edge) {
+          if (!indegree.has(edge.from) || !indegree.has(edge.to)) return;
+          indegree.set(edge.to, (indegree.get(edge.to) || 0) + 1);
+          outgoing.set(edge.from, (outgoing.get(edge.from) || []).concat([edge.to]));
+        });
+        const queue = nodeIds.filter(function (nodeId) { return (indegree.get(nodeId) || 0) === 0; });
+        const ordered = [];
+        while (queue.length > 0) {
+          const current = queue.shift();
+          ordered.push(current);
+          (outgoing.get(current) || []).forEach(function (next) {
+            const nextDegree = (indegree.get(next) || 0) - 1;
+            indegree.set(next, nextDegree);
+            if (nextDegree === 0) queue.push(next);
+          });
+        }
+        return ordered.length === nodeIds.length ? ordered : nodeIds;
+      }
+
+      function resolveTerminalNodeIds(graph, outgoingMap) {
+        const declared = (graph.endNodes || []).filter(function (nodeId) {
+          return (outgoingMap.get(nodeId) || []).length === 0;
+        });
+        if (declared.length > 0) {
+          return new Set(declared);
+        }
+        return new Set(
+          graph.nodes
+            .map(function (node) { return node.id; })
+            .filter(function (nodeId) { return (outgoingMap.get(nodeId) || []).length === 0; })
+        );
+      }
+
+      function stepStatus(utilization, bottleneckIndex) {
+        if (utilization >= 0.98 || bottleneckIndex >= 0.82) return "critical";
+        if (utilization >= 0.85 || bottleneckIndex >= 0.62) return "risk";
+        return "healthy";
+      }
+
+      function readStepOverride(scenario, stepId, field) {
+        const value = num(scenario["step_" + stepId + "_" + field], Number.NaN);
+        return Number.isFinite(value) ? value : null;
+      }
+
+      function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits) {
+        const baselineDemand = num(model.inputDefaults.demandRatePerHour, num(model.baseline.demandRatePerHour, 10));
+        const demandMultiplier = clamp(num(scenario.demandMultiplier, 1), 0.2, 3);
+        const lineDemand = Math.max(0.1, baselineDemand * demandMultiplier);
+        const staffingMultiplier = clamp(num(scenario.staffingMultiplier, 1), 0.25, 3);
+        const equipmentMultiplier = clamp(num(scenario.equipmentMultiplier, 1), 0.25, 3);
+        const availabilityMultiplier = clamp(1 - num(scenario.unplannedDowntimePct, 7) / 100, 0.2, 1);
+        const ctMultiplier = clamp(num(scenario.ctMultiplier, 1), 0.25, 3);
+        const setupPenaltyMultiplier = clamp(num(scenario.setupPenaltyMultiplier, 1), 0, 3);
+        const variabilityMultiplier = clamp(num(scenario.variabilityMultiplier, 1), 0.2, 3);
+        const horizonHours = clamp(num(scenario.simulationHorizonHours, 8), 8, 720);
+        const activeShiftCount = readActiveShiftCount(scenario);
+        const activeHoursPerDay = getActiveHoursPerDay(activeShiftCount);
+        const activeCapacityFraction = activeHoursPerDay / 24;
+        const horizonSeverity = 1 + ((horizonHours - 8) / 16) * 0.22;
+        const mixProfile = String(scenario.mixProfile || "balanced");
+
+        const stepEvals = {};
+        const ranked = [];
+        let lineCapacity = Number.POSITIVE_INFINITY;
+        let totalWipQty = 0;
+        let totalLeadTimeMinutes = 0;
+        let totalExplicitLeadTimeMinutes = 0;
+        let leadTimeTopStepId = "";
+        let leadTimeTopValue = -1;
+        let worstCaseTouchTime = 0;
+
+        model.stepModels.forEach(function (step, index) {
+          const ctMinutes = typeof step.ctMinutes === "number" ? step.ctMinutes : null;
+          if (ctMinutes === null) {
+            stepEvals[step.stepId] = {
+              utilization: null,
+              headroom: null,
+              queueRisk: null,
+              queueDepth: null,
+              queueDelayMinutes: null,
+              wipQty: null,
+              effectiveCtMinutes: null,
+              capacityPerHour: null,
+              calendarCapacityPerHour: null,
+              serviceTimeHours: null,
+              explicitLeadTimeMinutes: null,
+              bottleneckIndex: null,
+              status: "unknown"
+            };
+            return;
+          }
+          const visit = Math.max(0.01, num(visitFactors[step.stepId], 1));
+          const mix = mixModifier(step.stepId, index, model.stepModels.length, mixProfile);
+          const stepDemandRate = lineDemand * visit * mix;
+          const stepCapacityUnitsOverride = readStepOverride(scenario, step.stepId, "capacityUnits");
+          const stepCtBaselineOverride = readStepOverride(scenario, step.stepId, "ctBaseline");
+          const stepCtMultiplier = Math.max(0.1, readStepOverride(scenario, step.stepId, "ctMultiplier") || 1);
+          const stepDowntimePct = clamp(readStepOverride(scenario, step.stepId, "downtimePct") || 0, 0, 95);
+          const stepLeadTimeMinutesOverride = readStepOverride(scenario, step.stepId, "leadTimeMinutes");
+          const ctBaseline = Math.max(0.05, stepCtBaselineOverride || ctMinutes);
+          const setupPenalty = Math.max(0, num(step.changeoverPenaltyPerUnitMinutes, 0));
+          const effectiveCt = Math.max(0.05, ctBaseline * ctMultiplier * stepCtMultiplier) + Math.max(0, setupPenalty * setupPenaltyMultiplier);
+          const baseUnits = Math.max(0.05, (stepCapacityUnitsOverride || num(step.effectiveUnits, 1)) * staffingMultiplier * equipmentMultiplier);
+          const relief = step.stepId === reliefStepId ? Math.max(0, reliefUnits) : 0;
+          const effectiveUnits = baseUnits + relief;
+          const avail = availabilityMultiplier * (1 - stepDowntimePct / 100);
+          const capRate = Math.max(0.001, (effectiveUnits * 60 * clamp(avail, 0.05, 1)) / Math.max(0.05, effectiveCt));
+          const calendarCapRate = Math.max(0.001, capRate * activeCapacityFraction);
+          const utilRaw = stepDemandRate / Math.max(0.001, calendarCapRate);
+          const util = clamp(utilRaw, 0, 1.35);
+          const headroom = Math.max(0, 1 - utilRaw);
+          const cv = Math.max(0.03, num(step.variabilityCv, 0.18) * variabilityMultiplier);
+          const qPressure = (util * util) / Math.max(0.06, 1 - util);
+          const qRisk = clamp((qPressure * (0.52 + cv)) / 7.2, 0, 1);
+          const qDepth = Math.max(0, Math.min(24, (Math.max(0, utilRaw - 0.66) * 8 + qRisk * 14) * visit));
+          const queueDelayMinutes = (qDepth / Math.max(0.001, calendarCapRate)) * 60;
+          const explicitLeadMinutesBase =
+            typeof step.leadTimeMinutes === "number" && Number.isFinite(step.leadTimeMinutes)
+              ? Math.max(0, step.leadTimeMinutes)
+              : null;
+          const explicitLeadMinutes =
+            stepLeadTimeMinutesOverride !== null
+              ? Math.max(0, stepLeadTimeMinutesOverride)
+              : explicitLeadMinutesBase;
+          const stepLeadMinutes = Math.max(0.01, effectiveCt + queueDelayMinutes + Math.max(0, explicitLeadMinutes || 0));
+          const accum = Math.max(0, stepDemandRate - calendarCapRate);
+          const wipQty = Math.max(0, qDepth + accum * horizonHours);
+          const shortage = clamp(utilRaw - 1, 0, 1);
+          const bn = clamp((0.6 * (Math.min(utilRaw, 1.25) / 1.25) + 0.3 * qRisk + 0.1 * shortage) * horizonSeverity, 0, 1);
+          lineCapacity = Math.min(lineCapacity, calendarCapRate / Math.max(0.01, visit * mix));
+          worstCaseTouchTime += Math.max(0.05, ctBaseline * ctMultiplier * stepCtMultiplier) * (1 + stepDowntimePct / 100);
+          totalLeadTimeMinutes += stepLeadMinutes;
+          totalExplicitLeadTimeMinutes += Math.max(0, explicitLeadMinutes || 0);
+          if (stepLeadMinutes > leadTimeTopValue) {
+            leadTimeTopValue = stepLeadMinutes;
+            leadTimeTopStepId = step.stepId;
+          }
+          totalWipQty += wipQty;
+          stepEvals[step.stepId] = {
+            utilization: util,
+            headroom: headroom,
+            queueRisk: qRisk,
+            queueDepth: qDepth,
+            queueDelayMinutes: queueDelayMinutes,
+            wipQty: wipQty,
+            effectiveCtMinutes: effectiveCt,
+            capacityPerHour: capRate,
+            calendarCapacityPerHour: calendarCapRate,
+            serviceTimeHours: effectiveCt / 60,
+            explicitLeadTimeMinutes: explicitLeadMinutes,
+            bottleneckIndex: bn,
+            status: stepStatus(utilRaw, bn)
+          };
+          ranked.push({ stepId: step.stepId, score: bn, throughputLimit: throughputLimit });
+        });
+        ranked.sort(function (a, b) {
+          const scoreDelta = b.score - a.score;
+          if (Math.abs(scoreDelta) > 1e-9) return scoreDelta;
+          return (a.throughputLimit || Number.POSITIVE_INFINITY) - (b.throughputLimit || Number.POSITIVE_INFINITY);
+        });
+        const throughput = Math.min(lineDemand, Number.isFinite(lineCapacity) ? lineCapacity : lineDemand);
+        const avgQueueRisk = ranked.length > 0 ? ranked.reduce(function (sum, row) { return sum + (stepEvals[row.stepId].queueRisk || 0); }, 0) / ranked.length : 0;
+        return {
+          lineDemand: lineDemand,
+          throughput: throughput,
+          stepEvals: stepEvals,
+          bottleneckStepId: ranked[0] ? ranked[0].stepId : "",
+          leadTimeTopStepId: leadTimeTopStepId,
+          avgQueueRisk: avgQueueRisk,
+          totalWipQty: totalWipQty,
+          totalLeadTimeMinutes: totalLeadTimeMinutes,
+          totalExplicitLeadTimeMinutes: totalExplicitLeadTimeMinutes,
+          worstCaseTouchTime: worstCaseTouchTime,
+          horizonHours: horizonHours,
+          sortedByBottleneck: ranked
+        };
+      }
+
+      function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
+        const orderedNodes = topologicalOrder(model.graph);
+        const nodeIds = model.graph.nodes.map(function (node) { return node.id; });
+        const startNodes =
+          (model.graph.startNodes || []).length > 0
+            ? model.graph.startNodes
+            : orderedNodes.length > 0
+              ? [orderedNodes[0]]
+              : [];
+        const startRatePerNode = startNodes.length > 0 ? system.lineDemand / startNodes.length : 0;
+        const activeHoursPerDay = getActiveHoursPerDay(readActiveShiftCount(scenario));
+        const outgoingMap = new Map();
+        nodeIds.forEach(function (nodeId) {
+          const edges = model.graph.edges.filter(function (edge) { return edge.from === nodeId; });
+          outgoingMap.set(nodeId, normalizeOutgoing(edges));
+        });
+        const terminalNodeSet = resolveTerminalNodeIds(model.graph, outgoingMap);
+        const queueQty = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        const cumulativeProcessedQtyByStep = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        const snapshotProcessedRateByStep = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        const completedQtyByStep = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        const blockedIdleHoursByStep = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        let arrivals = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+        let totalCompletedQty = 0;
+        const cappedElapsed = Math.max(0, elapsedHours);
+        const activeElapsedHours = activeHoursBetween(0, cappedElapsed, activeHoursPerDay);
+
+        if (cappedElapsed > 0) {
+          const maxSteps = 1800;
+          const targetDt = 1 / 240;
+          const rawSteps = Math.ceil(cappedElapsed / targetDt);
+          const steps = Math.max(1, Math.min(maxSteps, rawSteps));
+          const dtHours = cappedElapsed / steps;
+
+          for (let tick = 0; tick < steps; tick += 1) {
+            const intervalStartHours = tick * dtHours;
+            const intervalEndHours = intervalStartHours + dtHours;
+            const activeHours = activeHoursBetween(intervalStartHours, intervalEndHours, activeHoursPerDay);
+
+            startNodes.forEach(function (startId) {
+              arrivals.set(startId, (arrivals.get(startId) || 0) + startRatePerNode * dtHours);
+            });
+
+            const nextArrivals = new Map(nodeIds.map(function (nodeId) { return [nodeId, 0]; }));
+            orderedNodes.forEach(function (nodeId) {
+              const stepEval = system.stepEvals[nodeId];
+              const incomingQty = arrivals.get(nodeId) || 0;
+              const outgoing = outgoingMap.get(nodeId) || [];
+              if (!stepEval || stepEval.capacityPerHour === null || stepEval.capacityPerHour <= 0) {
+                if (terminalNodeSet.has(nodeId)) {
+                  totalCompletedQty += incomingQty;
+                }
+                completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) || 0) + incomingQty);
+                outgoing.forEach(function (edge) {
+                  nextArrivals.set(edge.to, (nextArrivals.get(edge.to) || 0) + incomingQty * edge.probability);
+                });
+                cumulativeProcessedQtyByStep.set(nodeId, (cumulativeProcessedQtyByStep.get(nodeId) || 0) + incomingQty);
+                snapshotProcessedRateByStep.set(nodeId, activeHours > 0 ? incomingQty / activeHours : 0);
+                return;
+              }
+
+              const availableQty = (queueQty.get(nodeId) || 0) + incomingQty;
+              const capacityQty = stepEval.capacityPerHour * activeHours;
+              let downstreamAcceptance = 1;
+              if (outgoing.length > 0 && activeHours > 0) {
+                let weightedAcceptance = 0;
+                let totalProbability = 0;
+                outgoing.forEach(function (edge) {
+                  const childEval = system.stepEvals[edge.to];
+                  const probability = edge.probability;
+                  totalProbability += probability;
+                  if (!childEval) {
+                    weightedAcceptance += probability;
+                    return;
+                  }
+                  const childQueueQty = queueQty.get(edge.to) || 0;
+                  const childPendingQty = (arrivals.get(edge.to) || 0) + (nextArrivals.get(edge.to) || 0);
+                  const childProjectedLoad = childQueueQty + childPendingQty;
+                  const childCalendarCapacity = childEval.calendarCapacityPerHour || childEval.capacityPerHour || 0;
+                  const childBufferQty = Math.max(1, childCalendarCapacity * 12);
+                  const childAcceptance = clamp(1 - childProjectedLoad / childBufferQty, 0.25, 1);
+                  weightedAcceptance += childAcceptance * probability;
+                });
+                if (totalProbability > 0) {
+                  downstreamAcceptance = weightedAcceptance / totalProbability;
+                }
+              }
+
+              const processedQty = Math.min(availableQty, capacityQty * downstreamAcceptance);
+              queueQty.set(nodeId, Math.max(0, availableQty - processedQty));
+              cumulativeProcessedQtyByStep.set(nodeId, (cumulativeProcessedQtyByStep.get(nodeId) || 0) + processedQty);
+              snapshotProcessedRateByStep.set(nodeId, activeHours > 0 ? processedQty / activeHours : 0);
+              completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) || 0) + processedQty);
+
+              if (activeHours > 0 && outgoing.length > 0 && availableQty > 1e-9 && capacityQty > 1e-9) {
+                const blockedIdleRatio = clamp(1 - processedQty / Math.max(1e-9, Math.min(availableQty, capacityQty)), 0, 1);
+                blockedIdleHoursByStep.set(nodeId, (blockedIdleHoursByStep.get(nodeId) || 0) + activeHours * blockedIdleRatio);
+              }
+
+              if (terminalNodeSet.has(nodeId)) {
+                totalCompletedQty += processedQty;
+              }
+              if (outgoing.length === 0) {
+                return;
+              }
+              outgoing.forEach(function (edge) {
+                nextArrivals.set(edge.to, (nextArrivals.get(edge.to) || 0) + processedQty * edge.probability);
+              });
+            });
+            arrivals = nextArrivals;
+          }
+        }
+
+        const node = {};
+        let totalWipQty = 0;
+        let bottleneckStepId = null;
+        let bottleneckIndex = 0;
+        const realizedThroughput = cappedElapsed > 0 ? totalCompletedQty / cappedElapsed : 0;
+
+        nodeIds.forEach(function (nodeId) {
+          const stepEval = system.stepEvals[nodeId];
+          if (!stepEval || stepEval.capacityPerHour === null || stepEval.capacityPerHour <= 0) {
+            node[nodeId] = {
+              utilization: null,
+              queueRisk: null,
+              queueDepth: null,
+              wipQty: null,
+              completedQty: Math.max(0, completedQtyByStep.get(nodeId) || 0),
+              idleWaitHours: null,
+              idleWaitPct: null,
+              bottleneckIndex: null,
+              status: "unknown"
+            };
+            return;
+          }
+          const displayedCapacityPerHour = stepEval.calendarCapacityPerHour || stepEval.capacityPerHour || 0;
+          const cumulativeProcessedQty = cumulativeProcessedQtyByStep.get(nodeId) || 0;
+          const realizedRate = cappedElapsed > 0 ? cumulativeProcessedQty / Math.max(1e-9, cappedElapsed) : 0;
+          const utilizationRaw = realizedRate / Math.max(0.001, displayedCapacityPerHour);
+          const utilization = clamp(utilizationRaw, 0, 1.35);
+          const queueDepth = Math.max(0, queueQty.get(nodeId) || 0);
+          const snapshotProcessedRate = snapshotProcessedRateByStep.get(nodeId) || 0;
+          const processWip = Math.max(0, snapshotProcessedRate * Math.max(0, stepEval.serviceTimeHours || 0));
+          const wipQty = queueDepth + processWip;
+          totalWipQty += wipQty;
+          const idleWaitHours = Math.max(0, blockedIdleHoursByStep.get(nodeId) || 0);
+          const idleWaitPct = activeElapsedHours > 0 ? clamp(idleWaitHours / activeElapsedHours, 0, 1) : 0;
+          const queueRisk = clamp(queueDepth / Math.max(1, displayedCapacityPerHour * 0.6), 0, 1);
+          const stepBottleneckIndex = clamp(0.65 * utilization + 0.35 * queueRisk, 0, 1);
+          const status = stepStatus(utilization, stepBottleneckIndex);
+          const bestEval = bottleneckStepId ? system.stepEvals[bottleneckStepId] : null;
+          const bestCapacity = bestEval ? (bestEval.calendarCapacityPerHour || bestEval.capacityPerHour || Number.POSITIVE_INFINITY) : Number.POSITIVE_INFINITY;
+          if (stepBottleneckIndex > bottleneckIndex + 1e-9 || (Math.abs(stepBottleneckIndex - bottleneckIndex) <= 1e-9 && displayedCapacityPerHour < bestCapacity)) {
+            bottleneckIndex = stepBottleneckIndex;
+            bottleneckStepId = nodeId;
+          }
+          node[nodeId] = {
+            utilization: utilization,
+            queueRisk: queueRisk,
+            queueDepth: queueDepth,
+            wipQty: wipQty,
+            completedQty: Math.max(0, completedQtyByStep.get(nodeId) || 0),
+            idleWaitHours: idleWaitHours,
+            idleWaitPct: idleWaitPct,
+            bottleneckIndex: stepBottleneckIndex,
+            status: status
+          };
+        });
+
+        return {
+          node: node,
+          totalWipQty: totalWipQty,
+          bottleneckStepId: bottleneckStepId,
+          bottleneckIndex: bottleneckIndex,
+          realizedThroughput: realizedThroughput,
+          completedOutputQty: totalCompletedQty
+        };
+      }
+
+      function createOutput(model, scenario, elapsedHours) {
+        const visit = computeVisitFactors(model.graph);
+        const baseline = evaluateSystem(model, scenario, visit, "", 0);
+        const reliefUnits = Math.max(0, Math.round(num(scenario.bottleneckReliefUnits, 1)));
+        const relief = baseline.bottleneckStepId && reliefUnits > 0 ? evaluateSystem(model, scenario, visit, baseline.bottleneckStepId, reliefUnits) : baseline;
+        const runtime = simulateRuntimeFlow(model, baseline, elapsedHours, scenario);
+        const topScore = runtime.bottleneckIndex;
+        const secondScore = baseline.sortedByBottleneck[1] ? baseline.sortedByBottleneck[1].score : 0;
+        const margin = Math.max(0, topScore - secondScore);
+        const knownSteps = Object.keys(runtime.node)
+          .map(function (stepId) { return runtime.node[stepId]; })
+          .filter(function (step) { return step.utilization !== null; });
+        const nearSat = knownSteps.filter(function (step) { return (step.utilization || 0) >= 0.9; }).length;
+        const cascadePressure = knownSteps.length > 0 ? nearSat / knownSteps.length : 0;
+        const wipPressure = clamp(runtime.totalWipQty / Math.max(1, baseline.horizonHours * Math.max(1, model.stepModels.length) * 10), 0, 1);
+        const migrationPenalty = runtime.bottleneckStepId && runtime.bottleneckStepId !== relief.bottleneckStepId ? 0.08 : 0;
+        const avgRuntimeQueueRisk = knownSteps.length > 0 ? knownSteps.reduce(function (sum, step) { return sum + (step.queueRisk || 0); }, 0) / knownSteps.length : 0;
+        const brittleness = clamp(
+          0.48 * topScore +
+            0.18 * avgRuntimeQueueRisk +
+            0.16 * cascadePressure +
+            0.18 * wipPressure +
+            migrationPenalty +
+            (margin < 0.08 ? 0.06 : 0) -
+            margin * 0.3,
+          0,
+          1
+        );
+        const labels = new Map(model.graph.nodes.map(function (node) { return [node.id, node.label]; }));
+        const baselineLabel = labels.get(baseline.bottleneckStepId) || baseline.bottleneckStepId || "n/a";
+        const reliefLabel = labels.get(relief.bottleneckStepId) || relief.bottleneckStepId || "n/a";
+        const nodeMetrics = {};
+        let totalLeadTimeMinutes = 0;
+        let totalExplicitLeadTimeMinutes = 0;
+        let leadTimeTopStepId = "";
+        let leadTimeTopValue = -1;
+        model.stepModels.forEach(function (step) {
+          const evalStep = runtime.node[step.stepId];
+          const stepBaseline = baseline.stepEvals[step.stepId];
+          if (!evalStep) {
+            nodeMetrics[step.stepId] = {
+              utilization: null,
+              headroom: null,
+              queueRisk: null,
+              queueDepth: null,
+              wipQty: null,
+              completedQty: 0,
+              idleWaitHours: null,
+              idleWaitPct: null,
+              leadTimeMinutes: null,
+              capacityPerHour: null,
+              bottleneckIndex: null,
+              bottleneckFlag: false,
+              status: "unknown"
+            };
+            return;
+          }
+          const displayedCapacityPerHour = stepBaseline ? (stepBaseline.calendarCapacityPerHour || stepBaseline.capacityPerHour || null) : null;
+          const queueDelayMinutes =
+            displayedCapacityPerHour !== null && displayedCapacityPerHour > 0
+              ? ((evalStep.queueDepth || 0) / displayedCapacityPerHour) * 60
+              : 0;
+          const processMinutes = Math.max(0, ((stepBaseline && stepBaseline.serviceTimeHours) || 0) * 60);
+          const explicitLeadMinutes = Math.max(0, (stepBaseline && stepBaseline.explicitLeadTimeMinutes) || 0);
+          const leadTimeMinutes = processMinutes + queueDelayMinutes + explicitLeadMinutes;
+          totalLeadTimeMinutes += leadTimeMinutes;
+          totalExplicitLeadTimeMinutes += explicitLeadMinutes;
+          if (leadTimeMinutes > leadTimeTopValue) {
+            leadTimeTopValue = leadTimeMinutes;
+            leadTimeTopStepId = step.stepId;
+          }
+          nodeMetrics[step.stepId] = {
+            utilization: evalStep.utilization,
+            headroom: evalStep.utilization !== null ? Math.max(0, 1 - evalStep.utilization) : (stepBaseline ? stepBaseline.headroom : null),
+            queueRisk: evalStep.queueRisk,
+            queueDepth: evalStep.queueDepth,
+            wipQty: evalStep.wipQty,
+            completedQty: evalStep.completedQty,
+            idleWaitHours: evalStep.idleWaitHours,
+            idleWaitPct: evalStep.idleWaitPct,
+            leadTimeMinutes: leadTimeMinutes,
+            capacityPerHour: displayedCapacityPerHour,
+            bottleneckIndex: evalStep.bottleneckIndex,
+            bottleneckFlag: step.stepId === runtime.bottleneckStepId,
+            status: step.stepId === runtime.bottleneckStepId ? "critical" : evalStep.status
+          };
+        });
+        const compiledBaselineLeadTime = num((model.baseline.globalMetrics || {}).totalLeadTimeMinutes, baseline.totalLeadTimeMinutes);
+        const waitSharePct = totalLeadTimeMinutes > 0 ? totalExplicitLeadTimeMinutes / totalLeadTimeMinutes : 0;
+        return {
+          globalMetrics: {
+            simElapsedHours: elapsedHours,
+            forecastThroughput: runtime.realizedThroughput > 0 ? runtime.realizedThroughput : baseline.throughput,
+            totalCompletedOutputPieces: runtime.completedOutputQty,
+            totalWipQty: runtime.totalWipQty,
+            worstCaseTouchTime: baseline.worstCaseTouchTime,
+            totalLeadTimeMinutes: totalLeadTimeMinutes,
+            leadTimeDeltaMinutes: totalLeadTimeMinutes - compiledBaselineLeadTime,
+            waitSharePct: waitSharePct,
+            leadTimeTopContributor: labels.get(leadTimeTopStepId) || "n/a",
+            throughputDelta: relief.throughput - baseline.throughput,
+            bottleneckMigration: baselineLabel === reliefLabel ? baselineLabel + " -> no change" : baselineLabel + " -> " + reliefLabel,
+            bottleneckIndex: topScore,
+            brittleness: brittleness
+          },
+          nodeMetrics: nodeMetrics
+        };
+      }
+
+      function bindParameterGroupsToForecast(groups, forecastModel) {
+        const inputMap = new Map((forecastModel.inputs || []).map(function (input) { return [input.key, input]; }));
+        return (groups || []).map(function (group) {
+          return Object.assign({}, group, {
+            fields: (group.fields || []).map(function (field) {
+              const input = inputMap.get(field.key);
+              if (!input) return field;
+              return Object.assign({}, field, {
+                type: input.type === "select" ? "dropdown" : field.type,
+                min: typeof input.min === "number" ? input.min : field.min,
+                max: typeof input.max === "number" ? input.max : field.max,
+                step: typeof input.step === "number" ? input.step : field.step,
+                options: input.options || field.options,
+                defaultValue: (forecastModel.inputDefaults || {})[field.key] != null ? (forecastModel.inputDefaults || {})[field.key] : (input.defaultValue != null ? input.defaultValue : field.defaultValue)
+              });
+            })
+          });
+        });
+      }
+
+      function getDefaultScenario(groups, inputDefaults) {
+        const scenario = {};
+        groups.forEach(function (group) {
+          (group.fields || []).forEach(function (field) {
+            scenario[field.key] = inputDefaults[field.key] != null ? inputDefaults[field.key] : field.defaultValue;
+          });
+        });
+        return scenario;
+      }
+
+      function formatValue(value, format, decimals) {
+        const d = typeof decimals === "number" ? decimals : 1;
+        if (typeof value === "string") return value;
+        if (typeof value !== "number") return "--";
+        if (format === "percent") return (value * 100).toFixed(d) + "%";
+        if (format === "delta") return (value >= 0 ? "+" : "") + value.toFixed(d);
+        if (format === "duration") return value.toFixed(d) + " min";
+        return value.toFixed(d);
+      }
+
+      const parameterGroups = bindParameterGroupsToForecast(DASHBOARD_CONFIG.parameterGroups || [], MODEL);
+      const defaultScenario = Object.assign({}, getDefaultScenario(parameterGroups, MODEL.inputDefaults || {}), BASE_SCENARIO || {});
+      let scenario = Object.assign({}, defaultScenario);
+      let isPaused = true;
+      let speed = 1;
+      let elapsed = 0;
+      let lastTick = performance.now();
+      const titleEl = document.getElementById("title");
+      const subtitleEl = document.getElementById("subtitle");
+      const paramsEl = document.getElementById("params");
+      const kpiEl = document.getElementById("kpiRow");
+      const diagnosisEl = document.getElementById("diagnosis");
+      const flowEl = document.getElementById("flow");
+      const simTimeEl = document.getElementById("simTime");
+      const livePillEl = document.getElementById("livePill");
+      const startPauseEl = document.getElementById("startPause");
+
+      function horizonHours() {
+        return clamp(Math.round(num(scenario.simulationHorizonHours, 8)), 8, 720);
+      }
+
+      function renderParams() {
+        let html = "<h3 style=\"margin:0 0 8px;\">Parameters</h3>";
+        parameterGroups.forEach(function (group) {
+          html += "<div class=\"group-title\">" + group.label + "</div>";
+          (group.fields || []).forEach(function (field) {
+            const raw = scenario[field.key] != null ? scenario[field.key] : field.defaultValue;
+            const valueLabel = (typeof raw === "number" ? raw : String(raw)) + (field.unit ? " " + field.unit : "");
+            html += "<div class=\"field\">";
+            html += "<label>" + field.label + "</label>";
+            html += "<div class=\"value\">" + valueLabel + "</div>";
+            if (field.type === "dropdown") {
+              html += "<select data-key=\"" + field.key + "\">";
+              (field.options || []).forEach(function (option) {
+                const selected = String(raw) === String(option) ? " selected" : "";
+                html += "<option value=\"" + option + "\""+ selected +">" + option + "</option>";
+              });
+              html += "</select>";
+            } else if (field.type === "slider") {
+              html += "<input data-key=\"" + field.key + "\" type=\"range\" min=\"" + (field.min != null ? field.min : 0) + "\" max=\"" + (field.max != null ? field.max : 100) + "\" step=\"" + (field.step != null ? field.step : 1) + "\" value=\"" + Number(raw) + "\" />";
+            } else {
+              html += "<input data-key=\"" + field.key + "\" type=\"number\" min=\"" + (field.min != null ? field.min : "") + "\" max=\"" + (field.max != null ? field.max : "") + "\" step=\"" + (field.step != null ? field.step : "any") + "\" value=\"" + Number(raw) + "\" />";
+            }
+            html += "</div>";
+          });
+        });
+        paramsEl.innerHTML = html;
+        paramsEl.querySelectorAll("input[data-key],select[data-key]").forEach(function (el) {
+          el.addEventListener("input", function (event) {
+            const target = event.target;
+            const key = target.getAttribute("data-key");
+            if (!key) return;
+            if (target.tagName === "SELECT") {
+              scenario[key] = target.value;
+            } else {
+              scenario[key] = Number(target.value);
+            }
+            render();
+          });
+        });
+      }
+
+      function renderKpis(metrics) {
+        const kpis = DASHBOARD_CONFIG.kpis || [];
+        let html = "";
+        kpis.forEach(function (kpi) {
+          const value = metrics[kpi.key] != null ? metrics[kpi.key] : 0;
+          html += "<article class=\"kpi\"><div class=\"label\">" + kpi.label + "</div><div class=\"value\">" + formatValue(value, kpi.format, kpi.decimals) + "</div></article>";
+        });
+        kpiEl.innerHTML = html;
+      }
+
+      function renderDiagnosis() {
+        if (!DIAGNOSIS) {
+          diagnosisEl.textContent = "Operational diagnosis not included in this bundle.";
+          return;
+        }
+        diagnosisEl.innerHTML =
+          "<div class=\"diagnosis-grid\">" +
+          "<article class=\"diagnosis-card\"><h3>Operational Diagnosis</h3><p>" + DIAGNOSIS.statusSummary + "</p></article>" +
+          "<article class=\"diagnosis-card\"><h3>Primary Constraint</h3><p>" + DIAGNOSIS.primaryConstraint + "</p></article>" +
+          "<article class=\"diagnosis-card\"><h3>Constraint Mechanism</h3><p>" + DIAGNOSIS.constraintMechanism + "</p></article>" +
+          "<article class=\"diagnosis-card\"><h3>Recommended Action</h3><p>" + DIAGNOSIS.recommendedAction + "</p></article>" +
+          "</div>" +
+          "<div class=\"diagnosis-grid\" style=\"margin-top:10px\">" +
+          "<article class=\"diagnosis-card\"><h3>Downstream Effects</h3><p>" + DIAGNOSIS.downstreamEffects + "</p></article>" +
+          "<article class=\"diagnosis-card\"><h3>Economic Interpretation</h3><p>" + DIAGNOSIS.economicInterpretation + "</p></article>" +
+          "<article class=\"diagnosis-card\"><h3>Scenario Guidance</h3><p>" + DIAGNOSIS.scenarioGuidance + "</p></article>" +
+          "<article class=\"diagnosis-card\"><h3>Confidence</h3><p>" + DIAGNOSIS.confidence + " - " + DIAGNOSIS.confidenceNote + "</p></article>" +
+          "</div>" +
+          "<article class=\"diagnosis-card\" style=\"margin-top:10px\"><h3>AI Opportunity Lens</h3><ul>" +
+          "<li><strong>Data already exists but is underused:</strong> " + DIAGNOSIS.aiOpportunityLens.dataAlreadyExists + "</li>" +
+          "<li><strong>Manual but pattern-based decisions:</strong> " + DIAGNOSIS.aiOpportunityLens.manualPatternDecisions + "</li>" +
+          "<li><strong>Backward-looking vs predictive gap:</strong> " + DIAGNOSIS.aiOpportunityLens.predictiveGap + "</li>" +
+          "<li><strong>Tribal knowledge / email as database:</strong> " + DIAGNOSIS.aiOpportunityLens.tribalKnowledge + "</li>" +
+          "<li><strong>Visibility gaps causing profit leakage:</strong> " + DIAGNOSIS.aiOpportunityLens.visibilityGap + "</li>" +
+          "</ul></article>";
+      }
+
+      function renderFlow(output) {
+        let html = "";
+        const edges = MODEL.graph.edges || [];
+        const edgeSet = new Set(edges.map(function (edge) { return edge.from + "->" + edge.to; }));
+        MODEL.graph.nodes.forEach(function (node, index) {
+          const metrics = output.nodeMetrics[node.id] || {};
+          const utilRatio = typeof metrics.utilization === "number" ? clamp(metrics.utilization, 0, 1.35) : 0;
+          const util = typeof metrics.utilization === "number" ? (metrics.utilization * 100).toFixed(1) + "%" : "--";
+          const wip = typeof metrics.wipQty === "number" ? Math.round(metrics.wipQty) + " pcs" : "--";
+          const completed = typeof metrics.completedQty === "number" ? Math.round(metrics.completedQty) + " pcs" : "--";
+          const queueDepth = typeof metrics.queueDepth === "number" ? metrics.queueDepth : 0;
+          const status = metrics.status || "unknown";
+          const klass = status === "critical" ? "critical" : (status === "risk" ? "risk" : "");
+          const pulse = status === "critical" ? 0.85 : (status === "risk" ? 1.2 : 1.9);
+          const wipBarPct = clamp((queueDepth / 14) * 100, 0, 100);
+          const delay = (index * 0.11).toFixed(2);
+          html += "<article class=\"node " + klass + "\" style=\"--util:" + utilRatio.toFixed(3) + ";--pulse:" + pulse.toFixed(2) + "s;--delay:" + delay + "s;\">";
+          html += "<h4>" + node.label + "</h4>";
+          html += "<p class=\"muted\">PROCESS</p>";
+          html += "<p>util: " + util + "</p>";
+          html += "<p>lot/wip: " + wip + "</p>";
+          html += "<p>Completed Lot: " + completed + "</p>";
+          html += "<p>status: " + status + "</p>";
+          html += "<div class=\"wip-bar\"><span class=\"wip-fill\" style=\"width:" + wipBarPct.toFixed(1) + "%\"></span></div>";
+          html += "</article>";
+          if (index < MODEL.graph.nodes.length - 1) {
+            const next = MODEL.graph.nodes[index + 1];
+            const prob = edgeSet.has(node.id + "->" + next.id) ? "100%" : "";
+            html += "<div class=\"arrow\" style=\"--delay:" + delay + "s\">" + prob + " -></div>";
+          }
+        });
+        flowEl.innerHTML = html;
+      }
+
+      function render() {
+        titleEl.textContent = DASHBOARD_CONFIG.appTitle || "Forecast Export Cockpit";
+        subtitleEl.textContent = DASHBOARD_CONFIG.subtitle || "Constraint forecast (non-DES)";
+        const output = createOutput(MODEL, scenario, elapsed);
+        renderKpis(output.globalMetrics);
+        renderFlow(output);
+        flowEl.classList.toggle("live", !isPaused);
+        simTimeEl.textContent = elapsed.toFixed(2) + " / " + horizonHours() + " h";
+        livePillEl.textContent = isPaused ? "Paused" : "Live";
+        startPauseEl.textContent = isPaused ? "Start" : "Pause";
+      }
+
+      document.querySelectorAll("[data-speed]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          speed = Number(button.getAttribute("data-speed") || "1");
+          document.querySelectorAll("[data-speed]").forEach(function (b) { b.classList.remove("active"); });
+          button.classList.add("active");
+        });
+      });
+
+      document.getElementById("startPause").addEventListener("click", function () {
+        isPaused = !isPaused;
+        if (!isPaused && elapsed >= horizonHours() - 1e-6) {
+          elapsed = 0;
+        }
+        render();
+      });
+
+      document.getElementById("resetBtn").addEventListener("click", function () {
+        scenario = Object.assign({}, defaultScenario);
+        isPaused = true;
+        speed = 1;
+        elapsed = 0;
+        document.querySelectorAll("[data-speed]").forEach(function (b) { b.classList.remove("active"); });
+        const speedOne = document.querySelector("[data-speed='1']");
+        if (speedOne) speedOne.classList.add("active");
+        renderParams();
+        render();
+      });
+
+      function loop(now) {
+        const delta = (now - lastTick) / 1000;
+        lastTick = now;
+        if (!isPaused) {
+          elapsed = Math.min(horizonHours(), elapsed + delta * BASE_SIM_HOURS_PER_SECOND * speed);
+          if (elapsed >= horizonHours() - 1e-6) {
+            isPaused = true;
+          }
+          render();
+        }
+        requestAnimationFrame(loop);
+      }
+
+      renderParams();
+      renderDiagnosis();
+      render();
+      requestAnimationFrame(function (now) {
+        lastTick = now;
+        requestAnimationFrame(loop);
+      });
+    })();
+  </script>
+</body>
+</html>

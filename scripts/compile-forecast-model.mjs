@@ -163,6 +163,30 @@ function normalizeResourcePools(processing) {
   return parseResourcePoolsFromString(processing?.resourcesRaw);
 }
 
+function deriveDefaultActiveShiftCount(processingRows) {
+  const counts = new Map();
+  for (const row of Array.isArray(processingRows) ? processingRows : []) {
+    const value = toNumber(row?.shiftCount, Number.NaN);
+    if (!Number.isFinite(value) || value <= 0) {
+      continue;
+    }
+    const rounded = String(Math.round(value));
+    counts.set(rounded, (counts.get(rounded) ?? 0) + 1);
+  }
+  if (counts.size === 0) {
+    return DEFAULT_ACTIVE_SHIFT_COUNT;
+  }
+  let winner = DEFAULT_ACTIVE_SHIFT_COUNT;
+  let winnerCount = -1;
+  for (const [value, count] of counts.entries()) {
+    if (count > winnerCount) {
+      winner = value;
+      winnerCount = count;
+    }
+  }
+  return winner;
+}
+
 function mixModifier(index, total, mixProfile) {
   if (mixProfile === "front-loaded") {
     return index < Math.ceil(total / 3) ? 1.12 : 0.94;
@@ -284,12 +308,13 @@ const sellingPricePerUnit =
   Number.isFinite(master.economicsDefaults.sellingPricePerUnit)
     ? master.economicsDefaults.sellingPricePerUnit
     : 0;
+const defaultActiveShiftCount = deriveDefaultActiveShiftCount(master.processing ?? []);
 
 compileTexts.add(
   "Demand rate is not shown in the source image; baseline demandRatePerHour is seeded at 90% of computed release capacity from the start step."
 );
 compileTexts.add(
-  "The source image does not show a shift calendar; activeShiftCount defaults to 3 so runtime capacity reflects continuous daily availability unless the user overrides it."
+  `The source image shows a consistent visible shift count of ${defaultActiveShiftCount}; activeShiftCount defaults to that value so runtime capacity aligns with the VSM.`
 );
 compileTexts.add(
   "Step-level variability is not shown in the source image; baseline variabilityCv defaults to 0.18 for all steps."
@@ -612,7 +637,7 @@ const compiled = {
       key: "activeShiftCount",
       label: "Operating Shifts",
       type: "select",
-      defaultValue: DEFAULT_ACTIVE_SHIFT_COUNT,
+      defaultValue: defaultActiveShiftCount,
       options: [
         { label: "1 shift", value: "1" },
         { label: "2 shifts", value: "2" },
@@ -649,7 +674,7 @@ const compiled = {
     setupPenaltyMultiplier: 1,
     variabilityMultiplier: 1,
     simulationHorizonHours: "24",
-    activeShiftCount: DEFAULT_ACTIVE_SHIFT_COUNT,
+    activeShiftCount: defaultActiveShiftCount,
     bottleneckReliefUnits: 1,
     sellingPricePerUnit
   },

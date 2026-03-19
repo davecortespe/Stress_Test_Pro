@@ -1,6 +1,6 @@
 ---
 name: ui-sim-dashboard-shell
-description: Use this skill when creating or refactoring ANY simulator dashboard UI (manufacturing lines, warehouse flows, service bays, etc.). It locks a generic layout: header + left Parameters panel + top KPI cards row + central Simulation canvas (node graph) with zoom/pan and animated dashed edges. All labels, inputs, and KPI cards are driven by models/dashboard_config.json. No domain-specific wording or logic.
+description: Use this skill when creating or refactoring ANY simulator dashboard UI (manufacturing lines, warehouse flows, service bays, etc.). It locks a generic simulator cockpit layout: header + collapsible left What-if rail + simulation-first center stage with zoom/pan and animated dashed edges, with KPI treatment adapted by view mode. All labels, inputs, and KPI cards are driven by models/dashboard_config.json. No domain-specific wording or logic.
 argument-hint: "[optional: theme=dark] [optional: graph=svg] [optional: stack=react]"
 ---
 
@@ -9,8 +9,8 @@ argument-hint: "[optional: theme=dark] [optional: graph=svg] [optional: stack=re
 ## Goal
 Build a reusable, consistent simulator dashboard shell that is domain-agnostic:
 - Parameters on the left (group panels with sliders/inputs)
-- KPI cards on the top (row of cards)
-- Simulation canvas below (node graph + animation + zoom/pan)
+- Simulation canvas as the dominant center stage (node graph + animation + zoom/pan)
+- KPI cards available as either a top row or a compact in-canvas ribbon, depending on view mode
 - Header (title, run/pause, save scenario, live indicator)
 
 This skill is ONLY about UI structure, design system, and graph rendering.
@@ -20,7 +20,7 @@ It must not embed manufacturing or warehouse specific assumptions.
 
 ## Hard rules (Non-negotiable)
 1) **No domain-specific labels** in code (for example "doors", "receivers"). All UI text comes from `models/dashboard_config.json`.
-2) **Do not change the layout regions.** Header, left parameters, top KPIs, center simulation must exist.
+2) **Do not change the core layout regions.** Header, left parameters, and center simulation must exist. KPI presentation may be top-row or in-canvas depending on the accepted workflow.
 3) **Use a tokenized theme** with CSS variables (no scattered one-off styling).
 4) **Reusable components** only: Panel, MetricCard, SliderRow, NodeCard, Badge, Button.
 5) **Graph is data-driven**: render nodes/edges from a graph model; show metrics from a metrics map.
@@ -73,28 +73,33 @@ Apply a strict dark operations simulator UI style matching the provided referenc
 Apply this profile when building the same style of cockpit achieved in this repo.
 
 ### Locked layout behavior
-- Keep structure fixed: left parameters, top KPI row, center canvas.
+- Keep structure fixed: top control ribbon, left parameters rail, simulation-first center canvas.
 - Do not create alternative panel layouts.
-- Do not move KPI row into canvas.
+- In `Flow`, prefer a compact KPI ribbon inside the canvas over a full-width KPI row when vertical space is tight.
 
 ### Header behavior and placement
 - Left cluster:
   - yellow brand mark: `LeanStorming Operational Stress Labs`
   - title + subtitle
-  - actions: `Start/Pause`, `Reset Time`, `Import Library CSV`, `Save Scenario`
+  - actions: `Start/Pause`, `Reset Time`, `Save Scenario`
   - playback chips below actions: `x1`, `x2`, `x5`, `x50`, `x200`, `5s/mo`
-  - live indicator + staged chip (when paused with staged edits)
 - Right cluster:
-  - large `Sim Time {elapsed} / {horizon} h` chip
+  - large `Sim Time {elapsed} / {horizon} h` chip with inline `Simulation Horizon` preset dropdown
   - progress bar + percent
+  - live indicator
   - `Scenarios` chip placeholder
+- Secondary row:
+  - compact `Recommended move` card
+  - `Recommended move` remains collapsed by default and uses a `more` toggle for explanatory copy
 
 ### Simulation controls UX
 - Speed chips are direct toggles (no dropdown).
 - `Start/Pause` is the primary control (single toggle).
 - `Reset Time` resets elapsed time and graph view-fit state only.
 - `Reset Time` must not restore baseline parameters or discard user edits.
-- `Simulation Horizon` remains in the left parameter panel with presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
+- `Simulation Horizon` lives in the sim-time chip, not in the left parameter panel.
+- Horizon dropdown uses presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
+- Horizon should be visible but disabled while the run is live.
 - Keep top ribbon compact so graph/node rows stay visually dominant.
 - View mode buttons should be larger than default chips for easy click/tap targeting.
 - View mode buttons should fill the available width of the View card evenly.
@@ -102,11 +107,12 @@ Apply this profile when building the same style of cockpit achieved in this repo
 - Speed chips should be visually larger than default pills for quick operator recognition.
 
 ### Standard report surfaces
-- `FLOW MAP`
+- `FLOW`
 - `DIAGNOSIS`
 - `KAIZEN`
 - `THROUGHPUT`
 - `WASTE`
+- `ASSUMPTIONS`
 
 ### Report-language guidance
 - Keep report structure and metrics stable.
@@ -137,9 +143,10 @@ Apply this profile when building the same style of cockpit achieved in this repo
 - User-friendly controls: stepper buttons, numeric inputs, clear units.
 
 ### Responsiveness
-- KPI cards wrap on smaller widths.
-- Left panel remains collapsible and scrollable.
+- KPI cards wrap on smaller widths for analysis views, but `Flow` should preserve a single compact KPI ribbon whenever practical.
+- Left panel remains collapsible, scrollable, and always recoverable with an obvious reopen handle.
 - Header right cluster can wrap below left cluster on narrow viewports.
+- Parameter help tooltips must not be clipped by the rail or graph container; use floating overlay behavior when needed.
 
 ---
 
@@ -181,15 +188,15 @@ Apply this profile when building the same style of cockpit achieved in this repo
 
 ### Header (top bar)
 - Left: brand mark + title + subtitle (from config)
-- Left controls: actions grid + playback row + live/staged state
-- Right status strip: large Sim Time chip + progress + scenario chip
+- Left controls: actions grid + playback row
+- Right status strip: large Sim Time chip + horizon dropdown + progress + live state + scenario chip
 
 ### Body (two-column)
 - Left sidebar: Parameters panel (scrollable)
   - Section title: "Parameters" (or config-driven label)
   - Parameter groups rendered from config
 - Main content:
-  - KPI row: MetricCards rendered from config (5-8 cards)
+  - KPI row or compact flow ribbon: MetricCards rendered from config
   - Simulation canvas: fills remaining space
     - grid background
     - node graph
@@ -294,14 +301,16 @@ The app must render a working dashboard immediately.
 
 ## Acceptance checklist (must pass)
 - [ ] Sidebar renders parameter groups from config with proper controls and value badges
-- [ ] Header uses Start/Pause + Reset Time with live/staged indicators
+- [ ] Header uses Start/Pause + Reset Time and keeps playback controls below actions
 - [ ] Brand line appears above title with warning/yellow styling
-- [ ] Large timer chip is on the right side of header
+- [ ] Large timer chip is on the right side of header and contains the horizon preset dropdown
 - [ ] Speed chips x1/x2/x5/x50/x200/5s/mo are visible and selectable below actions
 - [ ] Reset Time does not wipe edited parameters
-- [ ] Simulation Horizon control includes 8 hrs, 16 hrs, 24 hrs, 1 week, and 1 month presets
-- [ ] KPI row renders cards from config and formats values
+- [ ] Simulation Horizon control includes 8 hrs, 16 hrs, 24 hrs, 1 week, and 1 month presets in the timer chip
+- [ ] `Recommended move` collapses to title-only with `more`/`less` expansion
+- [ ] KPI row or ribbon renders cards from config and formats values
 - [ ] KPI row has glass/dark panels, glow accents, and clear hierarchy
+- [ ] `Flow` mode can render KPIs as a compact in-canvas ribbon to preserve simulation space
 - [ ] View buttons span the width of the View card with large, readable targets
 - [ ] Each view button contains an in-button `(i)` explainer affordance
 - [ ] Graph canvas renders nodes/edges from graph JSON
@@ -311,6 +320,9 @@ The app must render a working dashboard immediately.
 - [ ] Node cards include Completed Lot and WIP fill strip
 - [ ] Bottlenecks are highlighted with red/magenta glow; healthy nodes are teal/green
 - [ ] Zoom/pan works
+- [ ] Flow canvas opens near the first steps rather than low-centered in the stage
+- [ ] Left rail can be collapsed and reopened without losing discoverability
+- [ ] Parameter help tooltips are readable and not clipped by scroll containers
 - [ ] Theme is consistent and tokenized (CSS variables)
 - [ ] Palette follows dark navy/ink base, cyan/teal flow, magenta/red risk
 - [ ] No domain-specific labels hardcoded

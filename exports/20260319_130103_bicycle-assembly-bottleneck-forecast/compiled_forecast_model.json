@@ -1,0 +1,747 @@
+{
+  "version": "0.3.0",
+  "generatedAt": "2026-03-19T16:59:46.903Z",
+  "metadata": {
+    "name": "Bicycle Assembly Bottleneck Forecast",
+    "units": "per-hour",
+    "mode": "constraint-forecast-non-des"
+  },
+  "graph": {
+    "metadata": {
+      "name": "Bicycle Assembly Bottleneck Forecast",
+      "units": "minutes",
+      "source": "User-provided VSM image (strict transcription, 2026-03-19)"
+    },
+    "nodes": [
+      {
+        "id": "frame_kit_prep",
+        "label": "Frame Kit Prep",
+        "type": "process",
+        "boxData": {
+          "stageRaw": "A",
+          "stepDescriptionRaw": "Pick frame, fork, seat post, handlebars, hardware kit",
+          "ctRaw": "3",
+          "changeoverRaw": "10",
+          "waitRaw": "20",
+          "equipmentCountRaw": "1",
+          "peopleNeededRaw": "1",
+          "shiftCountRaw": "1",
+          "lotSizeRaw": "10",
+          "reworkPctRaw": "1%",
+          "equipmentReliabilityRaw": "98%",
+          "notesRaw": [
+            "Material availability matters"
+          ]
+        }
+      },
+      {
+        "id": "wheel_assembly",
+        "label": "Wheel Assembly",
+        "type": "process",
+        "boxData": {
+          "stageRaw": "B",
+          "stepDescriptionRaw": "Assemble front and rear wheel sets",
+          "ctRaw": "6",
+          "changeoverRaw": "15",
+          "waitRaw": "45",
+          "equipmentCountRaw": "2",
+          "peopleNeededRaw": "2",
+          "shiftCountRaw": "1",
+          "lotSizeRaw": "10",
+          "reworkPctRaw": "2%",
+          "equipmentReliabilityRaw": "96%",
+          "notesRaw": [
+            "Moderate labor content"
+          ]
+        }
+      },
+      {
+        "id": "drivetrain_assembly",
+        "label": "Drivetrain Assembly",
+        "type": "process",
+        "boxData": {
+          "stageRaw": "C",
+          "stepDescriptionRaw": "Prepare crankset, chain, pedals, derailleur set",
+          "ctRaw": "5",
+          "changeoverRaw": "12",
+          "waitRaw": "35",
+          "equipmentCountRaw": "1",
+          "peopleNeededRaw": "1",
+          "shiftCountRaw": "1",
+          "lotSizeRaw": "10",
+          "reworkPctRaw": "2%",
+          "equipmentReliabilityRaw": "97%",
+          "notesRaw": [
+            "Small parts shortages possible"
+          ]
+        }
+      },
+      {
+        "id": "frame_sub_assembly",
+        "label": "Frame Sub-Assembly",
+        "type": "process",
+        "boxData": {
+          "stageRaw": "D",
+          "stepDescriptionRaw": "Install fork, headset, handlebars, seat post",
+          "ctRaw": "7",
+          "changeoverRaw": "8",
+          "waitRaw": "50",
+          "equipmentCountRaw": "2",
+          "peopleNeededRaw": "2",
+          "shiftCountRaw": "1",
+          "lotSizeRaw": "10",
+          "reworkPctRaw": "3%",
+          "equipmentReliabilityRaw": "95%",
+          "notesRaw": [
+            "Fit-up variability starts here"
+          ]
+        }
+      },
+      {
+        "id": "final_mechanical_assembly",
+        "label": "Final Mechanical Assembly",
+        "type": "process",
+        "boxData": {
+          "stageRaw": "E",
+          "stepDescriptionRaw": "Join wheels, drivetrain, brakes, cables, chain",
+          "ctRaw": "9",
+          "changeoverRaw": "20",
+          "waitRaw": "80",
+          "equipmentCountRaw": "2",
+          "peopleNeededRaw": "2",
+          "shiftCountRaw": "1",
+          "lotSizeRaw": "10",
+          "reworkPctRaw": "4%",
+          "equipmentReliabilityRaw": "94%",
+          "notesRaw": [
+            "Good bottleneck candidate"
+          ]
+        }
+      },
+      {
+        "id": "brake_and_gear_adjustment",
+        "label": "Brake and Gear Adjustment",
+        "type": "process",
+        "boxData": {
+          "stageRaw": "F",
+          "stepDescriptionRaw": "Tune shifting, brakes, torque verification",
+          "ctRaw": "8",
+          "changeoverRaw": "5",
+          "waitRaw": "60",
+          "equipmentCountRaw": "1",
+          "peopleNeededRaw": "1",
+          "shiftCountRaw": "1",
+          "lotSizeRaw": "10",
+          "reworkPctRaw": "6%",
+          "equipmentReliabilityRaw": "97%",
+          "notesRaw": [
+            "Another likely bottleneck / rework loop"
+          ]
+        }
+      },
+      {
+        "id": "inspection_and_touch_up",
+        "label": "Inspection and Touch-Up",
+        "type": "process",
+        "boxData": {
+          "stageRaw": "G",
+          "stepDescriptionRaw": "Visual inspection, road-test stand, touch-up fixes",
+          "ctRaw": "4",
+          "changeoverRaw": "0",
+          "waitRaw": "30",
+          "equipmentCountRaw": "1",
+          "peopleNeededRaw": "1",
+          "shiftCountRaw": "1",
+          "lotSizeRaw": "10",
+          "reworkPctRaw": "5%",
+          "equipmentReliabilityRaw": "98%",
+          "notesRaw": [
+            "Feeds rework back to F or E"
+          ]
+        }
+      },
+      {
+        "id": "packaging_and_staging",
+        "label": "Packaging and Staging",
+        "type": "process",
+        "boxData": {
+          "stageRaw": "H",
+          "stepDescriptionRaw": "Box bike, label, palletize, stage for shipment",
+          "ctRaw": "3.5",
+          "changeoverRaw": "10",
+          "waitRaw": "25",
+          "equipmentCountRaw": "1",
+          "peopleNeededRaw": "1",
+          "shiftCountRaw": "1",
+          "lotSizeRaw": "10",
+          "reworkPctRaw": "1%",
+          "equipmentReliabilityRaw": "99%",
+          "notesRaw": [
+            "End of line"
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "frame_kit_prep",
+        "to": "wheel_assembly",
+        "probability": 1
+      },
+      {
+        "from": "wheel_assembly",
+        "to": "drivetrain_assembly",
+        "probability": 1
+      },
+      {
+        "from": "drivetrain_assembly",
+        "to": "frame_sub_assembly",
+        "probability": 1
+      },
+      {
+        "from": "frame_sub_assembly",
+        "to": "final_mechanical_assembly",
+        "probability": 1
+      },
+      {
+        "from": "final_mechanical_assembly",
+        "to": "brake_and_gear_adjustment",
+        "probability": 1
+      },
+      {
+        "from": "brake_and_gear_adjustment",
+        "to": "inspection_and_touch_up",
+        "probability": 1
+      },
+      {
+        "from": "inspection_and_touch_up",
+        "to": "packaging_and_staging",
+        "probability": 1
+      }
+    ],
+    "startNodes": [
+      "frame_kit_prep"
+    ],
+    "endNodes": [
+      "packaging_and_staging"
+    ]
+  },
+  "inputs": [
+    {
+      "key": "demandMultiplier",
+      "label": "Demand Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.6,
+      "max": 1.8,
+      "step": 0.05
+    },
+    {
+      "key": "mixProfile",
+      "label": "Mix Profile",
+      "type": "select",
+      "defaultValue": "balanced",
+      "options": [
+        "balanced",
+        "front-loaded",
+        "midstream-heavy",
+        "back-loaded"
+      ]
+    },
+    {
+      "key": "staffingMultiplier",
+      "label": "Staffing Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.7,
+      "max": 1.4,
+      "step": 0.05
+    },
+    {
+      "key": "equipmentMultiplier",
+      "label": "Equipment Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.7,
+      "max": 1.4,
+      "step": 0.05
+    },
+    {
+      "key": "unplannedDowntimePct",
+      "label": "Unplanned Downtime",
+      "type": "number",
+      "defaultValue": 0,
+      "min": 0,
+      "max": 35,
+      "step": 0.5
+    },
+    {
+      "key": "ctMultiplier",
+      "label": "Cycle Time Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.75,
+      "max": 1.6,
+      "step": 0.05
+    },
+    {
+      "key": "setupPenaltyMultiplier",
+      "label": "Setup Penalty",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0,
+      "max": 1.8,
+      "step": 0.05
+    },
+    {
+      "key": "variabilityMultiplier",
+      "label": "Variability Multiplier",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0.6,
+      "max": 1.8,
+      "step": 0.05
+    },
+    {
+      "key": "simulationHorizonHours",
+      "label": "Simulation Horizon",
+      "type": "select",
+      "defaultValue": "24",
+      "options": [
+        {
+          "label": "8 hrs",
+          "value": "8"
+        },
+        {
+          "label": "16 hrs",
+          "value": "16"
+        },
+        {
+          "label": "24 hrs",
+          "value": "24"
+        },
+        {
+          "label": "1 week",
+          "value": "168"
+        },
+        {
+          "label": "1 month",
+          "value": "720"
+        }
+      ]
+    },
+    {
+      "key": "activeShiftCount",
+      "label": "Operating Shifts",
+      "type": "select",
+      "defaultValue": "1",
+      "options": [
+        {
+          "label": "1 shift",
+          "value": "1"
+        },
+        {
+          "label": "2 shifts",
+          "value": "2"
+        },
+        {
+          "label": "3 shifts",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "key": "bottleneckReliefUnits",
+      "label": "Bottleneck Relief (+units)",
+      "type": "number",
+      "defaultValue": 1,
+      "min": 0,
+      "max": 6,
+      "step": 1
+    },
+    {
+      "key": "sellingPricePerUnit",
+      "label": "Selling Price / Unit",
+      "type": "number",
+      "defaultValue": 0,
+      "min": 0,
+      "max": 100000,
+      "step": 0.01
+    }
+  ],
+  "inputDefaults": {
+    "demandRatePerHour": 13.5,
+    "demandMultiplier": 1,
+    "mixProfile": "balanced",
+    "staffingMultiplier": 1,
+    "equipmentMultiplier": 1,
+    "unplannedDowntimePct": 0,
+    "ctMultiplier": 1,
+    "setupPenaltyMultiplier": 1,
+    "variabilityMultiplier": 1,
+    "simulationHorizonHours": "24",
+    "activeShiftCount": "1",
+    "bottleneckReliefUnits": 1,
+    "sellingPricePerUnit": 0
+  },
+  "stepModels": [
+    {
+      "stepId": "frame_kit_prep",
+      "label": "Frame Kit Prep",
+      "equipmentType": "Frame Kit Prep",
+      "workerCount": 1,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 3,
+      "changeoverMinutes": 10,
+      "changeoverPenaltyPerUnitMinutes": 1,
+      "leadTimeMinutes": 20,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 4,
+      "effectiveCapacityPerHour": 15,
+      "baseline": {
+        "demandRatePerHour": 13.5,
+        "utilization": 0.9,
+        "headroom": 0.1,
+        "queueRisk": 0.81,
+        "bottleneckIndex": 0.675,
+        "status": "risk"
+      }
+    },
+    {
+      "stepId": "wheel_assembly",
+      "label": "Wheel Assembly",
+      "equipmentType": "Wheel Assembly",
+      "workerCount": 2,
+      "parallelProcedures": 2,
+      "effectiveUnits": 2,
+      "ctMinutes": 6,
+      "changeoverMinutes": 15,
+      "changeoverPenaltyPerUnitMinutes": 1.5,
+      "leadTimeMinutes": 45,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 7.5,
+      "effectiveCapacityPerHour": 16,
+      "baseline": {
+        "demandRatePerHour": 13.5,
+        "utilization": 0.8438,
+        "headroom": 0.1563,
+        "queueRisk": 0.4556,
+        "bottleneckIndex": 0.5417,
+        "status": "healthy"
+      }
+    },
+    {
+      "stepId": "drivetrain_assembly",
+      "label": "Drivetrain Assembly",
+      "equipmentType": "Drivetrain Assembly",
+      "workerCount": 1,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 5,
+      "changeoverMinutes": 12,
+      "changeoverPenaltyPerUnitMinutes": 1.2,
+      "leadTimeMinutes": 35,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 6.2,
+      "effectiveCapacityPerHour": 9.6774,
+      "baseline": {
+        "demandRatePerHour": 13.5,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "bottleneckIndex": 0.9395,
+        "status": "critical"
+      }
+    },
+    {
+      "stepId": "frame_sub_assembly",
+      "label": "Frame Sub-Assembly",
+      "equipmentType": "Frame Sub-Assembly",
+      "workerCount": 2,
+      "parallelProcedures": 2,
+      "effectiveUnits": 2,
+      "ctMinutes": 7,
+      "changeoverMinutes": 8,
+      "changeoverPenaltyPerUnitMinutes": 0.8,
+      "leadTimeMinutes": 50,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 7.8,
+      "effectiveCapacityPerHour": 15.3846,
+      "baseline": {
+        "demandRatePerHour": 13.5,
+        "utilization": 0.8775,
+        "headroom": 0.1225,
+        "queueRisk": 0.6286,
+        "bottleneckIndex": 0.6098,
+        "status": "risk"
+      }
+    },
+    {
+      "stepId": "final_mechanical_assembly",
+      "label": "Final Mechanical Assembly",
+      "equipmentType": "Final Mechanical Assembly",
+      "workerCount": 2,
+      "parallelProcedures": 2,
+      "effectiveUnits": 2,
+      "ctMinutes": 9,
+      "changeoverMinutes": 20,
+      "changeoverPenaltyPerUnitMinutes": 2,
+      "leadTimeMinutes": 80,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 11,
+      "effectiveCapacityPerHour": 10.9091,
+      "baseline": {
+        "demandRatePerHour": 13.5,
+        "utilization": 1.2375,
+        "headroom": 0,
+        "queueRisk": 1,
+        "bottleneckIndex": 0.9177,
+        "status": "critical"
+      }
+    },
+    {
+      "stepId": "brake_and_gear_adjustment",
+      "label": "Brake and Gear Adjustment",
+      "equipmentType": "Brake and Gear Adjustment",
+      "workerCount": 1,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 8,
+      "changeoverMinutes": 5,
+      "changeoverPenaltyPerUnitMinutes": 0.5,
+      "leadTimeMinutes": 60,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 8.5,
+      "effectiveCapacityPerHour": 7.0588,
+      "baseline": {
+        "demandRatePerHour": 13.5,
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "bottleneckIndex": 0.9913,
+        "status": "critical"
+      }
+    },
+    {
+      "stepId": "inspection_and_touch_up",
+      "label": "Inspection and Touch-Up",
+      "equipmentType": "Inspection and Touch-Up",
+      "workerCount": 1,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 4,
+      "changeoverMinutes": 0,
+      "changeoverPenaltyPerUnitMinutes": 0,
+      "leadTimeMinutes": 30,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 4,
+      "effectiveCapacityPerHour": 15,
+      "baseline": {
+        "demandRatePerHour": 13.5,
+        "utilization": 0.9,
+        "headroom": 0.1,
+        "queueRisk": 0.81,
+        "bottleneckIndex": 0.675,
+        "status": "risk"
+      }
+    },
+    {
+      "stepId": "packaging_and_staging",
+      "label": "Packaging and Staging",
+      "equipmentType": "Packaging and Staging",
+      "workerCount": 1,
+      "parallelProcedures": 1,
+      "effectiveUnits": 1,
+      "ctMinutes": 3.5,
+      "changeoverMinutes": 10,
+      "changeoverPenaltyPerUnitMinutes": 1,
+      "leadTimeMinutes": 25,
+      "variabilityCv": 0.18,
+      "effectiveCtMinutes": 4.5,
+      "effectiveCapacityPerHour": 13.3333,
+      "baseline": {
+        "demandRatePerHour": 13.5,
+        "utilization": 1.0125,
+        "headroom": 0,
+        "queueRisk": 1,
+        "bottleneckIndex": 0.7873,
+        "status": "critical"
+      }
+    }
+  ],
+  "baseline": {
+    "demandRatePerHour": 13.5,
+    "lineCapacityPerHour": 7.0588,
+    "bottleneckStepId": "brake_and_gear_adjustment",
+    "globalMetrics": {
+      "throughput": 7.0588,
+      "globalThroughput": 7.0588,
+      "forecastThroughput": 7.0588,
+      "throughputDelta": 0,
+      "bottleneckMigration": "baseline only",
+      "bottleneckIndex": 0.9913,
+      "brittleness": 0.8513,
+      "avgQueueRisk": 0.838,
+      "totalWipQty": 418.4354,
+      "worstCaseTouchTime": 45.5,
+      "totalLeadTimeMinutes": 972.8947,
+      "leadTimeDeltaMinutes": 0,
+      "waitSharePct": 0.3546,
+      "leadTimeTopContributor": "Brake and Gear Adjustment"
+    },
+    "nodeMetrics": {
+      "frame_kit_prep": {
+        "utilization": 0.9,
+        "headroom": 0.1,
+        "queueRisk": 0.81,
+        "queueDepth": 11.26,
+        "wipQty": 11.26,
+        "completedQty": 0,
+        "leadTimeMinutes": 68.04,
+        "capacityPerHour": 15,
+        "bottleneckIndex": 0.675,
+        "bottleneckFlag": false,
+        "status": "risk"
+      },
+      "wheel_assembly": {
+        "utilization": 0.8438,
+        "headroom": 0.1563,
+        "queueRisk": 0.4556,
+        "queueDepth": 6.6138,
+        "wipQty": 6.6138,
+        "completedQty": 0,
+        "leadTimeMinutes": 75.8016,
+        "capacityPerHour": 16,
+        "bottleneckIndex": 0.5417,
+        "bottleneckFlag": false,
+        "status": "healthy"
+      },
+      "drivetrain_assembly": {
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "queueDepth": 17.005,
+        "wipQty": 108.7474,
+        "completedQty": 0,
+        "leadTimeMinutes": 145.4313,
+        "capacityPerHour": 9.6774,
+        "bottleneckIndex": 0.9395,
+        "bottleneckFlag": false,
+        "status": "critical"
+      },
+      "frame_sub_assembly": {
+        "utilization": 0.8775,
+        "headroom": 0.1225,
+        "queueRisk": 0.6286,
+        "queueDepth": 8.9255,
+        "wipQty": 8.9255,
+        "completedQty": 0,
+        "leadTimeMinutes": 91.8095,
+        "capacityPerHour": 15.3846,
+        "bottleneckIndex": 0.6098,
+        "bottleneckFlag": false,
+        "status": "risk"
+      },
+      "final_mechanical_assembly": {
+        "utilization": 1.2375,
+        "headroom": 0,
+        "queueRisk": 1,
+        "queueDepth": 15.9025,
+        "wipQty": 78.0841,
+        "completedQty": 0,
+        "leadTimeMinutes": 176.4636,
+        "capacityPerHour": 10.9091,
+        "bottleneckIndex": 0.9177,
+        "bottleneckFlag": false,
+        "status": "critical"
+      },
+      "brake_and_gear_adjustment": {
+        "utilization": 1.35,
+        "headroom": 0,
+        "queueRisk": 1,
+        "queueDepth": 20.6275,
+        "wipQty": 175.2163,
+        "completedQty": 0,
+        "leadTimeMinutes": 243.3347,
+        "capacityPerHour": 7.0588,
+        "bottleneckIndex": 0.9913,
+        "bottleneckFlag": true,
+        "status": "critical"
+      },
+      "inspection_and_touch_up": {
+        "utilization": 0.9,
+        "headroom": 0.1,
+        "queueRisk": 0.81,
+        "queueDepth": 11.26,
+        "wipQty": 11.26,
+        "completedQty": 0,
+        "leadTimeMinutes": 79.04,
+        "capacityPerHour": 15,
+        "bottleneckIndex": 0.675,
+        "bottleneckFlag": false,
+        "status": "risk"
+      },
+      "packaging_and_staging": {
+        "utilization": 1.0125,
+        "headroom": 0,
+        "queueRisk": 1,
+        "queueDepth": 14.3275,
+        "wipQty": 18.3283,
+        "completedQty": 0,
+        "leadTimeMinutes": 92.974,
+        "capacityPerHour": 13.3333,
+        "bottleneckIndex": 0.7873,
+        "bottleneckFlag": false,
+        "status": "critical"
+      }
+    }
+  },
+  "assumptions": [
+    {
+      "id": "strict-001",
+      "severity": "warning",
+      "text": "The VSM title is not visible in the image; model metadata was inferred as Bicycle Assembly Bottleneck Forecast."
+    },
+    {
+      "id": "strict-002",
+      "severity": "info",
+      "text": "People Needed was mapped directly to workers because that is the visible staffing field in the image."
+    },
+    {
+      "id": "strict-003",
+      "severity": "info",
+      "text": "# of Equipment was mapped directly to parallelProcedures / effectiveUnits because that is the visible concurrency field in the image."
+    },
+    {
+      "id": "strict-004",
+      "severity": "warning",
+      "text": "Hours per shift are not visible in the image, so the forecast calendar still assumes 8 hours per shift when converting shift count to active capacity."
+    },
+    {
+      "id": "strict-005",
+      "severity": "warning",
+      "text": "Demand rate and product mix are not visible in the image; baseline demand will be inferred in phase 2 from the start-step release capacity."
+    },
+    {
+      "id": "compile-001",
+      "severity": "warning",
+      "text": "Demand rate is not shown in the source image; baseline demandRatePerHour is seeded at 90% of computed release capacity from the start step."
+    },
+    {
+      "id": "compile-002",
+      "severity": "warning",
+      "text": "The source image shows a consistent visible shift count of 1; activeShiftCount defaults to that value so runtime capacity aligns with the VSM."
+    },
+    {
+      "id": "compile-003",
+      "severity": "warning",
+      "text": "Step-level variability is not shown in the source image; baseline variabilityCv defaults to 0.18 for all steps."
+    },
+    {
+      "id": "compile-004",
+      "severity": "info",
+      "text": "Queue risk, bottleneck index, brittleness, and migration outputs are deterministic non-DES forecast heuristics for rapid recompute."
+    }
+  ]
+}

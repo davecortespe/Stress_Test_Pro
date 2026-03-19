@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { AssumptionsReportPanel } from "../components/AssumptionsReportPanel";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { GraphCanvas } from "../components/GraphCanvas";
@@ -61,6 +61,12 @@ const RESULTS_MODE_LABELS: Record<SimulatorResultsMode, string> = {
   waste: "Waste Analysis",
   assumptions: "Assumptions Review"
 };
+
+const KAIZEN_PDF_URL = "/generated/kaizen-executive-report.pdf";
+const PARAMETER_RAIL_WIDTH_STORAGE_KEY = "stress-test-pro.parameter-rail-width-v1";
+const PARAMETER_RAIL_MIN_WIDTH = 290;
+const PARAMETER_RAIL_DEFAULT_WIDTH = 320;
+const PARAMETER_RAIL_HARD_MAX_WIDTH = 520;
 
 const throughputKpis: KpiConfig[] = [
   {
@@ -194,6 +200,19 @@ function downloadTextFile(fileName: string, contents: string, mimeType = "text/p
   URL.revokeObjectURL(url);
 }
 
+function getParameterRailMaxWidth(viewportWidth: number): number {
+  return Math.max(
+    PARAMETER_RAIL_MIN_WIDTH,
+    Math.min(PARAMETER_RAIL_HARD_MAX_WIDTH, Math.round(viewportWidth * 0.42))
+  );
+}
+
+function clampParameterRailWidth(width: number, viewportWidth: number): number {
+  const minWidth = PARAMETER_RAIL_MIN_WIDTH;
+  const maxWidth = getParameterRailMaxWidth(viewportWidth);
+  return Math.round(Math.min(Math.max(width, minWidth), maxWidth));
+}
+
 export default function SimulatorApp() {
   const libraryFileInputRef = useRef<HTMLInputElement | null>(null);
   const exportBundleData = useMemo(() => getExportBundleData(), []);
@@ -263,6 +282,22 @@ export default function SimulatorApp() {
   const [resultsMode, setResultsMode] = useState<SimulatorResultsMode>("flow");
   const [isScenarioLibraryOpen, setIsScenarioLibraryOpen] = useState(false);
   const [isParameterRailOpen, setIsParameterRailOpen] = useState(true);
+  const [parameterRailWidth, setParameterRailWidth] = useState(() => {
+    if (typeof window === "undefined") {
+      return PARAMETER_RAIL_DEFAULT_WIDTH;
+    }
+
+    try {
+      const savedWidth = Number(window.localStorage.getItem(PARAMETER_RAIL_WIDTH_STORAGE_KEY));
+      if (Number.isFinite(savedWidth)) {
+        return clampParameterRailWidth(savedWidth, window.innerWidth);
+      }
+    } catch {
+      // Ignore storage failures and keep the rail usable.
+    }
+
+    return clampParameterRailWidth(PARAMETER_RAIL_DEFAULT_WIDTH, window.innerWidth);
+  });
   const {
     libraryEntries,
     selectedScenarioId,
@@ -289,6 +324,32 @@ export default function SimulatorApp() {
   const [operationalDiagnosis, setOperationalDiagnosis] = useState(() =>
     buildOperationalDiagnosis(forecastModel, output, committedScenario)
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncRailWidth = () => {
+      setParameterRailWidth((current) => clampParameterRailWidth(current, window.innerWidth));
+    };
+
+    syncRailWidth();
+    window.addEventListener("resize", syncRailWidth);
+    return () => window.removeEventListener("resize", syncRailWidth);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(PARAMETER_RAIL_WIDTH_STORAGE_KEY, String(parameterRailWidth));
+    } catch {
+      // Ignore storage failures and keep the rail usable.
+    }
+  }, [parameterRailWidth]);
 
   // Refresh diagnosis once a run stops (or is paused) rather than every simulation tick.
   useEffect(() => {
@@ -544,6 +605,14 @@ export default function SimulatorApp() {
     }
   };
 
+  const openKaizenPdf = () => {
+    window.open(KAIZEN_PDF_URL, "_blank", "noopener,noreferrer");
+    setAppNotice({
+      tone: "success",
+      text: "Opened the latest Kaizen PDF report. If it looks stale, rerun npm run export:pdf-report first."
+    });
+  };
+
   const loadScenarioFromLibrary = (scenarioId: string) => {
     const scenario = loadScenarioEntry(scenarioId);
     if (!scenario) {
@@ -610,19 +679,30 @@ export default function SimulatorApp() {
           </div>
         ) : null}
 
-        <div className={`content-shell ${isParameterRailOpen ? "rail-open" : "rail-collapsed"}`}>
+          <div
+          className={`content-shell ${isParameterRailOpen ? "rail-open" : "rail-collapsed"}`}
+          style={{ "--parameter-rail-width": `${parameterRailWidth}px` } as CSSProperties}
+        >
           <aside className="left-rail">
             <ParameterSidebar
               groups={sidebarParameterGroups}
               scenario={activeScenario}
               editable
               isRailOpen={isParameterRailOpen}
+              railWidth={parameterRailWidth}
+              minRailWidth={PARAMETER_RAIL_MIN_WIDTH}
+              maxRailWidth={getParameterRailMaxWidth(typeof window === "undefined" ? 1440 : window.innerWidth)}
               onToggleRail={() => setIsParameterRailOpen((current) => !current)}
+              onRailWidthChange={(nextWidth) =>
+                setParameterRailWidth(
+                  clampParameterRailWidth(nextWidth, typeof window === "undefined" ? 1440 : window.innerWidth)
+                )
+              }
               onChange={updateScenarioValue}
             />
           </aside>
 
-          <main className={`center-stage ${isFlowMode ? "center-stage-flow" : ""}`}>
+          <main className={`center-stage ${isFlowMode ? "center-stage-flow" : "reports-mode"}`}>
             {!isFlowMode ? (
               <>
                 <div className="stage-toolbar">
@@ -676,7 +756,7 @@ export default function SimulatorApp() {
             ) : null}
 
             {resultsMode === "kaizen" ? (
-              <KaizenReportPanel report={kaizenReport} />
+              <KaizenReportPanel report={kaizenReport} onOpenPdf={openKaizenPdf} />
             ) : null}
 
             {resultsMode === "throughput" ? (

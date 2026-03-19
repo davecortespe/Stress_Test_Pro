@@ -559,3 +559,49 @@ export interface ScenarioLibraryParseResult {
   discoveredColumns: string[];
   context: ScenarioLibraryFileContext | null;
 }
+
+export interface ConsultingReportSourceArtifact {
+  artifact_id: string;
+  artifact_path: string;
+  status: "present" | "missing";
+}
+
+export interface ConsultingReportContentItem {
+  label: string;
+  content_ref: string;
+  source_value: unknown;
+}
+
+export interface ConsultingReportContentGroup {
+  group_label: string;
+  content_refs: string[];
+  content_items: ConsultingReportContentItem[];
+}
+
+export interface ConsultingReportPage {
+  page_number: number;
+  page_title: string;
+  section: string;
+  layout_type: string;
+  content_groups: ConsultingReportContentGroup[];
+  formatting_notes: string[];
+  reviewer_notes: string[];
+}
+
+export interface ConsultingReportSection {
+  section_title: string;
+  purpose: string;
+  pages: number[];
+}
+
+export interface ConsultingReportExportSpec {
+  export_title: string;
+  export_mode: "consulting_grade_organization";
+  source_artifacts: ConsultingReportSourceArtifact[];
+  sections: ConsultingReportSection[];
+  pages: ConsultingReportPage[];
+  export_notes: string[];
+  presenter_notes: string[];
+  reviewer_notes: string[];
+  scenario_snapshot: Record<string, number | string> | null;
+}

@@ -75,7 +75,7 @@ function buildValidations(stepRows) {
             severity: "error",
             stepId: row.stepId,
             metricKey: "comparisonTimes",
-            message: `${row.stepName} is excluded from waste totals because both CT and LT are missing.`
+            message: `${row.stepName} is not included in waste totals because both CT and LT are missing.`
         });
     });
     fallbackRows.forEach((row) => {
@@ -86,7 +86,7 @@ function buildValidations(stepRows) {
             severity: "warning",
             stepId: row.stepId,
             metricKey: copiedField,
-            message: `${row.stepName} is mirroring ${sourceField} into ${copiedField} because one time value is missing.`
+            message: `${row.stepName} is using ${sourceField} as a stand-in for ${copiedField} because one time is missing.`
         });
     });
     ltBelowCtRows.forEach((row) => {
@@ -95,7 +95,7 @@ function buildValidations(stepRows) {
             severity: "warning",
             stepId: row.stepId,
             metricKey: "comparisonLtMinutes",
-            message: `${row.stepName} has LT below CT. Waste is floored at zero, but the source data should be reviewed.`
+            message: `${row.stepName} shows LT below CT. Waste is forced to zero, but the source data should be checked.`
         });
     });
     return validations;
@@ -106,9 +106,9 @@ function buildInsights(args) {
     if (blockingErrors.length > 0) {
         return [
             {
-                finding: "Waste totals are partially blocked by missing time data.",
-                impactEstimate: `${blockingErrors.length} step-level error(s) are excluding steps from aggregate LT-vs-CT waste totals.`,
-                recommendedAction: "Fill in CT or LT for the flagged steps, or accept the mirrored fallback where appropriate."
+                finding: "This waste report is not complete yet.",
+                impactEstimate: `${blockingErrors.length} step(s) are being left out of the total because required time data is missing.`,
+                recommendedAction: "Fill in CT or LT for the flagged steps, or confirm the fallback assumption if that is intended."
             }
         ];
     }
@@ -125,47 +125,47 @@ function buildInsights(args) {
     return [
         {
             finding: byWeightedWaste[0]
-                ? `${byWeightedWaste[0].stepName} is the largest weighted waste contributor.`
-                : "Weighted waste is not available yet.",
+                ? `${byWeightedWaste[0].stepName} is adding the most delay to the overall flow.`
+                : "Weighted delay is not available yet.",
             impactEstimate: summary.totalWasteMinutes !== null
-                ? `Weighted waiting waste is ${summary.totalWasteMinutes.toFixed(2)} minutes across the current route mix.`
-                : "Line-level waste cannot be totaled until comparison times are available.",
+                ? `Across the current flow mix, total weighted delay is ${summary.totalWasteMinutes.toFixed(2)} minutes.`
+                : "Total line delay cannot be calculated until comparison times are available.",
             recommendedAction: byWeightedWaste[0]
-                ? `Reduce wait, queue, batching, or hold time at ${byWeightedWaste[0].stepName} before chasing lower-impact steps.`
-                : "Populate CT and LT on the active route first."
+                ? `Reduce waiting, queue, batching, or hold time at ${byWeightedWaste[0].stepName} before working on lower-impact steps.`
+                : "Add CT and LT for the active path first."
         },
         {
             finding: byWastePct[0]
-                ? `${byWastePct[0].stepName} has the highest waste share.`
-                : "Waste percentage ranking is not available.",
+                ? `${byWastePct[0].stepName} has the highest share of delay.`
+                : "Delay percentage ranking is not available.",
             impactEstimate: byWastePct[0]?.wastePct !== null
-                ? `${((byWastePct[0]?.wastePct ?? 0) * 100).toFixed(1)}% of its LT is non-value-added versus CT.`
-                : "Waste % requires at least one valid LT/CT pair.",
+                ? `${((byWastePct[0]?.wastePct ?? 0) * 100).toFixed(1)}% of its elapsed time is delay rather than hands-on work.`
+                : "Delay % requires at least one valid LT and CT pair.",
             recommendedAction: byWastePct[0]
-                ? `Use ${byWastePct[0].stepName} to explain to clients where elapsed time is dominated by delay instead of touch time.`
-                : "Provide step-level LT and CT to unlock waste-share ranking."
+                ? `Use ${byWastePct[0].stepName} to explain where elapsed time is being consumed by waiting instead of work.`
+                : "Add step-level LT and CT to unlock the delay ranking."
         },
         {
             finding: mirroredFallback
-                ? `${mirroredFallback.stepName} is using the largest mirrored time assumption.`
-                : "No mirrored CT/LT assumptions are active.",
+                ? `${mirroredFallback.stepName} is using the largest fallback time assumption.`
+                : "No CT or LT fallback assumptions are active.",
             impactEstimate: mirroredFallback
-                ? `${mirroredFallback.usedCtFallback ? "CT" : "LT"} is being copied from the other field, which suppresses waste at that step until real data is entered.`
-                : "Every compared step has both CT and LT available.",
+                ? `${mirroredFallback.usedCtFallback ? "CT" : "LT"} is being copied from the other field, which can hide true delay until the real value is entered.`
+                : "Every compared step has both CT and LT filled in.",
             recommendedAction: mirroredFallback
-                ? `Replace the mirrored value at ${mirroredFallback.stepName} with the actual ${mirroredFallback.usedCtFallback ? "CT" : "LT"} before presenting the waste baseline externally.`
-                : "Keep both CT and LT populated to preserve comparison fidelity."
+                ? `Replace the fallback value at ${mirroredFallback.stepName} with the actual ${mirroredFallback.usedCtFallback ? "CT" : "LT"} before sharing this waste baseline outside the team.`
+                : "Keep both CT and LT filled in so the comparison stays accurate."
         },
         {
             finding: inconsistentSteps.length > 0
-                ? `${inconsistentSteps.length} step(s) report LT below CT.`
-                : "No LT-below-CT inconsistencies were detected.",
+                ? `${inconsistentSteps.length} step(s) show LT below CT.`
+                : "No LT-below-CT issues were found.",
             impactEstimate: inconsistentSteps.length > 0
-                ? `These steps are being floored to zero waste, so the issue is a data-quality inconsistency rather than a true improvement signal.`
+                ? "Those steps are being forced to zero delay, so this points to a data issue rather than a real improvement."
                 : `Value-add ratio is ${summary.valueAddRatio !== null ? `${(summary.valueAddRatio * 100).toFixed(1)}%` : "not available"}.`,
             recommendedAction: inconsistentSteps.length > 0
-                ? "Review the LT source on those steps before using the waste comparison in client-facing reports."
-                : "Use the line-level value-add ratio to compare scenarios on current-state delay."
+                ? "Check the LT source for those steps before using this waste comparison in external reporting."
+                : "Use the line-level value-add ratio to compare scenarios on current delay."
         }
     ];
 }
@@ -247,45 +247,45 @@ export function buildWasteAnalysis(model, scenario, output) {
     const summaryRows = [
         {
             key: "totalLeadTimeMinutes",
-            label: "Weighted total lead time",
+            label: "Weighted total elapsed time",
             value: summary.totalLeadTimeMinutes,
             format: "duration"
         },
         {
             key: "totalTouchTimeMinutes",
-            label: "Weighted total touch time",
+            label: "Weighted total hands-on time",
             value: summary.totalTouchTimeMinutes,
             format: "duration"
         },
         {
             key: "totalWasteMinutes",
-            label: "Weighted total waste",
+            label: "Weighted total delay",
             value: summary.totalWasteMinutes,
             format: "duration"
         },
         {
             key: "totalWastePct",
-            label: "Waste share",
+            label: "Delay share",
             value: summary.totalWastePct,
             format: "percent",
             decimals: 1
         },
         {
             key: "valueAddRatio",
-            label: "Value-add ratio",
+            label: "Value work ratio",
             value: summary.valueAddRatio,
             format: "percent",
             decimals: 1
         },
         {
             key: "topWasteStep",
-            label: "Top waste contributor",
+            label: "Biggest delay step",
             value: summary.topWasteStep,
             format: "text"
         },
         {
             key: "fallbackCount",
-            label: "Mirrored fallback steps",
+            label: "Fallback time steps",
             value: summary.fallbackCount,
             format: "number",
             decimals: 0

@@ -177,17 +177,17 @@ function computeVisitFactors(graph) {
 }
 
 function mixModifier(stepId, index, total, mixProfile) {
-  if (mixProfile === "station-1-heavy") {
-    return index <= 1 ? 1.12 : 0.96;
+  void stepId;
+  if (mixProfile === "front-loaded") {
+    return index < Math.ceil(total / 3) ? 1.12 : 0.94;
   }
-  if (mixProfile === "final-step-heavy") {
-    return index >= Math.max(0, total - 2) ? 1.12 : 0.96;
+  if (mixProfile === "midstream-heavy") {
+    const start = Math.floor(total / 3);
+    const end = Math.ceil((total * 2) / 3);
+    return index >= start && index < end ? 1.12 : 0.94;
   }
-  if (mixProfile === "family-A-heavy") {
-    return stepId === "station_1" || stepId === "station_2" ? 1.1 : 0.97;
-  }
-  if (mixProfile === "family-B-heavy") {
-    return stepId === "station_4" || stepId === "station_5" ? 1.1 : 0.97;
+  if (mixProfile === "back-loaded") {
+    return index >= Math.floor((total * 2) / 3) ? 1.12 : 0.94;
   }
   return 1;
 }
@@ -319,10 +319,16 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
       status,
       throughputLimit
     };
-    ranked.push({ stepId: step.stepId, score: bottleneckIndex });
+    ranked.push({ stepId: step.stepId, score: bottleneckIndex, throughputLimit });
   });
 
-  ranked.sort((a, b) => b.score - a.score);
+  ranked.sort((a, b) => {
+    const scoreDelta = b.score - a.score;
+    if (Math.abs(scoreDelta) > 1e-9) {
+      return scoreDelta;
+    }
+    return (a.throughputLimit ?? Number.POSITIVE_INFINITY) - (b.throughputLimit ?? Number.POSITIVE_INFINITY);
+  });
   const throughput = Math.min(lineDemand, Number.isFinite(lineCapacity) ? lineCapacity : lineDemand);
   const avgQueueRisk =
     ranked.length > 0

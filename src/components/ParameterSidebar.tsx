@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent
+} from "react";
 import type { ParameterGroup, SelectOption } from "../types/contracts";
 
 interface ParameterSidebarProps {
@@ -7,7 +13,11 @@ interface ParameterSidebarProps {
   onChange: (key: string, value: number | string) => void;
   editable: boolean;
   isRailOpen: boolean;
+  railWidth: number;
+  minRailWidth: number;
+  maxRailWidth: number;
   onToggleRail: () => void;
+  onRailWidthChange: (nextWidth: number) => void;
 }
 
 function formatBadge(value: number | string, unit?: string): string {
@@ -25,24 +35,23 @@ function getOptionLabel(option: string | SelectOption): string {
   return typeof option === "string" ? option : option.label;
 }
 
-interface ActiveHelp {
-  tooltipId: string;
-  text: string;
-  top: number;
-  left: number;
-  placement: "right" | "left" | "below";
-}
-
 export function ParameterSidebar({
   groups,
   scenario,
   onChange,
   editable,
   isRailOpen,
-  onToggleRail
+  railWidth,
+  minRailWidth,
+  maxRailWidth,
+  onToggleRail,
+  onRailWidthChange
 }: ParameterSidebarProps) {
-  const [activeHelp, setActiveHelp] = useState<ActiveHelp | null>(null);
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
+  const [openHelpId, setOpenHelpId] = useState<string | null>(null);
   const [isCompact, setIsCompact] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -56,62 +65,99 @@ export function ParameterSidebar({
   }, []);
 
   useEffect(() => {
-    if (!activeHelp) {
+    if (!openHelpId) {
       return;
     }
 
-    const handleWindowChange = () => setActiveHelp(null);
-    window.addEventListener("scroll", handleWindowChange, true);
-    window.addEventListener("resize", handleWindowChange);
-    return () => {
-      window.removeEventListener("scroll", handleWindowChange, true);
-      window.removeEventListener("resize", handleWindowChange);
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest(".field-help")) {
+        return;
+      }
+      setOpenHelpId(null);
     };
-  }, [activeHelp]);
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [openHelpId]);
 
-  const showHelp = (tooltipId: string, text: string, anchor: HTMLElement) => {
-    const rect = anchor.getBoundingClientRect();
-    const padding = 12;
-    const gap = 12;
-    const fallbackWidth = 260;
-    const width = Math.min(fallbackWidth, Math.max(220, window.innerWidth - padding * 2));
-    const rightSpace = window.innerWidth - rect.right - gap;
-    const leftSpace = rect.left - gap;
+  useEffect(
+    () => () => {
+      resizeCleanupRef.current?.();
+    },
+    []
+  );
 
-    if (rightSpace >= width) {
-      setActiveHelp({
-        tooltipId,
-        text,
-        top: Math.max(padding, rect.top + rect.height / 2),
-        left: Math.min(rect.right + gap, window.innerWidth - width - padding),
-        placement: "right"
-      });
+  const startResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (!isRailOpen) {
       return;
     }
 
-    if (leftSpace >= width) {
-      setActiveHelp({
-        tooltipId,
-        text,
-        top: Math.max(padding, rect.top + rect.height / 2),
-        left: Math.max(padding, rect.left - gap - width),
-        placement: "left"
-      });
+    resizeCleanupRef.current?.();
+    event.preventDefault();
+    event.stopPropagation();
+
+    const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    setIsResizing(true);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      onRailWidthChange(moveEvent.clientX - sidebarLeft);
+    };
+
+    const cleanup = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", cleanup);
+      window.removeEventListener("pointercancel", cleanup);
+      if (document.body.style.cursor === "col-resize") {
+        document.body.style.removeProperty("cursor");
+      }
+      if (document.body.style.userSelect === "none") {
+        document.body.style.removeProperty("user-select");
+      }
+      resizeCleanupRef.current = null;
+      setIsResizing(false);
+    };
+
+    resizeCleanupRef.current = cleanup;
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", cleanup);
+    window.addEventListener("pointercancel", cleanup);
+  };
+
+  const handleResizeKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (!isRailOpen) {
       return;
     }
 
-    setActiveHelp({
-      tooltipId,
-      text,
-      top: Math.min(window.innerHeight - padding - 20, rect.bottom + gap),
-      left: Math.max(padding, Math.min(rect.left, window.innerWidth - width - padding)),
-      placement: "below"
-    });
+    const step = event.shiftKey ? 48 : 24;
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      onRailWidthChange(railWidth - step);
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      onRailWidthChange(railWidth + step);
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      onRailWidthChange(minRailWidth);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      onRailWidthChange(maxRailWidth);
+    }
   };
 
   return (
     <div
-      className={`parameter-sidebar ${isCompact ? "is-compact" : ""} ${isRailOpen ? "is-rail-open" : "is-rail-collapsed"}`}
+      ref={sidebarRef}
+      className={`parameter-sidebar ${isCompact ? "is-compact" : ""} ${isRailOpen ? "is-rail-open" : "is-rail-collapsed"} ${isResizing ? "is-resizing" : ""}`}
     >
       {!isRailOpen ? (
         <button
@@ -160,24 +206,32 @@ export function ParameterSidebar({
                   <div className="input-row-header">
                     <label htmlFor={field.key}>{field.label}</label>
                     {field.helpText ? (
-                      <div className="field-help">
+                      <div className={`field-help ${openHelpId === tooltipId ? "is-open" : ""}`}>
                         <button
                           type="button"
                           className="field-help-trigger"
                           aria-label={`About ${field.label}`}
-                          aria-expanded={activeHelp?.tooltipId === tooltipId}
+                          aria-expanded={openHelpId === tooltipId}
                           aria-describedby={tooltipId}
-                          onFocus={(event) => showHelp(tooltipId, field.helpText ?? "", event.currentTarget)}
-                          onMouseEnter={(event) => showHelp(tooltipId, field.helpText ?? "", event.currentTarget)}
-                          onMouseLeave={() => setActiveHelp((current) => (current?.tooltipId === tooltipId ? null : current))}
+                          aria-haspopup="true"
+                          onClick={() => setOpenHelpId((current) => (current === tooltipId ? null : tooltipId))}
+                          onFocus={() => setOpenHelpId(tooltipId)}
                           onBlur={(event) => {
                             if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)) {
-                              setActiveHelp((current) => (current?.tooltipId === tooltipId ? null : current));
+                              setOpenHelpId((current) => (current === tooltipId ? null : current));
+                            }
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Escape") {
+                              setOpenHelpId((current) => (current === tooltipId ? null : current));
                             }
                           }}
                         >
                           i
                         </button>
+                        <div id={tooltipId} role="tooltip" className="field-help-tooltip">
+                          {field.helpText}
+                        </div>
                       </div>
                     ) : null}
                   </div>
@@ -213,20 +267,21 @@ export function ParameterSidebar({
           </section>
         ))}
       </div>
-      {activeHelp ? (
-        <div
-          id={activeHelp.tooltipId}
-          role="tooltip"
-          className={`field-help-tooltip field-help-tooltip-floating field-help-tooltip-${activeHelp.placement}`}
-          style={{
-            position: "fixed",
-            top: `${activeHelp.top}px`,
-            left: `${activeHelp.left}px`,
-            width: `min(260px, calc(100vw - 24px))`
-          }}
+      {isRailOpen ? (
+        <button
+          type="button"
+          className="parameter-resize-handle"
+          role="separator"
+          aria-label="Resize parameters panel"
+          aria-orientation="vertical"
+          aria-valuemin={minRailWidth}
+          aria-valuemax={maxRailWidth}
+          aria-valuenow={Math.round(railWidth)}
+          onPointerDown={startResize}
+          onKeyDown={handleResizeKeyDown}
         >
-          {activeHelp.text}
-        </div>
+          <span aria-hidden="true" className="parameter-resize-grip" />
+        </button>
       ) : null}
     </div>
   );

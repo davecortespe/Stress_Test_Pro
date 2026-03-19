@@ -68,6 +68,10 @@ function inferMissingFieldsFromAssumptions(assumptions) {
     if (!text) {
       continue;
     }
+    const isMissingText = /(not visible|missing|not shown|not provided|cannot be read|unreadable)/.test(text);
+    if (!isMissingText) {
+      continue;
+    }
     if (/(demand|mix|product mix)/.test(text)) {
       missing.add("demand rate/product mix");
     }

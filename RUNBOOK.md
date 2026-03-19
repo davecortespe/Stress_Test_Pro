@@ -4,7 +4,7 @@
 
 Use this repository as a reusable starter for simulator projects with a skills-first workflow:
 
-- Generic dashboard shell (left parameters, top KPIs, center graph/simulation)
+- Generic simulator cockpit shell (top control ribbon, collapsible what-if rail, simulation-first center stage)
 - VSM ingestion to deterministic non-DES forecast outputs (with optional DES compile path)
 - Domain swaps through config/model data, not UI rewrites
 - Operational diagnosis of simulation outputs for leader-ready decisions
@@ -113,19 +113,43 @@ Recommended deterministic refresh order:
 1. `node scripts/compile-forecast-model.mjs models/active`
 2. `node scripts/generate-result-metrics.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --out models/active/result_metrics.json`
 3. `node scripts/generate-operational-diagnosis.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --metrics models/active/result_metrics.json --outJson models/active/operational_diagnosis.json --outMd models/active/operational_diagnosis.md`
+4. `node scripts/export-consulting-report.mjs --outJson models/active/consulting_report_export.json --outMd models/active/consulting_report_export.md`
 
 ## Simulator header contract
 
 Current template behavior for the top control ribbon:
 
 - Brand line above title: `LeanStorming Operational Stress Labs` (warning/yellow treatment)
-- Actions row: `Start/Pause`, `Reset Time`, `Import Library CSV`, `Save Scenario`
+- Actions row: `Start/Pause`, `Reset Time`, `Save Scenario`
 - Playback controls are placed below actions in the same card
 - `Reset Time` resets elapsed simulation time and view state only; it does not reset edited parameters
-- Right status strip contains sim timer/progress and scenario library chip
+- Sim timer chip contains the `Simulation Horizon` control with presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`
+- Horizon control is visible in the clock chip and should be disabled while the simulation is actively running
+- Right status strip contains sim timer/progress, live state, and scenario library chip
 - View buttons stretch across the available card width and use larger click targets
-- Playback speed buttons are larger, high-visibility direct toggles
-- Each view button contains an in-button `(i)` affordance with a short hover/focus explanation of that report
+- Playback speed buttons are larger, high-visibility direct toggles with presets: `x1`, `x2`, `x5`, `x100`, `x200`, and `x1000`
+- `Recommended move` is de-emphasized and collapsed by default:
+  keep the title visible and expose supporting text behind a `more` toggle
+- In `Flow`, KPI cards should not consume a full top row:
+  use a compact in-canvas ribbon instead
+
+## Flow workspace contract
+
+- The simulation canvas is the visual hero and should start as close to the header as practical
+- `Flow` mode uses a compact KPI ribbon inside the canvas, not a full-width KPI band above it
+- Accepted baseline KPI ribbon in `Flow`:
+  `Forecast Output / hr`, `Constraint Pressure`, `WIP Load`, `Total Completed Lots`
+- `Total Completed Lots` sits last in the ribbon and uses a distinct magenta outline
+- `Reset` returns the canvas to the accepted top-left start-lane framing
+- Toggling the `What-if Controls` rail must not push the flow steps down or lose the saved viewport framing
+
+## What-if rail contract
+
+- Left rail is collapsible but always recoverable through a clear reopen handle
+- In desktop flow mode, the rail behaves like a sticky drawer with its own internal scroll region
+- The parameter list, not the whole page, owns scrolling when the rail is open
+- Help tooltips for parameter fields should render as floating overlays so they are not clipped by the scroll container, and the info icons should open on click/focus as well as hover
+- `Simulation Horizon` is no longer treated as a left-rail what-if lever once the header clock control exists
 
 ## On-demand Replit publish workflow
 
@@ -179,6 +203,31 @@ How to run after publishing:
 - `models/active/result_metrics.json`
 - `models/active/operational_diagnosis.json`
 - `models/active/operational_diagnosis.md`
+- `models/active/consulting_report_export.json`
+- `models/active/consulting_report_export.md`
+
+## Consulting-grade report exporter
+
+Use this when you need an executive-ready report or presentation package without changing the substance of the current artifacts:
+
+`npm run export:consulting-report`
+
+What it does:
+
+- reads the current active report artifacts as-is
+- preserves wording, recommendations, uncertainty, and evidence gaps
+- reorganizes the material into a consulting-style section/page structure
+- outputs a machine-friendly export spec plus a reviewer-friendly markdown outline
+
+What it writes:
+
+- `models/active/consulting_report_export.json`
+- `models/active/consulting_report_export.md`
+
+Bundle behavior:
+
+- `npm run export:bundle` now includes `consulting_report_export.json` and `consulting_report_export.md`
+- these files are organization specs only; they do not rewrite the underlying analysis
 - `models/vsm_graph.json` (legacy/standard compile path)
 - `models/master_data.json` (legacy/standard compile path)
 - `models/compiled_sim_spec.json` (legacy/standard compile path)
@@ -214,5 +263,7 @@ When using an assumptions-plan-execute-deliver workflow, insert `operational-dia
 - Demand seeding assumptions are explicit and traceable in compiled model assumptions
 - Landing page requires access code `LEAN` before simulator entry unless prior acceptance cookie exists
 - Direct `/sim` navigation is gated by the same access flow
-- View surfaces include `FLOW MAP`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, and `WASTE`
+- View surfaces include `FLOW`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, `WASTE`, and `ASSUMPTIONS`
 - Waste and Throughput report wording should remain operator-friendly without changing metrics or section structure
+- `Flow` opens with the graph framed near the first steps rather than centered low in the canvas
+- `What-if Controls` remain reachable when collapsed and show an obvious internal scrollbar when open

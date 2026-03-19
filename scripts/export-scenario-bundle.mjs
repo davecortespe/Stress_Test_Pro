@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import {
+  buildConsultingReportExport,
+  consultingReportExportToMarkdown
+} from "./consulting-report-export.mjs";
 import { buildOperationalDiagnosis, toMarkdown as toOperationalDiagnosisMarkdown } from "./generate-operational-diagnosis.mjs";
 
 function parseArgs(argv) {
@@ -558,6 +562,7 @@ This bundle is a portable snapshot of a committed forecast scenario.
 ### Browser cockpit (recommended)
 
 Open \`browser_forecast.html\` in your browser.
+Playback presets in the exported cockpit include \`x1\`, \`x2\`, \`x5\`, \`x100\`, \`x200\`, and \`x1000\`.
 ${fullAppSection}
 
 ### Node CLI
@@ -591,6 +596,8 @@ node exports/${folderName}/run_forecast.mjs --path exports/${folderName}
 - \`browser_forecast.html\`
 - \`operational_diagnosis.json\`
 - \`operational_diagnosis.md\`
+- \`consulting_report_export.json\`
+- \`consulting_report_export.md\`
 - \`README.md\`
 ${fullAppFiles}
 ${metricsLine}
@@ -1055,8 +1062,9 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
           <button data-speed="1" class="active">x1</button>
           <button data-speed="2">x2</button>
           <button data-speed="5">x5</button>
-          <button data-speed="50">x50</button>
+          <button data-speed="100">x100</button>
           <button data-speed="200">x200</button>
+          <button data-speed="1000">x1000</button>
         </span>
       </div>
     </section>
@@ -1967,6 +1975,8 @@ const resultMetrics =
 const metricsExportPath = path.join(folderPath, "result_metrics.json");
 const diagnosisJsonPath = path.join(folderPath, "operational_diagnosis.json");
 const diagnosisMdPath = path.join(folderPath, "operational_diagnosis.md");
+const consultingReportJsonPath = path.join(folderPath, "consulting_report_export.json");
+const consultingReportMdPath = path.join(folderPath, "consulting_report_export.md");
 
 writeJson(path.join(folderPath, "dashboard_config.json"), dashboardConfig);
 writeJson(path.join(folderPath, "vsm_graph.json"), vsmGraph);
@@ -1986,6 +1996,24 @@ const operationalDiagnosisMarkdown = fs.existsSync(activeDiagnosisMdPath)
   : toOperationalDiagnosisMarkdown(operationalDiagnosis);
 writeJson(diagnosisJsonPath, operationalDiagnosis);
 fs.writeFileSync(diagnosisMdPath, `${operationalDiagnosisMarkdown}\n`, "utf8");
+const consultingReportExport = buildConsultingReportExport({
+  dashboardConfig,
+  compiledForecast,
+  scenarioCommitted,
+  resultMetrics: includeMetrics ? resultMetrics : null,
+  operationalDiagnosis,
+  sourceArtifacts: {
+    dashboardConfigPath: "dashboard_config.json",
+    compiledForecastPath: "compiled_forecast_model.json",
+    scenarioCommittedPath: "scenario_committed.json",
+    resultMetricsPath: "result_metrics.json",
+    operationalDiagnosisPath: "operational_diagnosis.json",
+    operationalDiagnosisMarkdownPath: "operational_diagnosis.md",
+    operationalDiagnosisMarkdown
+  }
+});
+writeJson(consultingReportJsonPath, consultingReportExport);
+fs.writeFileSync(consultingReportMdPath, consultingReportExportToMarkdown(consultingReportExport), "utf8");
 if (!includeMetrics) {
   fs.rmSync(metricsExportPath);
 }

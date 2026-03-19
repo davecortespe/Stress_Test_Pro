@@ -112,18 +112,17 @@ function computeVisitFactors(graph) {
     }
     return result;
 }
-function mixModifier(stepId, index, total, mixProfile) {
-    if (mixProfile === "station-1-heavy") {
-        return index <= 1 ? 1.12 : 0.96;
+function mixModifier(_stepId, index, total, mixProfile) {
+    if (mixProfile === "front-loaded") {
+        return index < Math.ceil(total / 3) ? 1.12 : 0.94;
     }
-    if (mixProfile === "final-step-heavy") {
-        return index >= Math.max(0, total - 2) ? 1.12 : 0.96;
+    if (mixProfile === "midstream-heavy") {
+        const start = Math.floor(total / 3);
+        const end = Math.ceil((total * 2) / 3);
+        return index >= start && index < end ? 1.12 : 0.94;
     }
-    if (mixProfile === "family-A-heavy") {
-        return stepId === "station_1" || stepId === "station_2" ? 1.1 : 0.97;
-    }
-    if (mixProfile === "family-B-heavy") {
-        return stepId === "station_4" || stepId === "station_5" ? 1.1 : 0.97;
+    if (mixProfile === "back-loaded") {
+        return index >= Math.floor((total * 2) / 3) ? 1.12 : 0.94;
     }
     return 1;
 }
@@ -262,7 +261,15 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
         };
         ranked.push({ stepId: step.stepId, score: bottleneckIndex });
     });
-    ranked.sort((a, b) => b.score - a.score);
+    ranked.sort((a, b) => {
+        const scoreDelta = b.score - a.score;
+        if (Math.abs(scoreDelta) > 1e-9) {
+            return scoreDelta;
+        }
+        const aLimit = stepEvals[a.stepId]?.throughputLimit ?? Number.POSITIVE_INFINITY;
+        const bLimit = stepEvals[b.stepId]?.throughputLimit ?? Number.POSITIVE_INFINITY;
+        return aLimit - bLimit;
+    });
     const throughput = Math.min(lineDemand, Number.isFinite(lineCapacity) ? lineCapacity : lineDemand);
     const avgQueueRisk = ranked.length > 0
         ? ranked.reduce((sum, row) => sum + (stepEvals[row.stepId]?.queueRisk ?? 0), 0) / ranked.length
@@ -460,7 +467,14 @@ function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
         const queueRisk = clamp(queueDepth / Math.max(1, displayedCapacityPerHour * 0.6), 0, 1);
         const stepBottleneckIndex = clamp(0.65 * utilization + 0.35 * queueRisk, 0, 1);
         const status = stepStatus(utilization, stepBottleneckIndex);
-        if (stepBottleneckIndex > bottleneckIndex) {
+        const currentCapacity = displayedCapacityPerHour;
+        const bestCapacity = bottleneckStepId !== null
+            ? system.stepEvals[bottleneckStepId]?.calendarCapacityPerHour ??
+                system.stepEvals[bottleneckStepId]?.capacityPerHour ??
+                Number.POSITIVE_INFINITY
+            : Number.POSITIVE_INFINITY;
+        if (stepBottleneckIndex > bottleneckIndex + 1e-9 ||
+            (Math.abs(stepBottleneckIndex - bottleneckIndex) <= 1e-9 && currentCapacity < bestCapacity)) {
             bottleneckIndex = stepBottleneckIndex;
             bottleneckStepId = nodeId;
         }

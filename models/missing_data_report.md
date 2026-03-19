@@ -1,37 +1,22 @@
 # Missing Data Report
 
-Source: user-provided VSM image transcribed on 2026-03-13.
+Source: user-provided VSM image transcribed on 2026-03-19.
 
 ## Global gaps
 
-- VSM title/name is not visible.
+- The VSM title is not visible, so the model title was inferred from the bicycle assembly line context.
 - Demand rate is not visible.
 - Product mix is not visible.
-- Lot size is not visible.
-- Shift hours (hours per shift) are not visible.
-- Uptime/downtime assumptions are not visible.
-- Worker counts are not visible.
+- Hours per shift are not visible.
 
 ## Step-level unresolved fields
 
-| Step | Missing / null field | Reason |
-| --- | --- | --- |
-| Raw Material Staging & Weighing | `workers` | Worker count is not shown in the image. |
-| Buffer / Media Preparation | `workers` | Worker count is not shown in the image. |
-| Upstream Batch Transfer to Purification | `workers` | Worker count is not shown in the image. |
-| Primary Capture Chromatography | `workers` | Worker count is not shown in the image. |
-| Intermediate Purification Step | `workers` | Worker count is not shown in the image. |
-| Viral Inactivation / Hold | `workers` | Worker count is not shown in the image. |
-| Polishing Chromatography | `workers` | Worker count is not shown in the image. |
-| UF/DF Concentration & Diafiltration | `workers` | Worker count is not shown in the image. |
-| Bulk Fill / Collection | `workers` | Worker count is not shown in the image. |
-| Sample Submission to QC | `workers` | Worker count is not shown in the image. |
-| QC Testing / Release Hold | `workers` | Worker count is not shown in the image. |
-| Final Bulk Release to Packaging / Cold Storage | `workers` | Worker count is not shown in the image. |
+None. All visible process-box values used for strict transcription were readable.
 
 ## Notes on strict transcription
 
-- Step labels and sequence are preserved exactly as visible in the provided image.
-- `Lead Time (hrs)` is transcribed as step wait/flow-delay input.
-- `# of Lines` is transcribed as `parallelProcedures`.
-- `# of Shifts` is preserved per-step in notes/data, but conversion to staffed hours requires an assumption (not visible in source).
+- Step labels and left-to-right sequence are preserved exactly as shown in the image.
+- `CT`, `C/O`, lead/wait time, `# of Equipment`, `People Needed`, `# of Shifts`, `Lot Size`, `Rework %`, `Equipment Reliability`, and notes were transcribed from the visible table values.
+- `People Needed` was mapped to `workers`.
+- `# of Equipment` was mapped to `parallelProcedures`.
+- The forecast compiler will infer baseline demand from the start-step release capacity because no explicit demand rate is shown in the image.

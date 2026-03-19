@@ -6,7 +6,7 @@ Use this workflow when a user shares a VSM image and wants a fast, repeatable bo
 - Preserve VSM structure exactly.
 - Build deterministic forecast model and UI wiring.
 - Avoid discrete-event simulation unless explicitly requested.
-- Keep layout fixed (left parameters, top KPIs, center canvas).
+- Keep layout fixed as a simulation-first cockpit (top control ribbon, collapsible what-if rail, center canvas).
 
 ## Phase Order (do not reorder)
 
@@ -56,8 +56,9 @@ Rules:
 - Bind left parameters to model inputs.
 - Bind KPI cards and node styling to forecast outputs.
 - Keep graph zoom/pan and animated dashed edges.
-- Keep result views at: `FLOW MAP`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, `WASTE`.
+- Keep result views at: `FLOW`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, `WASTE`, `ASSUMPTIONS`.
 - Add short report-explainer `(i)` affordances inside the view buttons, not outside them.
+- In `Flow`, prefer a compact KPI ribbon inside the graph workspace over a full-width KPI band when vertical space is constrained.
 
 Exit gate:
 - UI renders from model/config data with no hardcoded domain labels.
@@ -85,18 +86,26 @@ Rules:
 
 ## UX Contract (template baseline)
 - Header title block includes brand line above title: `LeanStorming Operational Stress Labs` in warning/yellow styling.
-- Header actions use: `Start/Pause`, `Reset Time`, `Import Library CSV`, `Save Scenario`.
+- Header actions use: `Start/Pause`, `Reset Time`, `Save Scenario`.
 - `Reset Time` resets elapsed time (and viewport fit) only; it does not revert edited parameters/scenario state.
 - Playback speed controls render below the actions row in the same card (`x1/x2/x5/x50/x200/5s/mo`).
-- Header right keeps simulation timer/progress and scenarios chip.
-- Left parameters include `Simulation Horizon` presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`.
+- Header right keeps simulation timer/progress, live state, and scenarios chip.
+- `Simulation Horizon` presets (`8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`) live in the sim-time chip, not in the left rail.
+- The sim-time horizon dropdown remains visible but should be disabled while the run is live.
 - Top ribbon should stay compact to preserve vertical space for simulation steps.
-- View mode buttons (`FLOW MAP`, `DIAGNOSIS`, `THROUGHPUT`, `WASTE`) should use comfortably large tap/click targets.
+- `Recommended move` stays compact by default: show the title only, then expand details behind a `more` toggle.
+- View mode buttons (`FLOW`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, `WASTE`, `ASSUMPTIONS`) should use comfortably large tap/click targets.
 - View mode buttons should fill the view card width evenly and keep the `(i)` explainer inside the button.
 - `KAIZEN` report is part of the standard report set and should sit with the other view buttons.
+- `ASSUMPTIONS` is part of the standard report set and should sit with the other view buttons.
 - Throughput and Waste report language should read clearly for ops personnel without changing metrics or report structure.
+- In `Flow`, keep the graph as the hero surface and use a compact KPI ribbon:
+  `Forecast Output / hr`, `Constraint Pressure`, `WIP Load`, `Total Completed Lots`
+- `Total Completed Lots` should sit last in the flow ribbon and may use distinct accent styling.
 - Node cards: `util`, `lot/wip`, `Completed Lot`, `status` + WIP fill strip.
 - Step edit: double-click node opens near-node popover on desktop (modal on small screens).
+- Left `What-if Controls` rail should be collapsible, sticky, internally scrollable, and always recoverable with a clear reopen affordance.
+- Parameter help tooltips must not be clipped by the rail; use floating overlay behavior when needed.
 
 ## Access Gate Contract
 - Landing-page entry into `/sim` must be gated by a validation prompt.

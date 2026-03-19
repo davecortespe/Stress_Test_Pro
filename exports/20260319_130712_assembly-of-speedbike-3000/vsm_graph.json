@@ -1,0 +1,220 @@
+{
+  "metadata": {
+    "name": "Assembly of SpeedBike 3000",
+    "units": "minutes",
+    "source": "User-provided VSM image (strict transcription, 2026-03-19)"
+  },
+  "nodes": [
+    {
+      "id": "frame_kit_prep",
+      "label": "Frame Kit Prep",
+      "type": "process",
+      "boxData": {
+        "stageRaw": "A",
+        "stepDescriptionRaw": "Pick frame, fork, seat post, handlebars, hardware kit",
+        "ctRaw": "3",
+        "changeoverRaw": "10",
+        "waitRaw": "20",
+        "equipmentCountRaw": "1",
+        "peopleNeededRaw": "1",
+        "shiftCountRaw": "1",
+        "lotSizeRaw": "10",
+        "reworkPctRaw": "1%",
+        "equipmentReliabilityRaw": "98%",
+        "notesRaw": [
+          "Material availability matters"
+        ]
+      }
+    },
+    {
+      "id": "wheel_assembly",
+      "label": "Wheel Assembly",
+      "type": "process",
+      "boxData": {
+        "stageRaw": "B",
+        "stepDescriptionRaw": "Assemble front and rear wheel sets",
+        "ctRaw": "6",
+        "changeoverRaw": "15",
+        "waitRaw": "45",
+        "equipmentCountRaw": "2",
+        "peopleNeededRaw": "2",
+        "shiftCountRaw": "1",
+        "lotSizeRaw": "10",
+        "reworkPctRaw": "2%",
+        "equipmentReliabilityRaw": "96%",
+        "notesRaw": [
+          "Moderate labor content"
+        ]
+      }
+    },
+    {
+      "id": "drivetrain_assembly",
+      "label": "Drivetrain Assembly",
+      "type": "process",
+      "boxData": {
+        "stageRaw": "C",
+        "stepDescriptionRaw": "Prepare crankset, chain, pedals, derailleur set",
+        "ctRaw": "5",
+        "changeoverRaw": "12",
+        "waitRaw": "35",
+        "equipmentCountRaw": "1",
+        "peopleNeededRaw": "1",
+        "shiftCountRaw": "1",
+        "lotSizeRaw": "10",
+        "reworkPctRaw": "2%",
+        "equipmentReliabilityRaw": "97%",
+        "notesRaw": [
+          "Small parts shortages possible"
+        ]
+      }
+    },
+    {
+      "id": "frame_sub_assembly",
+      "label": "Frame Sub-Assembly",
+      "type": "process",
+      "boxData": {
+        "stageRaw": "D",
+        "stepDescriptionRaw": "Install fork, headset, handlebars, seat post",
+        "ctRaw": "7",
+        "changeoverRaw": "8",
+        "waitRaw": "50",
+        "equipmentCountRaw": "2",
+        "peopleNeededRaw": "2",
+        "shiftCountRaw": "1",
+        "lotSizeRaw": "10",
+        "reworkPctRaw": "3%",
+        "equipmentReliabilityRaw": "95%",
+        "notesRaw": [
+          "Fit-up variability starts here"
+        ]
+      }
+    },
+    {
+      "id": "final_mechanical_assembly",
+      "label": "Final Mechanical Assembly",
+      "type": "process",
+      "boxData": {
+        "stageRaw": "E",
+        "stepDescriptionRaw": "Join wheels, drivetrain, brakes, cables, chain",
+        "ctRaw": "9",
+        "changeoverRaw": "20",
+        "waitRaw": "80",
+        "equipmentCountRaw": "2",
+        "peopleNeededRaw": "2",
+        "shiftCountRaw": "1",
+        "lotSizeRaw": "10",
+        "reworkPctRaw": "4%",
+        "equipmentReliabilityRaw": "94%",
+        "notesRaw": [
+          "Good bottleneck candidate"
+        ]
+      }
+    },
+    {
+      "id": "brake_and_gear_adjustment",
+      "label": "Brake and Gear Adjustment",
+      "type": "process",
+      "boxData": {
+        "stageRaw": "F",
+        "stepDescriptionRaw": "Tune shifting, brakes, torque verification",
+        "ctRaw": "8",
+        "changeoverRaw": "5",
+        "waitRaw": "60",
+        "equipmentCountRaw": "1",
+        "peopleNeededRaw": "1",
+        "shiftCountRaw": "1",
+        "lotSizeRaw": "10",
+        "reworkPctRaw": "6%",
+        "equipmentReliabilityRaw": "97%",
+        "notesRaw": [
+          "Another likely bottleneck / rework loop"
+        ]
+      }
+    },
+    {
+      "id": "inspection_and_touch_up",
+      "label": "Inspection and Touch-Up",
+      "type": "process",
+      "boxData": {
+        "stageRaw": "G",
+        "stepDescriptionRaw": "Visual inspection, road-test stand, touch-up fixes",
+        "ctRaw": "4",
+        "changeoverRaw": "0",
+        "waitRaw": "30",
+        "equipmentCountRaw": "1",
+        "peopleNeededRaw": "1",
+        "shiftCountRaw": "1",
+        "lotSizeRaw": "10",
+        "reworkPctRaw": "5%",
+        "equipmentReliabilityRaw": "98%",
+        "notesRaw": [
+          "Feeds rework back to F or E"
+        ]
+      }
+    },
+    {
+      "id": "packaging_and_staging",
+      "label": "Packaging and Staging",
+      "type": "process",
+      "boxData": {
+        "stageRaw": "H",
+        "stepDescriptionRaw": "Box bike, label, palletize, stage for shipment",
+        "ctRaw": "3.5",
+        "changeoverRaw": "10",
+        "waitRaw": "25",
+        "equipmentCountRaw": "1",
+        "peopleNeededRaw": "1",
+        "shiftCountRaw": "1",
+        "lotSizeRaw": "10",
+        "reworkPctRaw": "1%",
+        "equipmentReliabilityRaw": "99%",
+        "notesRaw": [
+          "End of line"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "frame_kit_prep",
+      "to": "wheel_assembly",
+      "probability": 1
+    },
+    {
+      "from": "wheel_assembly",
+      "to": "drivetrain_assembly",
+      "probability": 1
+    },
+    {
+      "from": "drivetrain_assembly",
+      "to": "frame_sub_assembly",
+      "probability": 1
+    },
+    {
+      "from": "frame_sub_assembly",
+      "to": "final_mechanical_assembly",
+      "probability": 1
+    },
+    {
+      "from": "final_mechanical_assembly",
+      "to": "brake_and_gear_adjustment",
+      "probability": 1
+    },
+    {
+      "from": "brake_and_gear_adjustment",
+      "to": "inspection_and_touch_up",
+      "probability": 1
+    },
+    {
+      "from": "inspection_and_touch_up",
+      "to": "packaging_and_staging",
+      "probability": 1
+    }
+  ],
+  "startNodes": [
+    "frame_kit_prep"
+  ],
+  "endNodes": [
+    "packaging_and_staging"
+  ]
+}

@@ -1,6 +1,6 @@
 {
-  "appTitle": "LeanBio Batch Purification Train",
-  "subtitle": "",
+  "appTitle": "Assembly of SpeedBike 3000",
+  "subtitle": "Non-DES bottleneck forecast cockpit",
   "parameterGroups": [
     {
       "groupId": "interventions",
@@ -42,7 +42,7 @@
             { "label": "2 shifts", "value": "2" },
             { "label": "3 shifts", "value": "3" }
           ],
-          "defaultValue": "3"
+          "defaultValue": "1"
         },
         {
           "key": "bottleneckReliefUnits",
