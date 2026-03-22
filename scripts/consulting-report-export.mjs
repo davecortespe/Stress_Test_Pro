@@ -132,6 +132,34 @@ function markdownValue(value) {
   return `\`${JSON.stringify(value)}\``;
 }
 
+function htmlEscape(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function slugify(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64) || "section";
+}
+
+function htmlValue(value) {
+  if (value === null || value === undefined) {
+    return '<span class="value-null">null</span>';
+  }
+  if (typeof value === "object") {
+    return `<code>${htmlEscape(JSON.stringify(value, null, 2))}</code>`;
+  }
+  return htmlEscape(value);
+}
+
 export function buildConsultingReportExport({
   dashboardConfig,
   compiledForecast,
@@ -545,11 +573,353 @@ export function consultingReportExportToMarkdown(spec) {
   return `${lines.join("\n")}\n`;
 }
 
-export function writeConsultingReportExport({ outJsonPath, outMarkdownPath, spec }) {
+function renderContentItem(item) {
+  return `
+    <div class="content-item">
+      <div class="content-item-label">${htmlEscape(item.label)}</div>
+      <div class="content-item-ref">${htmlEscape(item.content_ref)}</div>
+      <div class="content-item-value">${htmlValue(item.source_value)}</div>
+    </div>
+  `;
+}
+
+function renderContentGroup(group) {
+  return `
+    <section class="content-group">
+      <div class="content-group-label">${htmlEscape(group.group_label)}</div>
+      <div class="content-group-refs">${(group.content_refs ?? []).map((ref) => `<span>${htmlEscape(ref)}</span>`).join("")}</div>
+      <div class="content-group-items">
+        ${(group.content_items ?? []).map((item) => renderContentItem(item)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderPage(page) {
+  return `
+    <section id="${slugify(page.section)}-${page.page_number}" class="slide slide-layout-${htmlEscape(page.layout_type)}">
+      <header class="slide-header">
+        <div class="slide-kicker">${htmlEscape(page.section)}</div>
+        <h2>${htmlEscape(page.page_title)}</h2>
+        <div class="slide-page-number">Page ${page.page_number}</div>
+      </header>
+      <div class="slide-content">
+        ${(page.content_groups ?? []).map((group) => renderContentGroup(group)).join("")}
+      </div>
+      <div class="slide-footer">
+        ${(page.formatting_notes ?? []).map((note) => `<span>${htmlEscape(note)}</span>`).join("")}
+      </div>
+    </section>
+  `;
+}
+
+export function consultingReportExportToHtml(spec) {
+  const sectionNav = (spec.sections ?? [])
+    .map(
+      (section) => `
+        <li>
+          <a href="#${slugify(section.section_title)}-${section.pages?.[0] ?? 1}">${htmlEscape(section.section_title)}</a>
+          <span>pages ${section.pages.join(", ")}</span>
+        </li>
+      `
+    )
+    .join("");
+
+  const pages = (spec.pages ?? []).map((page) => renderPage(page)).join("");
+  const sourceArtifacts = (spec.source_artifacts ?? [])
+    .map(
+      (artifact) => `
+        <li>
+          <span>${htmlEscape(artifact.artifact_id)}</span>
+          <code>${htmlEscape(artifact.artifact_path)}</code>
+          <strong>${htmlEscape(artifact.status)}</strong>
+        </li>
+      `
+    )
+    .join("");
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${htmlEscape(spec.export_title)}</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111d;
+      --panel: #0d1726;
+      --panel-2: #122033;
+      --ink: #f2f6fd;
+      --muted: #98a7be;
+      --line: rgba(120, 153, 193, 0.28);
+      --accent: #7bcfe3;
+      --accent-2: #f0c451;
+      --danger: #ff7b9c;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: radial-gradient(circle at 18% 0%, rgba(123, 207, 227, 0.12), transparent 30%), linear-gradient(180deg, #06101c, #040811); color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; }
+    body { padding: 24px; }
+    .deck {
+      display: grid;
+      gap: 18px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .cover {
+      display: grid;
+      gap: 16px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(15, 26, 41, 0.96), rgba(8, 16, 28, 0.96));
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+    }
+    .cover h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.05;
+    }
+    .cover-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .cover-meta span,
+    .section-chip,
+    .page-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(12, 20, 32, 0.72);
+    }
+    .cover-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(8, 16, 26, 0.82);
+      padding: 18px;
+    }
+    .panel h2, .panel h3 {
+      margin: 0 0 10px;
+    }
+    .section-list, .source-list {
+      display: grid;
+      gap: 10px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .section-list li, .source-list li {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(9, 18, 29, 0.7);
+    }
+    .section-list span, .source-list code, .source-list strong { color: var(--muted); font-size: 0.88rem; }
+    .section-list a { color: var(--ink); text-decoration: none; font-weight: 600; }
+    .slide {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(15, 25, 40, 0.96), rgba(8, 16, 28, 0.96));
+      padding: 20px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+    .slide-header {
+      display: grid;
+      gap: 6px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(120, 153, 193, 0.16);
+    }
+    .slide-kicker {
+      color: var(--accent);
+      font-size: 0.74rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .slide h2 {
+      margin: 0;
+      font-size: 1.65rem;
+      line-height: 1.15;
+    }
+    .slide-page-number { color: var(--muted); font-size: 0.88rem; }
+    .slide-content {
+      display: grid;
+      gap: 14px;
+    }
+    .content-group {
+      border: 1px solid rgba(120, 153, 193, 0.2);
+      border-radius: 14px;
+      background: rgba(9, 17, 28, 0.7);
+      padding: 14px;
+    }
+    .content-group-label {
+      color: var(--accent-2);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .content-group-refs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .content-group-refs span {
+      font-size: 0.72rem;
+      color: var(--muted);
+      border: 1px solid rgba(120, 153, 193, 0.18);
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+    .content-group-items {
+      display: grid;
+      gap: 10px;
+    }
+    .content-item {
+      border: 1px solid rgba(120, 153, 193, 0.16);
+      border-radius: 12px;
+      background: rgba(7, 13, 22, 0.72);
+      padding: 12px;
+    }
+    .content-item-label { color: var(--accent); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    .content-item-ref { color: var(--muted); font-size: 0.72rem; margin-top: 4px; word-break: break-word; }
+    .content-item-value {
+      margin-top: 10px;
+      font-size: 0.95rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .content-item-value code {
+      display: block;
+      white-space: pre-wrap;
+      margin: 0;
+      color: #d8e7f5;
+    }
+    .value-null {
+      color: var(--danger);
+      font-style: italic;
+    }
+    .slide-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 6px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      border-top: 1px solid rgba(120, 153, 193, 0.14);
+    }
+    .slide-layout-cover_title_status .slide-content,
+    .slide-layout-executive_summary_three_block .slide-content {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .slide-layout-executive_summary_three_block .slide-content > .content-group:first-child {
+      grid-column: 1 / -1;
+    }
+    .slide-layout-context_overview_with_metrics .slide-content,
+    .slide-layout-implications_with_callouts .slide-content,
+    .slide-layout-recommendation_with_guidance .slide-content {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .slide-layout-diagnosis_storyline .slide-content {
+      grid-template-columns: 1fr;
+    }
+    .slide-layout-appendix_metric_table .slide-content,
+    .slide-layout-appendix_step_metric_grid .slide-content {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .slide-layout-appendix_gaps_and_assumptions .slide-content {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .callout {
+      border-left: 4px solid var(--accent-2);
+      padding-left: 12px;
+    }
+    @media print {
+      body { padding: 0; background: #fff; color: #000; }
+      .deck { gap: 0; max-width: none; }
+      .cover, .slide {
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        page-break-after: always;
+      }
+      .cover { min-height: 100vh; }
+    }
+    @media (max-width: 920px) {
+      .cover-grid,
+      .slide-layout-cover_title_status .slide-content,
+      .slide-layout-executive_summary_three_block .slide-content,
+      .slide-layout-context_overview_with_metrics .slide-content,
+      .slide-layout-implications_with_callouts .slide-content,
+      .slide-layout-recommendation_with_guidance .slide-content,
+      .slide-layout-appendix_gaps_and_assumptions .slide-content {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <section class="cover">
+      <div class="cover-meta">
+        <span>Consulting-grade organization export</span>
+        <span>${htmlEscape(spec.export_mode)}</span>
+      </div>
+      <h1>${htmlEscape(spec.export_title)}</h1>
+      <div class="cover-grid">
+        <div class="panel">
+          <h2>Section Outline</h2>
+          <ul class="section-list">
+            ${sectionNav}
+          </ul>
+        </div>
+        <div class="panel">
+          <h2>Source Artifacts</h2>
+          <ul class="source-list">
+            ${sourceArtifacts}
+          </ul>
+        </div>
+      </div>
+    </section>
+    ${pages}
+  </main>
+</body>
+</html>`;
+}
+
+export function writeConsultingReportExport({ outJsonPath, outMarkdownPath, outHtmlPath, spec }) {
   fs.mkdirSync(path.dirname(outJsonPath), { recursive: true });
   fs.writeFileSync(outJsonPath, `${JSON.stringify(spec, null, 2)}\n`, "utf8");
   if (outMarkdownPath) {
     fs.mkdirSync(path.dirname(outMarkdownPath), { recursive: true });
     fs.writeFileSync(outMarkdownPath, consultingReportExportToMarkdown(spec), "utf8");
+  }
+  if (outHtmlPath) {
+    fs.mkdirSync(path.dirname(outHtmlPath), { recursive: true });
+    fs.writeFileSync(outHtmlPath, consultingReportExportToHtml(spec), "utf8");
   }
 }

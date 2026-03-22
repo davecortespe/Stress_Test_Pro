@@ -58,6 +58,9 @@ const outJsonPath = path.resolve(
 const outMarkdownPath = path.resolve(
   String(args.outMd ?? path.join(repoRoot, "models", "active", "consulting_report_export.md"))
 );
+const outHtmlPath = path.resolve(
+  String(args.outHtml ?? path.join(repoRoot, "models", "active", "consulting_report_export.html"))
+);
 
 const spec = buildConsultingReportExport({
   dashboardConfig: readJson(dashboardConfigPath),
@@ -81,8 +84,10 @@ const spec = buildConsultingReportExport({
 writeConsultingReportExport({
   outJsonPath,
   outMarkdownPath,
+  outHtmlPath,
   spec
 });
 
 console.log(`Consulting report export JSON written: ${outJsonPath}`);
 console.log(`Consulting report export Markdown written: ${outMarkdownPath}`);
+console.log(`Consulting report export HTML written: ${outHtmlPath}`);

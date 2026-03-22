@@ -1,0 +1,1678 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Assembly of SpeedBike 3000 - Executive Report Export</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111d;
+      --panel: #0d1726;
+      --panel-2: #122033;
+      --ink: #f2f6fd;
+      --muted: #98a7be;
+      --line: rgba(120, 153, 193, 0.28);
+      --accent: #7bcfe3;
+      --accent-2: #f0c451;
+      --danger: #ff7b9c;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: radial-gradient(circle at 18% 0%, rgba(123, 207, 227, 0.12), transparent 30%), linear-gradient(180deg, #06101c, #040811); color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; }
+    body { padding: 24px; }
+    .deck {
+      display: grid;
+      gap: 18px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .cover {
+      display: grid;
+      gap: 16px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(15, 26, 41, 0.96), rgba(8, 16, 28, 0.96));
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+    }
+    .cover h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.05;
+    }
+    .cover-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .cover-meta span,
+    .section-chip,
+    .page-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(12, 20, 32, 0.72);
+    }
+    .cover-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(8, 16, 26, 0.82);
+      padding: 18px;
+    }
+    .panel h2, .panel h3 {
+      margin: 0 0 10px;
+    }
+    .section-list, .source-list {
+      display: grid;
+      gap: 10px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .section-list li, .source-list li {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(9, 18, 29, 0.7);
+    }
+    .section-list span, .source-list code, .source-list strong { color: var(--muted); font-size: 0.88rem; }
+    .section-list a { color: var(--ink); text-decoration: none; font-weight: 600; }
+    .slide {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(15, 25, 40, 0.96), rgba(8, 16, 28, 0.96));
+      padding: 20px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+      display: grid;
+      gap: 16px;
+      margin-top: 18px;
+    }
+    .slide-header {
+      display: grid;
+      gap: 6px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(120, 153, 193, 0.16);
+    }
+    .slide-kicker {
+      color: var(--accent);
+      font-size: 0.74rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .slide h2 {
+      margin: 0;
+      font-size: 1.65rem;
+      line-height: 1.15;
+    }
+    .slide-page-number { color: var(--muted); font-size: 0.88rem; }
+    .slide-content {
+      display: grid;
+      gap: 14px;
+    }
+    .content-group {
+      border: 1px solid rgba(120, 153, 193, 0.2);
+      border-radius: 14px;
+      background: rgba(9, 17, 28, 0.7);
+      padding: 14px;
+    }
+    .content-group-label {
+      color: var(--accent-2);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .content-group-refs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .content-group-refs span {
+      font-size: 0.72rem;
+      color: var(--muted);
+      border: 1px solid rgba(120, 153, 193, 0.18);
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+    .content-group-items {
+      display: grid;
+      gap: 10px;
+    }
+    .content-item {
+      border: 1px solid rgba(120, 153, 193, 0.16);
+      border-radius: 12px;
+      background: rgba(7, 13, 22, 0.72);
+      padding: 12px;
+    }
+    .content-item-label { color: var(--accent); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    .content-item-ref { color: var(--muted); font-size: 0.72rem; margin-top: 4px; word-break: break-word; }
+    .content-item-value {
+      margin-top: 10px;
+      font-size: 0.95rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .content-item-value code {
+      display: block;
+      white-space: pre-wrap;
+      margin: 0;
+      color: #d8e7f5;
+    }
+    .value-null {
+      color: var(--danger);
+      font-style: italic;
+    }
+    .slide-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 6px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      border-top: 1px solid rgba(120, 153, 193, 0.14);
+    }
+    .slide-layout-cover_title_status .slide-content,
+    .slide-layout-executive_summary_three_block .slide-content {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .slide-layout-executive_summary_three_block .slide-content > .content-group:first-child {
+      grid-column: 1 / -1;
+    }
+    .slide-layout-context_overview_with_metrics .slide-content,
+    .slide-layout-implications_with_callouts .slide-content,
+    .slide-layout-recommendation_with_guidance .slide-content {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .slide-layout-diagnosis_storyline .slide-content {
+      grid-template-columns: 1fr;
+    }
+    .slide-layout-appendix_metric_table .slide-content,
+    .slide-layout-appendix_step_metric_grid .slide-content {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .slide-layout-appendix_gaps_and_assumptions .slide-content {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .callout {
+      border-left: 4px solid var(--accent-2);
+      padding-left: 12px;
+    }
+    @media print {
+      body { padding: 0; background: #fff; color: #000; }
+      .deck { gap: 0; max-width: none; }
+      .cover, .slide {
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        page-break-after: always;
+      }
+      .cover { min-height: 100vh; }
+    }
+    @media (max-width: 920px) {
+      .cover-grid,
+      .slide-layout-cover_title_status .slide-content,
+      .slide-layout-executive_summary_three_block .slide-content,
+      .slide-layout-context_overview_with_metrics .slide-content,
+      .slide-layout-implications_with_callouts .slide-content,
+      .slide-layout-recommendation_with_guidance .slide-content,
+      .slide-layout-appendix_gaps_and_assumptions .slide-content {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <section class="cover">
+      <div class="cover-meta">
+        <span>Consulting-grade organization export</span>
+        <span>consulting_grade_organization</span>
+      </div>
+      <h1>Assembly of SpeedBike 3000 - Executive Report Export</h1>
+      <div class="cover-grid">
+        <div class="panel">
+          <h2>Section Outline</h2>
+          <ul class="section-list">
+            
+        <li>
+          <a href="#cover-1">Cover</a>
+          <span>pages 1</span>
+        </li>
+      
+        <li>
+          <a href="#executive-summary-2">Executive Summary</a>
+          <span>pages 2</span>
+        </li>
+      
+        <li>
+          <a href="#context-problem-statement-3">Context / Problem Statement</a>
+          <span>pages 3</span>
+        </li>
+      
+        <li>
+          <a href="#analysis-diagnostic-findings-4">Analysis / Diagnostic Findings</a>
+          <span>pages 4</span>
+        </li>
+      
+        <li>
+          <a href="#implications-opportunities-5">Implications / Opportunities</a>
+          <span>pages 5</span>
+        </li>
+      
+        <li>
+          <a href="#recommendations-next-steps-6">Recommendations / Next Steps</a>
+          <span>pages 6</span>
+        </li>
+      
+        <li>
+          <a href="#appendix-evidence-7">Appendix / Evidence</a>
+          <span>pages 7, 8, 9, 10</span>
+        </li>
+      
+          </ul>
+        </div>
+        <div class="panel">
+          <h2>Source Artifacts</h2>
+          <ul class="source-list">
+            
+        <li>
+          <span>dashboard_config</span>
+          <code>models/dashboard_config.json</code>
+          <strong>present</strong>
+        </li>
+      
+        <li>
+          <span>compiled_forecast_model</span>
+          <code>models/active/compiled_forecast_model.json</code>
+          <strong>present</strong>
+        </li>
+      
+        <li>
+          <span>scenario_committed</span>
+          <code>models/active/scenario_committed.json</code>
+          <strong>present</strong>
+        </li>
+      
+        <li>
+          <span>result_metrics</span>
+          <code>models/active/result_metrics.json</code>
+          <strong>present</strong>
+        </li>
+      
+        <li>
+          <span>operational_diagnosis</span>
+          <code>models/active/operational_diagnosis.json</code>
+          <strong>present</strong>
+        </li>
+      
+        <li>
+          <span>operational_diagnosis_markdown</span>
+          <code>models/active/operational_diagnosis.md</code>
+          <strong>present</strong>
+        </li>
+      
+          </ul>
+        </div>
+      </div>
+    </section>
+    
+    <section id="cover-1" class="slide slide-layout-cover_title_status">
+      <header class="slide-header">
+        <div class="slide-kicker">Cover</div>
+        <h2>Assembly of SpeedBike 3000</h2>
+        <div class="slide-page-number">Page 1</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Title Block</div>
+      <div class="content-group-refs"><span>models/dashboard_config.json#/appTitle</span><span>models/dashboard_config.json#/subtitle</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">appTitle</div>
+      <div class="content-item-ref">models/dashboard_config.json#/appTitle</div>
+      <div class="content-item-value">Assembly of SpeedBike 3000</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">subtitle</div>
+      <div class="content-item-ref">models/dashboard_config.json#/subtitle</div>
+      <div class="content-item-value">Non-DES bottleneck forecast cockpit</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Report Status</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/status</span><span>models/active/operational_diagnosis.json#/confidence</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">status</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/status</div>
+      <div class="content-item-value">overloaded</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">confidence</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/confidence</div>
+      <div class="content-item-value">medium</div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>Use a restrained cover layout with title, subtitle, and status strip only.</span><span>Keep the page visually sparse with strong whitespace and no dense tables.</span>
+      </div>
+    </section>
+  
+    <section id="executive-summary-2" class="slide slide-layout-executive_summary_three_block">
+      <header class="slide-header">
+        <div class="slide-kicker">Executive Summary</div>
+        <h2>Executive Summary</h2>
+        <div class="slide-page-number">Page 2</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Current State</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/statusSummary</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">statusSummary</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/statusSummary</div>
+      <div class="content-item-value">Drivetrain Assembly is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Primary Constraint</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/primaryConstraint</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">primaryConstraint</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/primaryConstraint</div>
+      <div class="content-item-value">Drivetrain Assembly is saturated; effective service capacity is capped near 3.2 units/hr.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Recommended Action</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/recommendedAction</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">recommendedAction</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/recommendedAction</div>
+      <div class="content-item-value">Reduce effective cycle time at Drivetrain Assembly with standard work, faster changeovers, or error removal before spending on larger structural changes.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>Treat each source sentence as its own executive block.</span><span>Do not rewrite or compress the wording; only improve hierarchy.</span>
+      </div>
+    </section>
+  
+    <section id="context-problem-statement-3" class="slide slide-layout-context_overview_with_metrics">
+      <header class="slide-header">
+        <div class="slide-kicker">Context / Problem Statement</div>
+        <h2>Current System Context</h2>
+        <div class="slide-page-number">Page 3</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Model Context</div>
+      <div class="content-group-refs"><span>models/active/compiled_forecast_model.json#/metadata/name</span><span>models/active/compiled_forecast_model.json#/metadata/mode</span><span>models/active/compiled_forecast_model.json#/metadata/units</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">name</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/metadata/name</div>
+      <div class="content-item-value">Assembly of SpeedBike 3000</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">mode</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/metadata/mode</div>
+      <div class="content-item-value">constraint-forecast-non-des</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">units</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/metadata/units</div>
+      <div class="content-item-value">per-hour</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Current Global Metrics</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/globalMetrics/simElapsedHours</span><span>models/active/result_metrics.json#/globalMetrics/globalThroughput</span><span>models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces</span><span>models/active/result_metrics.json#/globalMetrics/totalWipQty</span><span>models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes</span><span>models/active/result_metrics.json#/globalMetrics/bottleneckMigration</span><span>models/active/result_metrics.json#/globalMetrics/bottleneckIndex</span><span>models/active/result_metrics.json#/globalMetrics/brittleness</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">simElapsedHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/simElapsedHours</div>
+      <div class="content-item-value">24</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">globalThroughput</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/globalThroughput</div>
+      <div class="content-item-value">2.3218542136676477</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">totalCompletedOutputPieces</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces</div>
+      <div class="content-item-value">55.72450112802355</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">totalWipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/totalWipQty</div>
+      <div class="content-item-value">268.2754988719821</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">totalLeadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes</div>
+      <div class="content-item-value">3884.540237801189</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckMigration</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/bottleneckMigration</div>
+      <div class="content-item-value">Brake and Gear Adjustment -&gt; Drivetrain Assembly (low confidence)</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/bottleneckIndex</div>
+      <div class="content-item-value">0.9964800773430307</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">brittleness</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/brittleness</div>
+      <div class="content-item-value">0.7184004900066172</div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>Use a clean two-zone layout: context on the left, key numeric evidence on the right.</span><span>Keep raw metric labels visible so reviewers can trace them back to source artifacts.</span>
+      </div>
+    </section>
+  
+    <section id="analysis-diagnostic-findings-4" class="slide slide-layout-diagnosis_storyline">
+      <header class="slide-header">
+        <div class="slide-kicker">Analysis / Diagnostic Findings</div>
+        <h2>Operational Diagnosis</h2>
+        <div class="slide-page-number">Page 4</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Constraint Definition</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/primaryConstraint</span><span>models/active/operational_diagnosis.json#/constraintMechanism</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">primaryConstraint</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/primaryConstraint</div>
+      <div class="content-item-value">Drivetrain Assembly is saturated; effective service capacity is capped near 3.2 units/hr.</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">constraintMechanism</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/constraintMechanism</div>
+      <div class="content-item-value">Drivetrain Assembly is taking demand at about 13.5 units/hr but only clearing about 3.2 units/hr, so arrivals are outrunning service and the queue cannot normalize.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Downstream Effects</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/downstreamEffects</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">downstreamEffects</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/downstreamEffects</div>
+      <div class="content-item-value">Throughput is running about 83% below required rate, WIP has built to roughly 268 units, total lead time is now about 3884.5 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>One diagnostic storyline per page: constraint, mechanism, and downstream effects.</span><span>Use stacked callout blocks rather than long continuous paragraphs.</span>
+      </div>
+    </section>
+  
+    <section id="implications-opportunities-5" class="slide slide-layout-implications_with_callouts">
+      <header class="slide-header">
+        <div class="slide-kicker">Implications / Opportunities</div>
+        <h2>Implications and Opportunity Lens</h2>
+        <div class="slide-page-number">Page 5</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Business Implications</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/economicInterpretation</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">economicInterpretation</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/economicInterpretation</div>
+      <div class="content-item-value">This is creating hidden capacity loss of roughly 83% versus required output. The likely business impact is overtime pressure, slower inventory availability, and missed throughput that has to be recovered later.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">AI Opportunity Lens</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/aiOpportunityLens/dataAlreadyExists</span><span>models/active/operational_diagnosis.json#/aiOpportunityLens/manualPatternDecisions</span><span>models/active/operational_diagnosis.json#/aiOpportunityLens/predictiveGap</span><span>models/active/operational_diagnosis.json#/aiOpportunityLens/tribalKnowledge</span><span>models/active/operational_diagnosis.json#/aiOpportunityLens/visibilityGap</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">dataAlreadyExists</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/aiOpportunityLens/dataAlreadyExists</div>
+      <div class="content-item-value">Utilization, queue, WIP, and lead-time data already exist here but are usually reviewed as separate metrics instead of as one flow signal.</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">manualPatternDecisions</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/aiOpportunityLens/manualPatternDecisions</div>
+      <div class="content-item-value">Labor rebalance, release timing, and expediting decisions are still manual even though the patterns are repetitive and detectable from the same simulation outputs.</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">predictiveGap</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/aiOpportunityLens/predictiveGap</div>
+      <div class="content-item-value">Most current reporting is backward-looking. The diagnosis should be used to flag where the next queue spike or throughput miss is likely before the floor feels it.</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">tribalKnowledge</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/aiOpportunityLens/tribalKnowledge</div>
+      <div class="content-item-value">If step recovery depends on supervisor memory, shift handoff notes, or email threads, that is acting like an unstructured operating database.</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">visibilityGap</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/aiOpportunityLens/visibilityGap</div>
+      <div class="content-item-value">When operators cannot see where queue pressure will propagate next, the business leaks profit through avoidable delay, premium labor, and hidden capacity loss.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>Use one implication block and one structured lens block with consistent callout styling.</span><span>Preserve all uncertainty and cautionary wording.</span>
+      </div>
+    </section>
+  
+    <section id="recommendations-next-steps-6" class="slide slide-layout-recommendation_with_guidance">
+      <header class="slide-header">
+        <div class="slide-kicker">Recommendations / Next Steps</div>
+        <h2>Recommendations and Next Steps</h2>
+        <div class="slide-page-number">Page 6</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Recommended Action</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/recommendedAction</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">recommendedAction</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/recommendedAction</div>
+      <div class="content-item-value">Reduce effective cycle time at Drivetrain Assembly with standard work, faster changeovers, or error removal before spending on larger structural changes.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Scenario Guidance</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/scenarioGuidance</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">scenarioGuidance</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/scenarioGuidance</div>
+      <div class="content-item-value">The current relief scenario is directionally right. It improves throughput by about 0.873 units/hr, and it also changes bottleneck behavior to Brake and Gear Adjustment -&gt; Drivetrain Assembly (low confidence).</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Confidence</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/confidence</span><span>models/active/operational_diagnosis.json#/confidenceNote</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">confidence</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/confidence</div>
+      <div class="content-item-value">medium</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">confidenceNote</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/confidenceNote</div>
+      <div class="content-item-value">Confidence is medium because key inputs are incomplete. Missing or weak fields: shift hours/uptime, demand rate/product mix.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>Place the action on the page as the dominant block and supporting guidance beneath it.</span><span>Keep confidence and evidence-gap wording visible rather than burying it in footer notes.</span>
+      </div>
+    </section>
+  
+    <section id="appendix-evidence-7" class="slide slide-layout-appendix_metric_table">
+      <header class="slide-header">
+        <div class="slide-kicker">Appendix / Evidence</div>
+        <h2>Global Metric Appendix</h2>
+        <div class="slide-page-number">Page 7</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Global Metrics</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/globalMetrics/simElapsedHours</span><span>models/active/result_metrics.json#/globalMetrics/globalThroughput</span><span>models/active/result_metrics.json#/globalMetrics/forecastThroughput</span><span>models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces</span><span>models/active/result_metrics.json#/globalMetrics/totalWipQty</span><span>models/active/result_metrics.json#/globalMetrics/worstCaseTouchTime</span><span>models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes</span><span>models/active/result_metrics.json#/globalMetrics/leadTimeDeltaMinutes</span><span>models/active/result_metrics.json#/globalMetrics/waitSharePct</span><span>models/active/result_metrics.json#/globalMetrics/leadTimeTopContributor</span><span>models/active/result_metrics.json#/globalMetrics/throughputDelta</span><span>models/active/result_metrics.json#/globalMetrics/bottleneckMigration</span><span>models/active/result_metrics.json#/globalMetrics/bottleneckIndex</span><span>models/active/result_metrics.json#/globalMetrics/brittleness</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">simElapsedHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/simElapsedHours</div>
+      <div class="content-item-value">24</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">globalThroughput</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/globalThroughput</div>
+      <div class="content-item-value">2.3218542136676477</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">forecastThroughput</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/forecastThroughput</div>
+      <div class="content-item-value">2.3218542136676477</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">totalCompletedOutputPieces</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces</div>
+      <div class="content-item-value">55.72450112802355</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">totalWipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/totalWipQty</div>
+      <div class="content-item-value">268.2754988719821</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">worstCaseTouchTime</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/worstCaseTouchTime</div>
+      <div class="content-item-value">45.5</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">totalLeadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes</div>
+      <div class="content-item-value">3884.540237801189</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeDeltaMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/leadTimeDeltaMinutes</div>
+      <div class="content-item-value">2911.645537801189</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">waitSharePct</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/waitSharePct</div>
+      <div class="content-item-value">0.08881359926272364</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeTopContributor</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/leadTimeTopContributor</div>
+      <div class="content-item-value">Frame Kit Prep</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">throughputDelta</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/throughputDelta</div>
+      <div class="content-item-value">0.8728652751423152</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckMigration</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/bottleneckMigration</div>
+      <div class="content-item-value">Brake and Gear Adjustment -&gt; Drivetrain Assembly (low confidence)</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/bottleneckIndex</div>
+      <div class="content-item-value">0.9964800773430307</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">brittleness</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/globalMetrics/brittleness</div>
+      <div class="content-item-value">0.7184004900066172</div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>Use an appendix-style metric table with strong alignment and ample row spacing.</span><span>Keep raw metric keys and values fully traceable to the source file.</span>
+      </div>
+    </section>
+  
+    <section id="appendix-evidence-8" class="slide slide-layout-appendix_step_metric_grid">
+      <header class="slide-header">
+        <div class="slide-kicker">Appendix / Evidence</div>
+        <h2>Detailed Step Metrics (1/2)</h2>
+        <div class="slide-page-number">Page 8</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Frame Kit Prep</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/utilization</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/headroom</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueRisk</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueDepth</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/wipQty</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/completedQty</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitHours</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitPct</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/leadTimeMinutes</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/capacityPerHour</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckIndex</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckFlag</span><span>models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/status</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">utilization</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/utilization</div>
+      <div class="content-item-value">0.8775655114878906</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">headroom</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/headroom</div>
+      <div class="content-item-value">0.12243448851210936</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueRisk</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueRisk</div>
+      <div class="content-item-value">1</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueDepth</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueDepth</div>
+      <div class="content-item-value">218.692138621459</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">wipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/wipQty</div>
+      <div class="content-item-value">218.692138621459</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">completedQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/completedQty</div>
+      <div class="content-item-value">105.30786137854687</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitHours</div>
+      <div class="content-item-value">0.4608544062911965</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitPct</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitPct</div>
+      <div class="content-item-value">0.05760680078639956</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/leadTimeMinutes</div>
+      <div class="content-item-value">2648.305663457508</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">capacityPerHour</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/capacityPerHour</div>
+      <div class="content-item-value">5</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckIndex</div>
+      <div class="content-item-value">0.9204175824671289</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckFlag</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckFlag</div>
+      <div class="content-item-value">false</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">status</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/status</div>
+      <div class="content-item-value">critical</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Wheel Assembly</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/utilization</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/headroom</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueRisk</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueDepth</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/wipQty</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/completedQty</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitHours</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitPct</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/leadTimeMinutes</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/capacityPerHour</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckIndex</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckFlag</span><span>models/active/result_metrics.json#/nodeMetrics/wheel_assembly/status</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">utilization</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/utilization</div>
+      <div class="content-item-value">0.716429365009163</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">headroom</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/headroom</div>
+      <div class="content-item-value">0.283570634990837</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueRisk</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueRisk</div>
+      <div class="content-item-value">1</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueDepth</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueDepth</div>
+      <div class="content-item-value">13.604902657373868</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">wipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/wipQty</div>
+      <div class="content-item-value">13.604902657373868</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">completedQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/completedQty</div>
+      <div class="content-item-value">91.70295872117286</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitHours</div>
+      <div class="content-item-value">1.9918397658952376</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitPct</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitPct</div>
+      <div class="content-item-value">0.2489799707369047</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/leadTimeMinutes</div>
+      <div class="content-item-value">205.55515489545604</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">capacityPerHour</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/capacityPerHour</div>
+      <div class="content-item-value">5.333333333333333</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckIndex</div>
+      <div class="content-item-value">0.815679087255956</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckFlag</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckFlag</div>
+      <div class="content-item-value">false</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">status</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/wheel_assembly/status</div>
+      <div class="content-item-value">risk</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Drivetrain Assembly</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/utilization</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/headroom</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueRisk</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueDepth</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/wipQty</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/completedQty</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitHours</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitPct</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/leadTimeMinutes</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/capacityPerHour</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckIndex</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckFlag</span><span>models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/status</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">utilization</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/utilization</div>
+      <div class="content-item-value">0.9945847343738934</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">headroom</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/headroom</div>
+      <div class="content-item-value">0.0054152656261066134</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueRisk</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueRisk</div>
+      <div class="content-item-value">1</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueDepth</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueDepth</div>
+      <div class="content-item-value">14.70285025351651</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">wipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/wipQty</div>
+      <div class="content-item-value">14.70285025351651</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">completedQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/completedQty</div>
+      <div class="content-item-value">77.00010846765626</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitHours</div>
+      <div class="content-item-value">0.016655458342250302</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitPct</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitPct</div>
+      <div class="content-item-value">0.002081932292781288</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/leadTimeMinutes</div>
+      <div class="content-item-value">314.6730147154071</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">capacityPerHour</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/capacityPerHour</div>
+      <div class="content-item-value">3.225806451612903</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckIndex</div>
+      <div class="content-item-value">0.9964800773430307</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckFlag</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckFlag</div>
+      <div class="content-item-value">true</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">status</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/status</div>
+      <div class="content-item-value">critical</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Frame Sub-Assembly</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/utilization</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/headroom</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueRisk</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueDepth</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/wipQty</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/completedQty</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitHours</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitPct</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/leadTimeMinutes</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/capacityPerHour</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckIndex</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckFlag</span><span>models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/status</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">utilization</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/utilization</div>
+      <div class="content-item-value">0.6245796878343927</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">headroom</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/headroom</div>
+      <div class="content-item-value">0.37542031216560734</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueRisk</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueRisk</div>
+      <div class="content-item-value">0.04184773861258469</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueDepth</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueDepth</div>
+      <div class="content-item-value">0.12876227265410672</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">wipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/wipQty</div>
+      <div class="content-item-value">0.12876227265410672</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">completedQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/completedQty</div>
+      <div class="content-item-value">76.87134619500216</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitHours</div>
+      <div class="content-item-value">0</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitPct</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitPct</div>
+      <div class="content-item-value">0</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/leadTimeMinutes</div>
+      <div class="content-item-value">59.306518590053045</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">capacityPerHour</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/capacityPerHour</div>
+      <div class="content-item-value">5.128205128205128</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckIndex</div>
+      <div class="content-item-value">0.4206235056067599</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckFlag</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckFlag</div>
+      <div class="content-item-value">false</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">status</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/status</div>
+      <div class="content-item-value">healthy</div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>Group step cards in process order and keep each step label exactly as shown in the model.</span><span>Use compact appendix cards to avoid rewriting the step evidence into prose.</span>
+      </div>
+    </section>
+  
+    <section id="appendix-evidence-9" class="slide slide-layout-appendix_step_metric_grid">
+      <header class="slide-header">
+        <div class="slide-kicker">Appendix / Evidence</div>
+        <h2>Detailed Step Metrics (2/2)</h2>
+        <div class="slide-page-number">Page 9</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Final Mechanical Assembly</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/utilization</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/headroom</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueRisk</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueDepth</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/wipQty</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/completedQty</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitHours</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitPct</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/leadTimeMinutes</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/capacityPerHour</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckIndex</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckFlag</span><span>models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/status</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">utilization</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/utilization</div>
+      <div class="content-item-value">0.7494942861899685</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">headroom</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/headroom</div>
+      <div class="content-item-value">0.2505057138100315</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueRisk</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueRisk</div>
+      <div class="content-item-value">1</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueDepth</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueDepth</div>
+      <div class="content-item-value">11.460935763877742</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">wipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/wipQty</div>
+      <div class="content-item-value">11.460935763877742</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">completedQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/completedQty</div>
+      <div class="content-item-value">65.41041043112452</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitHours</div>
+      <div class="content-item-value">1.797260351777721</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitPct</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitPct</div>
+      <div class="content-item-value">0.22465754397221513</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/leadTimeMinutes</div>
+      <div class="content-item-value">280.1054401039828</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">capacityPerHour</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/capacityPerHour</div>
+      <div class="content-item-value">3.636363636363636</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckIndex</div>
+      <div class="content-item-value">0.8371712860234795</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckFlag</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckFlag</div>
+      <div class="content-item-value">false</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">status</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/status</div>
+      <div class="content-item-value">critical</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Brake and Gear Adjustment</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/utilization</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/headroom</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueRisk</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueDepth</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/wipQty</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/completedQty</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitHours</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitPct</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/leadTimeMinutes</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/capacityPerHour</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckIndex</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckFlag</span><span>models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/status</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">utilization</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/utilization</div>
+      <div class="content-item-value">0.9901161535730416</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">headroom</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/headroom</div>
+      <div class="content-item-value">0.009883846426958387</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueRisk</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueRisk</div>
+      <div class="content-item-value">1</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueDepth</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueDepth</div>
+      <div class="content-item-value">9.497968817587909</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">wipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/wipQty</div>
+      <div class="content-item-value">9.497968817587909</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">completedQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/completedQty</div>
+      <div class="content-item-value">55.912441613536465</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitHours</div>
+      <div class="content-item-value">0.01240410474906212</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitPct</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitPct</div>
+      <div class="content-item-value">0.001550513093632765</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/leadTimeMinutes</div>
+      <div class="content-item-value">310.69820484849174</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">capacityPerHour</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/capacityPerHour</div>
+      <div class="content-item-value">2.352941176470588</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckIndex</div>
+      <div class="content-item-value">0.9935754998224771</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckFlag</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckFlag</div>
+      <div class="content-item-value">false</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">status</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/status</div>
+      <div class="content-item-value">critical</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Inspection and Touch-Up</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/utilization</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/headroom</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueRisk</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueDepth</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/wipQty</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/completedQty</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitHours</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitPct</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/leadTimeMinutes</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/capacityPerHour</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckIndex</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckFlag</span><span>models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/status</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">utilization</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/utilization</div>
+      <div class="content-item-value">0.46515392808983347</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">headroom</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/headroom</div>
+      <div class="content-item-value">0.5348460719101665</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueRisk</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueRisk</div>
+      <div class="content-item-value">0.03132341425215212</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueDepth</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueDepth</div>
+      <div class="content-item-value">0.09397024275645637</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">wipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/wipQty</div>
+      <div class="content-item-value">0.09397024275645637</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">completedQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/completedQty</div>
+      <div class="content-item-value">55.81847137078001</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitHours</div>
+      <div class="content-item-value">0</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitPct</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitPct</div>
+      <div class="content-item-value">0</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/leadTimeMinutes</div>
+      <div class="content-item-value">35.12764291307748</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">capacityPerHour</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/capacityPerHour</div>
+      <div class="content-item-value">5</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckIndex</div>
+      <div class="content-item-value">0.313313248246645</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckFlag</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckFlag</div>
+      <div class="content-item-value">false</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">status</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/status</div>
+      <div class="content-item-value">healthy</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Packaging and Staging</div>
+      <div class="content-group-refs"><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/utilization</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/headroom</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueRisk</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueDepth</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/wipQty</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/completedQty</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitHours</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitPct</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/leadTimeMinutes</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/capacityPerHour</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckIndex</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckFlag</span><span>models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/status</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">utilization</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/utilization</div>
+      <div class="content-item-value">0.5224171980752207</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">headroom</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/headroom</div>
+      <div class="content-item-value">0.4775828019247793</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueRisk</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueRisk</div>
+      <div class="content-item-value">0.03523884103367349</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">queueDepth</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueDepth</div>
+      <div class="content-item-value">0.09397024275646262</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">wipQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/wipQty</div>
+      <div class="content-item-value">0.09397024275646262</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">completedQty</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/completedQty</div>
+      <div class="content-item-value">55.72450112802355</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitHours</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitHours</div>
+      <div class="content-item-value">0</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">idleWaitPct</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitPct</div>
+      <div class="content-item-value">0</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">leadTimeMinutes</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/leadTimeMinutes</div>
+      <div class="content-item-value">30.768598277212245</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">capacityPerHour</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/capacityPerHour</div>
+      <div class="content-item-value">4.444444444444445</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckIndex</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckIndex</div>
+      <div class="content-item-value">0.3519047731106792</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">bottleneckFlag</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckFlag</div>
+      <div class="content-item-value">false</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">status</div>
+      <div class="content-item-ref">models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/status</div>
+      <div class="content-item-value">healthy</div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>Group step cards in process order and keep each step label exactly as shown in the model.</span><span>Use compact appendix cards to avoid rewriting the step evidence into prose.</span>
+      </div>
+    </section>
+  
+    <section id="appendix-evidence-10" class="slide slide-layout-appendix_gaps_and_assumptions">
+      <header class="slide-header">
+        <div class="slide-kicker">Appendix / Evidence</div>
+        <h2>Evidence Gaps and Assumptions</h2>
+        <div class="slide-page-number">Page 10</div>
+      </header>
+      <div class="slide-content">
+        
+    <section class="content-group">
+      <div class="content-group-label">Confidence and Gaps</div>
+      <div class="content-group-refs"><span>models/active/operational_diagnosis.json#/confidence</span><span>models/active/operational_diagnosis.json#/confidenceNote</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">confidence</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/confidence</div>
+      <div class="content-item-value">medium</div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">confidenceNote</div>
+      <div class="content-item-ref">models/active/operational_diagnosis.json#/confidenceNote</div>
+      <div class="content-item-value">Confidence is medium because key inputs are incomplete. Missing or weak fields: shift hours/uptime, demand rate/product mix.</div>
+    </div>
+  
+      </div>
+    </section>
+  
+    <section class="content-group">
+      <div class="content-group-label">Assumptions Log</div>
+      <div class="content-group-refs"><span>models/active/compiled_forecast_model.json#/assumptions/0</span><span>models/active/compiled_forecast_model.json#/assumptions/1</span><span>models/active/compiled_forecast_model.json#/assumptions/2</span><span>models/active/compiled_forecast_model.json#/assumptions/3</span><span>models/active/compiled_forecast_model.json#/assumptions/4</span><span>models/active/compiled_forecast_model.json#/assumptions/5</span><span>models/active/compiled_forecast_model.json#/assumptions/6</span><span>models/active/compiled_forecast_model.json#/assumptions/7</span><span>models/active/compiled_forecast_model.json#/assumptions/8</span></div>
+      <div class="content-group-items">
+        
+    <div class="content-item">
+      <div class="content-item-label">strict-001</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/assumptions/0</div>
+      <div class="content-item-value"><code>{
+  &quot;id&quot;: &quot;strict-001&quot;,
+  &quot;severity&quot;: &quot;warning&quot;,
+  &quot;text&quot;: &quot;The VSM title is not visible in the image; model metadata was inferred as Assembly of SpeedBike 3000.&quot;
+}</code></div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">strict-002</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/assumptions/1</div>
+      <div class="content-item-value"><code>{
+  &quot;id&quot;: &quot;strict-002&quot;,
+  &quot;severity&quot;: &quot;info&quot;,
+  &quot;text&quot;: &quot;People Needed was mapped directly to workers because that is the visible staffing field in the image.&quot;
+}</code></div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">strict-003</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/assumptions/2</div>
+      <div class="content-item-value"><code>{
+  &quot;id&quot;: &quot;strict-003&quot;,
+  &quot;severity&quot;: &quot;info&quot;,
+  &quot;text&quot;: &quot;# of Equipment was mapped directly to parallelProcedures / effectiveUnits because that is the visible concurrency field in the image.&quot;
+}</code></div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">strict-004</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/assumptions/3</div>
+      <div class="content-item-value"><code>{
+  &quot;id&quot;: &quot;strict-004&quot;,
+  &quot;severity&quot;: &quot;warning&quot;,
+  &quot;text&quot;: &quot;Hours per shift are not visible in the image, so the forecast calendar still assumes 8 hours per shift when converting shift count to active capacity.&quot;
+}</code></div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">strict-005</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/assumptions/4</div>
+      <div class="content-item-value"><code>{
+  &quot;id&quot;: &quot;strict-005&quot;,
+  &quot;severity&quot;: &quot;warning&quot;,
+  &quot;text&quot;: &quot;Demand rate and product mix are not visible in the image; baseline demand will be inferred in phase 2 from the start-step release capacity.&quot;
+}</code></div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">compile-001</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/assumptions/5</div>
+      <div class="content-item-value"><code>{
+  &quot;id&quot;: &quot;compile-001&quot;,
+  &quot;severity&quot;: &quot;warning&quot;,
+  &quot;text&quot;: &quot;Demand rate is not shown in the source image; baseline demandRatePerHour is seeded at 90% of computed release capacity from the start step.&quot;
+}</code></div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">compile-002</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/assumptions/6</div>
+      <div class="content-item-value"><code>{
+  &quot;id&quot;: &quot;compile-002&quot;,
+  &quot;severity&quot;: &quot;warning&quot;,
+  &quot;text&quot;: &quot;The source image shows a consistent visible shift count of 1; activeShiftCount defaults to that value so runtime capacity aligns with the VSM.&quot;
+}</code></div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">compile-003</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/assumptions/7</div>
+      <div class="content-item-value"><code>{
+  &quot;id&quot;: &quot;compile-003&quot;,
+  &quot;severity&quot;: &quot;warning&quot;,
+  &quot;text&quot;: &quot;Step-level variability is not shown in the source image; baseline variabilityCv defaults to 0.18 for all steps.&quot;
+}</code></div>
+    </div>
+  
+    <div class="content-item">
+      <div class="content-item-label">compile-004</div>
+      <div class="content-item-ref">models/active/compiled_forecast_model.json#/assumptions/8</div>
+      <div class="content-item-value"><code>{
+  &quot;id&quot;: &quot;compile-004&quot;,
+  &quot;severity&quot;: &quot;info&quot;,
+  &quot;text&quot;: &quot;Queue risk, bottleneck index, brittleness, and migration outputs are deterministic non-DES forecast heuristics for rapid recompute.&quot;
+}</code></div>
+    </div>
+  
+      </div>
+    </section>
+  
+      </div>
+      <div class="slide-footer">
+        <span>Present evidence gaps and assumptions as a clean appendix rather than hiding them in narrative pages.</span><span>Make uncertainty explicit and easy for reviewers to audit.</span>
+      </div>
+    </section>
+  
+  </main>
+</body>
+</html>

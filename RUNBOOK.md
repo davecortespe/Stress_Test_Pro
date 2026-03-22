@@ -113,7 +113,7 @@ Recommended deterministic refresh order:
 1. `node scripts/compile-forecast-model.mjs models/active`
 2. `node scripts/generate-result-metrics.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --out models/active/result_metrics.json`
 3. `node scripts/generate-operational-diagnosis.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --metrics models/active/result_metrics.json --outJson models/active/operational_diagnosis.json --outMd models/active/operational_diagnosis.md`
-4. `node scripts/export-consulting-report.mjs --outJson models/active/consulting_report_export.json --outMd models/active/consulting_report_export.md`
+4. `node scripts/export-consulting-report.mjs --outJson models/active/consulting_report_export.json --outMd models/active/consulting_report_export.md --outHtml models/active/consulting_report_export.html`
 
 ## Simulator header contract
 
@@ -205,6 +205,7 @@ How to run after publishing:
 - `models/active/operational_diagnosis.md`
 - `models/active/consulting_report_export.json`
 - `models/active/consulting_report_export.md`
+- `models/active/consulting_report_export.html`
 
 ## Consulting-grade report exporter
 
@@ -217,12 +218,13 @@ What it does:
 - reads the current active report artifacts as-is
 - preserves wording, recommendations, uncertainty, and evidence gaps
 - reorganizes the material into a consulting-style section/page structure
-- outputs a machine-friendly export spec plus a reviewer-friendly markdown outline
+- outputs a machine-friendly export spec, a reviewer-friendly markdown outline, and a browser-presentable HTML deck
 
 What it writes:
 
 - `models/active/consulting_report_export.json`
 - `models/active/consulting_report_export.md`
+- `models/active/consulting_report_export.html`
 
 Bundle behavior:
 

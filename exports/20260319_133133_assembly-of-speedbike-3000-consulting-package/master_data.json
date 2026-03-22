@@ -1,0 +1,371 @@
+{
+  "products": [
+    {
+      "productId": "bike_assembly",
+      "family": "bike",
+      "mixPct": 1,
+      "demandRatePerHour": null,
+      "batchSize": null,
+      "sellingPricePerUnit": 0
+    }
+  ],
+  "equipment": [
+    {
+      "equipmentType": "Frame Kit Prep",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Wheel Assembly",
+      "count": 2,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Drivetrain Assembly",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Frame Sub-Assembly",
+      "count": 2,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Final Mechanical Assembly",
+      "count": 2,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Brake and Gear Adjustment",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Inspection and Touch-Up",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    },
+    {
+      "equipmentType": "Packaging and Staging",
+      "count": 1,
+      "availability": {
+        "shiftHours": null,
+        "uptimePct": null
+      }
+    }
+  ],
+  "processing": [
+    {
+      "stepId": "frame_kit_prep",
+      "equipmentType": "Frame Kit Prep",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 3,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": "none",
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 10,
+            "unit": "min"
+          }
+        }
+      },
+      "leadTimeMinutes": 20,
+      "leadTimeRaw": "20 min",
+      "parallelProcedures": 1,
+      "workers": 1,
+      "shiftCount": 1,
+      "lotSize": 10,
+      "reworkPct": 0.01,
+      "equipmentReliabilityPct": 0.98,
+      "stage": "A",
+      "stepDescription": "Pick frame, fork, seat post, handlebars, hardware kit",
+      "sourceText": "Stage A | Frame Kit Prep | CT 3 min | LT 20 min | C/O 10 min | # of Equipment 1 | People Needed 1 | # of Shifts 1 | Lot Size 10 | Rework 1% | Equipment Reliability 98% | Material availability matters"
+    },
+    {
+      "stepId": "wheel_assembly",
+      "equipmentType": "Wheel Assembly",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 6,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": "none",
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 15,
+            "unit": "min"
+          }
+        }
+      },
+      "leadTimeMinutes": 45,
+      "leadTimeRaw": "45 min",
+      "parallelProcedures": 2,
+      "workers": 2,
+      "shiftCount": 1,
+      "lotSize": 10,
+      "reworkPct": 0.02,
+      "equipmentReliabilityPct": 0.96,
+      "stage": "B",
+      "stepDescription": "Assemble front and rear wheel sets",
+      "sourceText": "Stage B | Wheel Assembly | CT 6 min | LT 45 min | C/O 15 min | # of Equipment 2 | People Needed 2 | # of Shifts 1 | Lot Size 10 | Rework 2% | Equipment Reliability 96% | Moderate labor content"
+    },
+    {
+      "stepId": "drivetrain_assembly",
+      "equipmentType": "Drivetrain Assembly",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 5,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": "none",
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 12,
+            "unit": "min"
+          }
+        }
+      },
+      "leadTimeMinutes": 35,
+      "leadTimeRaw": "35 min",
+      "parallelProcedures": 1,
+      "workers": 1,
+      "shiftCount": 1,
+      "lotSize": 10,
+      "reworkPct": 0.02,
+      "equipmentReliabilityPct": 0.97,
+      "stage": "C",
+      "stepDescription": "Prepare crankset, chain, pedals, derailleur set",
+      "sourceText": "Stage C | Drivetrain Assembly | CT 5 min | LT 35 min | C/O 12 min | # of Equipment 1 | People Needed 1 | # of Shifts 1 | Lot Size 10 | Rework 2% | Equipment Reliability 97% | Small parts shortages possible"
+    },
+    {
+      "stepId": "frame_sub_assembly",
+      "equipmentType": "Frame Sub-Assembly",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 7,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": "none",
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 8,
+            "unit": "min"
+          }
+        }
+      },
+      "leadTimeMinutes": 50,
+      "leadTimeRaw": "50 min",
+      "parallelProcedures": 2,
+      "workers": 2,
+      "shiftCount": 1,
+      "lotSize": 10,
+      "reworkPct": 0.03,
+      "equipmentReliabilityPct": 0.95,
+      "stage": "D",
+      "stepDescription": "Install fork, headset, handlebars, seat post",
+      "sourceText": "Stage D | Frame Sub-Assembly | CT 7 min | LT 50 min | C/O 8 min | # of Equipment 2 | People Needed 2 | # of Shifts 1 | Lot Size 10 | Rework 3% | Equipment Reliability 95% | Fit-up variability starts here"
+    },
+    {
+      "stepId": "final_mechanical_assembly",
+      "equipmentType": "Final Mechanical Assembly",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 9,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": "none",
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 20,
+            "unit": "min"
+          }
+        }
+      },
+      "leadTimeMinutes": 80,
+      "leadTimeRaw": "80 min",
+      "parallelProcedures": 2,
+      "workers": 2,
+      "shiftCount": 1,
+      "lotSize": 10,
+      "reworkPct": 0.04,
+      "equipmentReliabilityPct": 0.94,
+      "stage": "E",
+      "stepDescription": "Join wheels, drivetrain, brakes, cables, chain",
+      "sourceText": "Stage E | Final Mechanical Assembly | CT 9 min | LT 80 min | C/O 20 min | # of Equipment 2 | People Needed 2 | # of Shifts 1 | Lot Size 10 | Rework 4% | Equipment Reliability 94% | Good bottleneck candidate"
+    },
+    {
+      "stepId": "brake_and_gear_adjustment",
+      "equipmentType": "Brake and Gear Adjustment",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 8,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": "none",
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 5,
+            "unit": "min"
+          }
+        }
+      },
+      "leadTimeMinutes": 60,
+      "leadTimeRaw": "60 min",
+      "parallelProcedures": 1,
+      "workers": 1,
+      "shiftCount": 1,
+      "lotSize": 10,
+      "reworkPct": 0.06,
+      "equipmentReliabilityPct": 0.97,
+      "stage": "F",
+      "stepDescription": "Tune shifting, brakes, torque verification",
+      "sourceText": "Stage F | Brake and Gear Adjustment | CT 8 min | LT 60 min | C/O 5 min | # of Equipment 1 | People Needed 1 | # of Shifts 1 | Lot Size 10 | Rework 6% | Equipment Reliability 97% | Another likely bottleneck / rework loop"
+    },
+    {
+      "stepId": "inspection_and_touch_up",
+      "equipmentType": "Inspection and Touch-Up",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 4,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": "none",
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 0,
+            "unit": "min"
+          }
+        }
+      },
+      "leadTimeMinutes": 30,
+      "leadTimeRaw": "30 min",
+      "parallelProcedures": 1,
+      "workers": 1,
+      "shiftCount": 1,
+      "lotSize": 10,
+      "reworkPct": 0.05,
+      "equipmentReliabilityPct": 0.98,
+      "stage": "G",
+      "stepDescription": "Visual inspection, road-test stand, touch-up fixes",
+      "sourceText": "Stage G | Inspection and Touch-Up | CT 4 min | LT 30 min | C/O 0 min | # of Equipment 1 | People Needed 1 | # of Shifts 1 | Lot Size 10 | Rework 5% | Equipment Reliability 98% | Feeds rework back to F or E"
+    },
+    {
+      "stepId": "packaging_and_staging",
+      "equipmentType": "Packaging and Staging",
+      "productKey": "*",
+      "ct": {
+        "dist": "fixed",
+        "params": {
+          "value": 3.5,
+          "unit": "min"
+        }
+      },
+      "changeover": {
+        "rule": "none",
+        "time": {
+          "dist": "fixed",
+          "params": {
+            "value": 10,
+            "unit": "min"
+          }
+        }
+      },
+      "leadTimeMinutes": 25,
+      "leadTimeRaw": "25 min",
+      "parallelProcedures": 1,
+      "workers": 1,
+      "shiftCount": 1,
+      "lotSize": 10,
+      "reworkPct": 0.01,
+      "equipmentReliabilityPct": 0.99,
+      "stage": "H",
+      "stepDescription": "Box bike, label, palletize, stage for shipment",
+      "sourceText": "Stage H | Packaging and Staging | CT 3.5 min | LT 25 min | C/O 10 min | # of Equipment 1 | People Needed 1 | # of Shifts 1 | Lot Size 10 | Rework 1% | Equipment Reliability 99% | End of line"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "strict-001",
+      "severity": "warning",
+      "text": "The VSM title is not visible in the image; model metadata was inferred as Assembly of SpeedBike 3000."
+    },
+    {
+      "id": "strict-002",
+      "severity": "info",
+      "text": "People Needed was mapped directly to workers because that is the visible staffing field in the image."
+    },
+    {
+      "id": "strict-003",
+      "severity": "info",
+      "text": "# of Equipment was mapped directly to parallelProcedures / effectiveUnits because that is the visible concurrency field in the image."
+    },
+    {
+      "id": "strict-004",
+      "severity": "warning",
+      "text": "Hours per shift are not visible in the image, so the forecast calendar still assumes 8 hours per shift when converting shift count to active capacity."
+    },
+    {
+      "id": "strict-005",
+      "severity": "warning",
+      "text": "Demand rate and product mix are not visible in the image; baseline demand will be inferred in phase 2 from the start-step release capacity."
+    }
+  ]
+}

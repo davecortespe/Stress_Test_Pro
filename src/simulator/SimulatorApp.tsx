@@ -26,6 +26,7 @@ import {
   buildWasteStepCsv,
   buildWasteSummaryCsv
 } from "../lib/wasteAnalysis";
+import consultingReportSpecJson from "../../models/active/consulting_report_export.json";
 import type {
   CompiledForecastModel,
   DashboardConfig,
@@ -613,6 +614,39 @@ export default function SimulatorApp() {
     });
   };
 
+  const exportConsultingReport = async () => {
+    const baseName =
+      `${dashboardConfig.appTitle ?? "consulting-report"}`
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "consulting-report";
+    const reportBase = `${baseName}-consulting-report`;
+    const mdUrl = new URL("../../models/active/consulting_report_export.md", import.meta.url);
+    const htmlUrl = new URL("../../models/active/consulting_report_export.html", import.meta.url);
+
+    try {
+      const [mdResponse, htmlResponse] = await Promise.all([fetch(mdUrl), fetch(htmlUrl)]);
+      if (!mdResponse.ok || !htmlResponse.ok) {
+        throw new Error("Consulting report assets could not be loaded.");
+      }
+      const [mdText, htmlText] = await Promise.all([mdResponse.text(), htmlResponse.text()]);
+      downloadTextFile(`${reportBase}.json`, `${JSON.stringify(consultingReportSpecJson, null, 2)}\n`);
+      downloadTextFile(`${reportBase}.md`, mdText);
+      downloadTextFile(`${reportBase}.html`, htmlText, "text/html;charset=utf-8");
+      setAppNotice({
+        tone: "success",
+        text: `Exported consulting report package: ${reportBase}`
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Consulting report export failed.";
+      setAppNotice({
+        tone: "error",
+        text: `Consulting report export failed: ${message}`
+      });
+    }
+  };
+
   const loadScenarioFromLibrary = (scenarioId: string) => {
     const scenario = loadScenarioEntry(scenarioId);
     if (!scenario) {
@@ -662,6 +696,7 @@ export default function SimulatorApp() {
           onStartPause={startPauseWithInspectorReset}
           onReset={resetSimulationView}
           onSaveCurrentScenario={saveCommittedScenarioToLibrary}
+          onExportConsultingReport={exportConsultingReport}
           onToggleScenarioLibrary={() => setIsScenarioLibraryOpen((current) => !current)}
           onFocusConstraint={() => setResultsMode("diagnosis")}
           onSimHorizonChange={(value) => updateScenarioValue("simulationHorizonHours", value)}

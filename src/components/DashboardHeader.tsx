@@ -67,6 +67,7 @@ interface DashboardHeaderProps {
   onStartPause: () => void;
   onReset: () => void;
   onSaveCurrentScenario: () => void;
+  onExportConsultingReport: () => void;
   onToggleScenarioLibrary: () => void;
   onFocusConstraint: () => void;
   onSimHorizonChange: (value: string) => void;
@@ -103,6 +104,7 @@ export function DashboardHeader({
   onStartPause,
   onReset,
   onSaveCurrentScenario,
+  onExportConsultingReport,
   onToggleScenarioLibrary,
   onFocusConstraint,
   onSimHorizonChange
@@ -195,6 +197,12 @@ export function DashboardHeader({
                 </button>
               ))}
             </div>
+          </div>
+          <div className="header-control-subsection export-subsection">
+            <p className="header-subsection-label">Export</p>
+            <button type="button" className="secondary export-report-btn" onClick={onExportConsultingReport}>
+              Export Consulting Report
+            </button>
           </div>
         </div>
       </section>
