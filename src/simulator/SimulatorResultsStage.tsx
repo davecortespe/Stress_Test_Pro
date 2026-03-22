@@ -1,0 +1,177 @@
+import { AssumptionsReportPanel } from "../components/AssumptionsReportPanel";
+import { GraphCanvas } from "../components/GraphCanvas";
+import { KaizenReportPanel } from "../components/KaizenReportPanel";
+import { KpiRow } from "../components/KpiRow";
+import { OperationalDiagnosisCard } from "../components/OperationalDiagnosisCard";
+import { ThroughputAnalysisPanel } from "../components/ThroughputAnalysisPanel";
+import { WasteAnalysisPanel } from "../components/WasteAnalysisPanel";
+import { buildThroughputStepCsv, buildThroughputSummaryCsv } from "../lib/throughputAnalysis";
+import { buildWasteStepCsv, buildWasteSummaryCsv } from "../lib/wasteAnalysis";
+import type {
+  AssumptionsReportResult,
+  CompiledForecastModel,
+  DashboardConfig,
+  KaizenReportResult,
+  KpiConfig,
+  OperationalDiagnosis,
+  SimulationOutput,
+  SimulatorResultsMode,
+  ThroughputAnalysisResult,
+  WasteAnalysisResult
+} from "../types/contracts";
+import { downloadTextFile, flowOverlayKpis, RESULTS_MODE_LABELS } from "./simulatorConfig";
+
+interface SimulatorResultsStageProps {
+  resultsMode: SimulatorResultsMode;
+  isParameterRailOpen: boolean;
+  activeKpis: KpiConfig[];
+  activeMetrics: Record<string, number | string>;
+  output: SimulationOutput;
+  forecastModel: CompiledForecastModel;
+  dashboardConfig: DashboardConfig;
+  isPaused: boolean;
+  resetViewSignal: number;
+  flowViewportStorageKey: string;
+  operationalDiagnosis: OperationalDiagnosis;
+  kaizenReport: KaizenReportResult;
+  throughputAnalysis: ThroughputAnalysisResult;
+  wasteAnalysis: WasteAnalysisResult;
+  assumptionsReport: AssumptionsReportResult;
+  onToggleParameterRail: () => void;
+  onOpenStepInspector: (nodeId: string, anchor: { x: number; y: number }) => void;
+  onOpenKaizenPdf: () => void;
+}
+
+export function SimulatorResultsStage({
+  resultsMode,
+  isParameterRailOpen,
+  activeKpis,
+  activeMetrics,
+  output,
+  forecastModel,
+  dashboardConfig,
+  isPaused,
+  resetViewSignal,
+  flowViewportStorageKey,
+  operationalDiagnosis,
+  kaizenReport,
+  throughputAnalysis,
+  wasteAnalysis,
+  assumptionsReport,
+  onToggleParameterRail,
+  onOpenStepInspector,
+  onOpenKaizenPdf
+}: SimulatorResultsStageProps) {
+  const isFlowMode = resultsMode === "flow";
+
+  return (
+    <main className={`center-stage ${isFlowMode ? "center-stage-flow" : "reports-mode"}`}>
+      {!isFlowMode ? (
+        <>
+          <div className="stage-toolbar">
+            <div className="stage-title-block">
+              <p className="stage-eyebrow">Primary Workspace</p>
+              <h2>{RESULTS_MODE_LABELS[resultsMode]}</h2>
+            </div>
+            <div className="stage-toolbar-actions">
+              <button
+                type="button"
+                className="secondary"
+                onClick={onToggleParameterRail}
+              >
+                {isParameterRailOpen ? "Hide Parameters" : "Show Parameters"}
+              </button>
+            </div>
+          </div>
+          <KpiRow
+            kpis={activeKpis}
+            metrics={activeMetrics}
+            featuredKey={activeKpis[0]?.key}
+            variant="compact"
+          />
+        </>
+      ) : null}
+
+      {resultsMode === "flow" ? (
+        <div className="flow-stage-shell">
+          <KpiRow
+            kpis={flowOverlayKpis}
+            metrics={output.globalMetrics}
+            featuredKey={flowOverlayKpis[0]?.key}
+            variant="overlay"
+          />
+          <GraphCanvas
+            graph={forecastModel.graph}
+            output={output}
+            nodeCardFields={dashboardConfig.nodeCardFields}
+            showProbabilities={dashboardConfig.graphStyle?.showProbabilities ?? true}
+            animateEdges={dashboardConfig.graphStyle?.edgeAnimation !== "none" && !isPaused}
+            resetViewSignal={resetViewSignal}
+            viewportStorageKey={flowViewportStorageKey}
+            parameterToggleLabel={isParameterRailOpen ? "Hide Parameters" : "Show Parameters"}
+            onParameterToggle={onToggleParameterRail}
+            onNodeDoubleClick={onOpenStepInspector}
+          />
+        </div>
+      ) : null}
+
+      {resultsMode === "diagnosis" ? (
+        <OperationalDiagnosisCard diagnosis={operationalDiagnosis} />
+      ) : null}
+
+      {resultsMode === "kaizen" ? (
+        <KaizenReportPanel report={kaizenReport} onOpenPdf={onOpenKaizenPdf} />
+      ) : null}
+
+      {resultsMode === "throughput" ? (
+        <ThroughputAnalysisPanel
+          analysis={{
+            ...throughputAnalysis,
+            scenarioLabel: throughputAnalysis.scenarioLabel || dashboardConfig.appTitle
+          }}
+          onExportSummaryCsv={() =>
+            downloadTextFile(
+              "throughput-analysis-summary.csv",
+              buildThroughputSummaryCsv(throughputAnalysis),
+              "text/csv;charset=utf-8"
+            )
+          }
+          onExportStepCsv={() =>
+            downloadTextFile(
+              "throughput-analysis-step-costs.csv",
+              buildThroughputStepCsv(throughputAnalysis),
+              "text/csv;charset=utf-8"
+            )
+          }
+        />
+      ) : null}
+
+      {resultsMode === "waste" ? (
+        <WasteAnalysisPanel
+          analysis={{
+            ...wasteAnalysis,
+            scenarioLabel: wasteAnalysis.scenarioLabel || dashboardConfig.appTitle
+          }}
+          onExportSummaryCsv={() =>
+            downloadTextFile(
+              "waste-analysis-summary.csv",
+              buildWasteSummaryCsv(wasteAnalysis),
+              "text/csv;charset=utf-8"
+            )
+          }
+          onExportStepCsv={() =>
+            downloadTextFile(
+              "waste-analysis-steps.csv",
+              buildWasteStepCsv(wasteAnalysis),
+              "text/csv;charset=utf-8"
+            )
+          }
+        />
+      ) : null}
+
+      {resultsMode === "assumptions" ? (
+        <AssumptionsReportPanel report={assumptionsReport} />
+      ) : null}
+    </main>
+  );
+}

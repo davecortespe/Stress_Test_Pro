@@ -48,8 +48,14 @@ interface SaveScenarioResult {
   mode: "file" | "download" | "cancelled";
   csvText?: string;
   fileName?: string;
+  libraryName?: string;
   savedEntry?: ScenarioLibraryEntry;
 }
+
+type OpenLibraryResult =
+  | { mode: "opened"; libraryName: string }
+  | { mode: "fallback" }
+  | { mode: "cancelled" };
 
 interface UseScenarioLibraryInput {
   scenarioColumns: string[];
@@ -65,7 +71,7 @@ interface UseScenarioLibraryResult {
   libraryName: string | null;
   lastLoadedAt: string | null;
   issues: ScenarioLibraryIssue[];
-  openLibrary: () => Promise<"opened" | "fallback" | "cancelled">;
+  openLibrary: () => Promise<OpenLibraryResult>;
   importLibraryFile: (file: File) => Promise<void>;
   saveCurrentScenario: (scenario: ScenarioState, scenarioName: string) => Promise<SaveScenarioResult>;
   loadScenarioEntry: (scenarioId: string) => ScenarioState | null;
@@ -138,9 +144,9 @@ export function useScenarioLibrary({
     );
   };
 
-  const openLibrary = async (): Promise<"opened" | "fallback" | "cancelled"> => {
+  const openLibrary = async (): Promise<OpenLibraryResult> => {
     if (typeof window === "undefined" || typeof window.showOpenFilePicker !== "function") {
-      return "fallback";
+      return { mode: "fallback" };
     }
 
     try {
@@ -158,14 +164,17 @@ export function useScenarioLibrary({
       });
 
       if (!handle) {
-        return "cancelled";
+        return { mode: "cancelled" };
       }
 
       await loadLibraryText(await readHandleText(handle), handle.name, handle);
-      return "opened";
+      return {
+        mode: "opened",
+        libraryName: handle.name
+      };
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        return "cancelled";
+        return { mode: "cancelled" };
       }
       throw error;
     }
@@ -201,6 +210,7 @@ export function useScenarioLibrary({
       setLibraryName(activeCsvHandle.name);
       return {
         mode: "file",
+        libraryName: activeCsvHandle.name,
         savedEntry: entry
       };
     }
@@ -224,6 +234,7 @@ export function useScenarioLibrary({
         setLibraryName(handle.name);
         return {
           mode: "file",
+          libraryName: handle.name,
           savedEntry: entry
         };
       } catch (error) {
@@ -240,6 +251,7 @@ export function useScenarioLibrary({
       mode: "download",
       csvText,
       fileName: defaultFileName,
+      libraryName: defaultFileName,
       savedEntry: entry
     };
   };

@@ -1,265 +1,61 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { AssumptionsReportPanel } from "../components/AssumptionsReportPanel";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { DashboardHeader } from "../components/DashboardHeader";
-import { GraphCanvas } from "../components/GraphCanvas";
-import { KaizenReportPanel } from "../components/KaizenReportPanel";
-import { KpiRow } from "../components/KpiRow";
-import { OperationalDiagnosisCard } from "../components/OperationalDiagnosisCard";
 import { ParameterSidebar } from "../components/ParameterSidebar";
 import { ScenarioLibraryPanel } from "../components/ScenarioLibraryPanel";
 import { StepInspector } from "../components/StepInspector";
-import { ThroughputAnalysisPanel } from "../components/ThroughputAnalysisPanel";
-import { WasteAnalysisPanel } from "../components/WasteAnalysisPanel";
 import { buildAssumptionsReport } from "../lib/assumptionsReport";
 import { createBottleneckForecastOutput } from "../lib/bottleneckForecast";
-import {
-  buildOperationalDiagnosis
-} from "../lib/operationalDiagnosis";
 import { buildKaizenReport } from "../lib/kaizenReport";
 import {
-  buildThroughputAnalysis,
-  buildThroughputStepCsv,
-  buildThroughputSummaryCsv
+  buildThroughputAnalysis
 } from "../lib/throughputAnalysis";
 import {
-  buildWasteAnalysis,
-  buildWasteStepCsv,
-  buildWasteSummaryCsv
+  buildWasteAnalysis
 } from "../lib/wasteAnalysis";
 import consultingReportSpecJson from "../../models/active/consulting_report_export.json";
-import type {
-  CompiledForecastModel,
-  DashboardConfig,
-  KpiConfig,
-  MasterData,
-  SimulatorResultsMode
-} from "../types/contracts";
-import compiledForecastModelJson from "../../models/active/compiled_forecast_model.json";
-import masterDataJson from "../../models/active/master_data.json";
-import dashboardConfigJson from "../../models/dashboard_config.json";
+import type { SimulatorResultsMode } from "../types/contracts";
 import {
-  bindParameterGroupsToForecast,
-  buildResolvedStepScenario,
-  buildScenarioLibraryStepColumns,
   buildInspectorValues,
-  getDefaultScenario
+  buildResolvedStepScenario
 } from "./scenarioState";
-import { getExportBundleData, getStartupScenarioOverride } from "./runtimeData";
 import { useScenarioLibrary } from "./useScenarioLibrary";
 import { useScenarioSession } from "./useScenarioSession";
+import {
+  assumptionsKpis,
+  downloadTextFile,
+  ExportNotice,
+  KAIZEN_PDF_URL,
+  kaizenKpis,
+  throughputKpis,
+  wasteKpis
+} from "./simulatorConfig";
+import { useOperationalDiagnosis } from "./useOperationalDiagnosis";
+import { useParameterRail } from "./useParameterRail";
+import { SimulatorResultsStage } from "./SimulatorResultsStage";
+import { useSimulatorModelData } from "./useSimulatorModelData";
 import "./simulator.css";
 
-interface ExportNotice {
-  tone: "success" | "error";
-  text: string;
-}
-
-const RESULTS_MODE_LABELS: Record<SimulatorResultsMode, string> = {
-  flow: "Live Flow Map",
-  diagnosis: "Operational Diagnosis",
-  kaizen: "Fishbone Audit",
-  throughput: "Throughput Economics",
-  waste: "Waste Analysis",
-  assumptions: "Assumptions Review"
-};
-
-const KAIZEN_PDF_URL = "/generated/kaizen-executive-report.pdf";
-const PARAMETER_RAIL_WIDTH_STORAGE_KEY = "stress-test-pro.parameter-rail-width-v1";
-const PARAMETER_RAIL_MIN_WIDTH = 290;
-const PARAMETER_RAIL_DEFAULT_WIDTH = 320;
-const PARAMETER_RAIL_HARD_MAX_WIDTH = 520;
-
-const throughputKpis: KpiConfig[] = [
-  {
-    key: "tocThroughputPerUnit",
-    label: "TOC Throughput / Unit",
-    format: "currency",
-    decimals: 2
-  },
-  {
-    key: "fullyLoadedProfitPerUnit",
-    label: "Fully Loaded Profit / Unit",
-    format: "currency",
-    decimals: 2
-  },
-  {
-    key: "tocThroughputPerBottleneckMinute",
-    label: "TOC / Bottleneck Min",
-    format: "currency",
-    decimals: 2
-  },
-  {
-    key: "estimatedGainPercent",
-    label: "Estimated Gain %",
-    format: "percent",
-    decimals: 1
-  }
-];
-
-const wasteKpis: KpiConfig[] = [
-  {
-    key: "totalLeadTimeMinutes",
-    label: "Weighted LT",
-    format: "duration",
-    decimals: 1
-  },
-  {
-    key: "totalTouchTimeMinutes",
-    label: "Weighted CT",
-    format: "duration",
-    decimals: 1
-  },
-  {
-    key: "totalWasteMinutes",
-    label: "Weighted Waste",
-    format: "duration",
-    decimals: 1
-  },
-  {
-    key: "totalWastePct",
-    label: "Waste %",
-    format: "percent",
-    decimals: 1
-  },
-  {
-    key: "topWasteStep",
-    label: "Top Waste Step",
-    format: "text"
-  }
-];
-
-const kaizenKpis: KpiConfig[] = [
-  {
-    key: "topOpportunity",
-    label: "Top Kaizen Focus",
-    format: "text"
-  },
-  {
-    key: "topOpportunityScore",
-    label: "Event Score",
-    format: "number",
-    decimals: 1
-  },
-  {
-    key: "fishboneFocus",
-    label: "Fishbone Focus",
-    format: "text"
-  },
-  {
-    key: "opportunityCount",
-    label: "Top Events",
-    format: "number",
-    decimals: 0
-  },
-  {
-    key: "missingSignalsCount",
-    label: "Missing Signals",
-    format: "number",
-    decimals: 0
-  }
-];
-
-const assumptionsKpis: KpiConfig[] = [
-  {
-    key: "trustLevel",
-    label: "Trust Level",
-    helpText: "Overall confidence based on how many important inputs were assumed or defaulted.",
-    format: "text"
-  },
-  {
-    key: "totalAssumptions",
-    label: "Assumptions Logged",
-    helpText: "Total number of documented assumptions in the current model.",
-    format: "number",
-    decimals: 0
-  },
-  {
-    key: "needsReview",
-    label: "Need Review",
-    helpText: "Assumptions that could materially change the conclusion if they are wrong.",
-    format: "number",
-    decimals: 0
-  },
-  {
-    key: "priorityChecks",
-    label: "Priority Checks",
-    helpText: "Best confirmations to collect before using the report for bigger decisions.",
-    format: "number",
-    decimals: 0
-  }
-];
-
-function downloadTextFile(fileName: string, contents: string, mimeType = "text/plain;charset=utf-8"): void {
-  const blob = new Blob([contents], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-function getParameterRailMaxWidth(viewportWidth: number): number {
-  return Math.max(
-    PARAMETER_RAIL_MIN_WIDTH,
-    Math.min(PARAMETER_RAIL_HARD_MAX_WIDTH, Math.round(viewportWidth * 0.42))
-  );
-}
-
-function clampParameterRailWidth(width: number, viewportWidth: number): number {
-  const minWidth = PARAMETER_RAIL_MIN_WIDTH;
-  const maxWidth = getParameterRailMaxWidth(viewportWidth);
-  return Math.round(Math.min(Math.max(width, minWidth), maxWidth));
+function buildFileSafeBaseName(value: string, fallback: string): string {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || fallback;
 }
 
 export default function SimulatorApp() {
   const libraryFileInputRef = useRef<HTMLInputElement | null>(null);
-  const exportBundleData = useMemo(() => getExportBundleData(), []);
-
-  const dashboardConfig = (exportBundleData?.dashboardConfig ?? dashboardConfigJson) as DashboardConfig;
-  const forecastModel = (exportBundleData?.compiledForecastModel ?? compiledForecastModelJson) as CompiledForecastModel;
-  const masterData = (exportBundleData?.masterData ?? masterDataJson) as MasterData;
-  const boundParameterGroups = useMemo(
-    () => bindParameterGroupsToForecast(dashboardConfig.parameterGroups, forecastModel),
-    [dashboardConfig, forecastModel]
-  );
-
-  const startupScenarioOverride = useMemo(
-    () => getStartupScenarioOverride(exportBundleData),
-    [exportBundleData]
-  );
-
-  const baselineScenario = useMemo(
-    () => ({
-      ...getDefaultScenario(boundParameterGroups, forecastModel.inputDefaults),
-      ...(startupScenarioOverride ?? {})
-    }),
-    [boundParameterGroups, forecastModel, startupScenarioOverride]
-  );
-  const scenarioLibraryColumns = useMemo(
-    () => buildScenarioLibraryStepColumns(forecastModel.stepModels),
-    [forecastModel.stepModels]
-  );
-  const simulationHorizonField = useMemo(
-    () =>
-      boundParameterGroups
-        .flatMap((group) => group.fields)
-        .find((field) => field.key === "simulationHorizonHours"),
-    [boundParameterGroups]
-  );
-  const sidebarParameterGroups = useMemo(
-    () =>
-      boundParameterGroups
-        .map((group) => ({
-          ...group,
-          fields: group.fields.filter((field) => field.key !== "simulationHorizonHours")
-        }))
-        .filter((group) => group.fields.length > 0),
-    [boundParameterGroups]
-  );
-
+  const {
+    dashboardConfig,
+    forecastModel,
+    masterData,
+    baselineScenario,
+    simulationHorizonField,
+    sidebarParameterGroups,
+    scenarioLibraryColumns,
+    flowViewportStorageKey
+  } = useSimulatorModelData();
   const {
     committedScenario,
     activeScenario,
@@ -277,28 +73,21 @@ export default function SimulatorApp() {
     toggleStartPause,
     resetSimulation
   } = useScenarioSession({ baselineScenario });
+  const {
+    isParameterRailOpen,
+    parameterRailWidth,
+    parameterRailMinWidth,
+    parameterRailMaxWidth,
+    toggleParameterRail,
+    setParameterRailWidth
+  } = useParameterRail();
+
   const [inspectorStepId, setInspectorStepId] = useState<string | null>(null);
   const [inspectorAnchor, setInspectorAnchor] = useState<{ x: number; y: number } | null>(null);
   const [appNotice, setAppNotice] = useState<ExportNotice | null>(null);
   const [resultsMode, setResultsMode] = useState<SimulatorResultsMode>("flow");
   const [isScenarioLibraryOpen, setIsScenarioLibraryOpen] = useState(false);
-  const [isParameterRailOpen, setIsParameterRailOpen] = useState(true);
-  const [parameterRailWidth, setParameterRailWidth] = useState(() => {
-    if (typeof window === "undefined") {
-      return PARAMETER_RAIL_DEFAULT_WIDTH;
-    }
 
-    try {
-      const savedWidth = Number(window.localStorage.getItem(PARAMETER_RAIL_WIDTH_STORAGE_KEY));
-      if (Number.isFinite(savedWidth)) {
-        return clampParameterRailWidth(savedWidth, window.innerWidth);
-      }
-    } catch {
-      // Ignore storage failures and keep the rail usable.
-    }
-
-    return clampParameterRailWidth(PARAMETER_RAIL_DEFAULT_WIDTH, window.innerWidth);
-  });
   const {
     libraryEntries,
     selectedScenarioId,
@@ -321,57 +110,13 @@ export default function SimulatorApp() {
     () => createBottleneckForecastOutput(forecastModel, committedScenario, simElapsedHours),
     [forecastModel, committedScenario, simElapsedHours]
   );
-  const wasRunningRef = useRef(false);
-  const [operationalDiagnosis, setOperationalDiagnosis] = useState(() =>
-    buildOperationalDiagnosis(forecastModel, output, committedScenario)
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const syncRailWidth = () => {
-      setParameterRailWidth((current) => clampParameterRailWidth(current, window.innerWidth));
-    };
-
-    syncRailWidth();
-    window.addEventListener("resize", syncRailWidth);
-    return () => window.removeEventListener("resize", syncRailWidth);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    try {
-      window.localStorage.setItem(PARAMETER_RAIL_WIDTH_STORAGE_KEY, String(parameterRailWidth));
-    } catch {
-      // Ignore storage failures and keep the rail usable.
-    }
-  }, [parameterRailWidth]);
-
-  // Refresh diagnosis once a run stops (or is paused) rather than every simulation tick.
-  useEffect(() => {
-    if (!isPaused) {
-      wasRunningRef.current = true;
-      return;
-    }
-
-    if (wasRunningRef.current) {
-      setOperationalDiagnosis(buildOperationalDiagnosis(forecastModel, output, committedScenario));
-      wasRunningRef.current = false;
-    }
-  }, [isPaused, forecastModel, output, committedScenario]);
-
-  // Also refresh diagnosis for committed baseline changes outside of active runs (reset/load/startup).
-  useEffect(() => {
-    if (isPaused && simElapsedHours <= 1e-6) {
-      setOperationalDiagnosis(buildOperationalDiagnosis(forecastModel, output, committedScenario));
-    }
-  }, [isPaused, simElapsedHours, forecastModel, output, committedScenario]);
-
+  const operationalDiagnosis = useOperationalDiagnosis({
+    forecastModel,
+    output,
+    committedScenario,
+    isPaused,
+    simElapsedHours
+  });
   const throughputAnalysis = useMemo(
     () => buildThroughputAnalysis(forecastModel, masterData, committedScenario, output),
     [forecastModel, masterData, committedScenario, output]
@@ -384,18 +129,9 @@ export default function SimulatorApp() {
     () => buildKaizenReport(forecastModel, committedScenario, output),
     [forecastModel, committedScenario, output]
   );
-  const flowViewportStorageKey = useMemo(
-    () => `${forecastModel.metadata.name ?? dashboardConfig.appTitle}-flow-viewport-v4`,
-    [dashboardConfig.appTitle, forecastModel.metadata.name]
-  );
   const assumptionsReport = useMemo(
     () => buildAssumptionsReport(forecastModel),
     [forecastModel]
-  );
-
-  const inspectorStep = useMemo(
-    () => forecastModel.stepModels.find((step) => step.stepId === inspectorStepId) ?? null,
-    [forecastModel, inspectorStepId]
   );
   const inspectorDefaultsByStepId = useMemo(
     () =>
@@ -411,24 +147,10 @@ export default function SimulatorApp() {
       ),
     [masterData]
   );
-
-  const openStepInspector = (nodeId: string, anchor: { x: number; y: number }) => {
-    setInspectorStepId(nodeId);
-    setInspectorAnchor(anchor);
-  };
-
-  const startPauseWithInspectorReset = () => {
-    toggleStartPause();
-    setInspectorStepId(null);
-    setInspectorAnchor(null);
-  };
-
-  const resetSimulationView = () => {
-    resetSimulation();
-    setInspectorStepId(null);
-    setInspectorAnchor(null);
-  };
-
+  const inspectorStep = useMemo(
+    () => forecastModel.stepModels.find((step) => step.stepId === inspectorStepId) ?? null,
+    [forecastModel.stepModels, inspectorStepId]
+  );
   const inspectorValues = useMemo(
     () =>
       buildInspectorValues(
@@ -438,24 +160,6 @@ export default function SimulatorApp() {
       ),
     [activeScenario, inspectorDefaultsByStepId, inspectorStep]
   );
-  const activeKpis =
-    resultsMode === "throughput"
-      ? throughputKpis
-      : resultsMode === "kaizen"
-        ? kaizenKpis
-        : resultsMode === "assumptions"
-          ? assumptionsKpis
-          : resultsMode === "waste"
-            ? wasteKpis
-          : dashboardConfig.kpis;
-  const isFlowMode = resultsMode === "flow";
-  const simProgressPct = useMemo(() => {
-    if (!Number.isFinite(simHorizonHours) || simHorizonHours <= 0) {
-      return 0;
-    }
-    const ratio = simElapsedHours / simHorizonHours;
-    return Math.max(0, Math.min(100, ratio * 100));
-  }, [simElapsedHours, simHorizonHours]);
   const resolvedStepScenario = useMemo(
     () => buildResolvedStepScenario(forecastModel.stepModels, committedScenario, inspectorDefaultsByStepId),
     [committedScenario, forecastModel.stepModels, inspectorDefaultsByStepId]
@@ -479,6 +183,21 @@ export default function SimulatorApp() {
     }),
     [assumptionsReport]
   );
+  const activeKpis = useMemo(() => {
+    if (resultsMode === "throughput") {
+      return throughputKpis;
+    }
+    if (resultsMode === "kaizen") {
+      return kaizenKpis;
+    }
+    if (resultsMode === "assumptions") {
+      return assumptionsKpis;
+    }
+    if (resultsMode === "waste") {
+      return wasteKpis;
+    }
+    return dashboardConfig.kpis;
+  }, [dashboardConfig.kpis, resultsMode]);
   const activeMetrics = useMemo(() => {
     if (resultsMode === "throughput") {
       return {
@@ -517,60 +236,52 @@ export default function SimulatorApp() {
     throughputAnalysis.summary,
     wasteAnalysis.summary
   ]);
-  const flowOverlayKpis = useMemo<KpiConfig[]>(
-    () => [
-      {
-        key: "forecastThroughput",
-        label: "Forecast Output / hr",
-        helpText: "Estimated completed output rate per hour under the current scenario settings and elapsed-time state.",
-        format: "number",
-        decimals: 1
-      },
-      {
-        key: "bottleneckIndex",
-        label: "Constraint Pressure",
-        helpText: "Constraint pressure score (0-100%). Higher values mean tighter capacity and higher risk of flow breakage.",
-        format: "percent",
-        decimals: 0
-      },
-      {
-        key: "totalWipQty",
-        label: "WIP Load",
-        helpText: "Total work-in-process currently in the system (queue plus in-process load across all steps).",
-        format: "number",
-        decimals: 0
-      },
-      {
-        key: "totalCompletedOutputPieces",
-        label: "Total Completed Lots",
-        helpText: "Cumulative completed lots produced by the flow at the current elapsed time.",
-        format: "number",
-        decimals: 1
-      }
-    ],
-    []
-  );
+  const simProgressPct = useMemo(() => {
+    if (!Number.isFinite(simHorizonHours) || simHorizonHours <= 0) {
+      return 0;
+    }
+    const ratio = simElapsedHours / simHorizonHours;
+    return Math.max(0, Math.min(100, ratio * 100));
+  }, [simElapsedHours, simHorizonHours]);
+
+  const closeInspector = () => {
+    setInspectorStepId(null);
+    setInspectorAnchor(null);
+  };
+
+  const showNotice = (tone: ExportNotice["tone"], text: string) => {
+    setAppNotice({ tone, text });
+  };
+
+  const openStepInspector = (nodeId: string, anchor: { x: number; y: number }) => {
+    setInspectorStepId(nodeId);
+    setInspectorAnchor(anchor);
+  };
+
+  const startPauseWithInspectorReset = () => {
+    toggleStartPause();
+    closeInspector();
+  };
+
+  const resetSimulationView = () => {
+    resetSimulation();
+    closeInspector();
+  };
 
   const openScenarioLibraryCsv = async () => {
     try {
       const result = await openLibrary();
-      if (result === "fallback") {
+      if (result.mode === "fallback") {
         libraryFileInputRef.current?.click();
         return;
       }
-      if (result === "opened") {
-        setAppNotice({
-          tone: "success",
-          text: `Loaded scenario library${libraryName ? `: ${libraryName}` : "."}`
-        });
+      if (result.mode === "opened") {
+        showNotice("success", `Loaded scenario library: ${result.libraryName}`);
         setIsScenarioLibraryOpen(true);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Scenario library could not be opened.";
-      setAppNotice({
-        tone: "error",
-        text: `Library open failed: ${message}`
-      });
+      showNotice("error", `Library open failed: ${message}`);
     }
   };
 
@@ -589,39 +300,29 @@ export default function SimulatorApp() {
       if (result.mode === "download" && result.csvText && result.fileName) {
         downloadTextFile(result.fileName, result.csvText, "text/csv;charset=utf-8");
       }
-      setAppNotice({
-        tone: "success",
-        text:
-          result.mode === "download"
-            ? `Scenario saved. Downloaded library CSV: ${result.fileName}`
-            : `Scenario saved to library${libraryName ? `: ${libraryName}` : "."}`
-      });
+      showNotice(
+        "success",
+        result.mode === "download"
+          ? `Scenario saved. Downloaded library CSV: ${result.fileName}`
+          : `Scenario saved to library${result.libraryName ? `: ${result.libraryName}` : "."}`
+      );
       setIsScenarioLibraryOpen(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Scenario library save failed.";
-      setAppNotice({
-        tone: "error",
-        text: `Library save failed: ${message}`
-      });
+      showNotice("error", `Library save failed: ${message}`);
     }
   };
 
   const openKaizenPdf = () => {
     window.open(KAIZEN_PDF_URL, "_blank", "noopener,noreferrer");
-    setAppNotice({
-      tone: "success",
-      text: "Opened the latest Kaizen PDF report. If it looks stale, rerun npm run export:pdf-report first."
-    });
+    showNotice(
+      "success",
+      "Opened the latest Kaizen PDF report. If it looks stale, rerun npm run export:pdf-report first."
+    );
   };
 
   const exportConsultingReport = async () => {
-    const baseName =
-      `${dashboardConfig.appTitle ?? "consulting-report"}`
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "consulting-report";
-    const reportBase = `${baseName}-consulting-report`;
+    const reportBase = `${buildFileSafeBaseName(dashboardConfig.appTitle, "consulting-report")}-consulting-report`;
     const mdUrl = new URL("../../models/active/consulting_report_export.md", import.meta.url);
     const htmlUrl = new URL("../../models/active/consulting_report_export.html", import.meta.url);
 
@@ -634,40 +335,29 @@ export default function SimulatorApp() {
       downloadTextFile(`${reportBase}.json`, `${JSON.stringify(consultingReportSpecJson, null, 2)}\n`);
       downloadTextFile(`${reportBase}.md`, mdText);
       downloadTextFile(`${reportBase}.html`, htmlText, "text/html;charset=utf-8");
-      setAppNotice({
-        tone: "success",
-        text: `Exported consulting report package: ${reportBase}`
-      });
+      showNotice("success", `Exported consulting report package: ${reportBase}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Consulting report export failed.";
-      setAppNotice({
-        tone: "error",
-        text: `Consulting report export failed: ${message}`
-      });
+      showNotice("error", `Consulting report export failed: ${message}`);
     }
   };
 
   const loadScenarioFromLibrary = (scenarioId: string) => {
     const scenario = loadScenarioEntry(scenarioId);
     if (!scenario) {
-      setAppNotice({
-        tone: "error",
-        text: "Selected scenario could not be loaded."
-      });
+      showNotice("error", "Selected scenario could not be loaded.");
       return;
     }
+
     loadScenario({
       ...baselineScenario,
       ...scenario
     });
-    setInspectorStepId(null);
-    setInspectorAnchor(null);
+    closeInspector();
     setIsScenarioLibraryOpen(false);
+
     const entry = libraryEntries.find((item) => item.scenarioId === scenarioId);
-    setAppNotice({
-      tone: "success",
-      text: `Loaded scenario: ${entry?.scenarioName ?? scenarioId}`
-    });
+    showNotice("success", `Loaded scenario: ${entry?.scenarioName ?? scenarioId}`);
   };
 
   return (
@@ -692,7 +382,7 @@ export default function SimulatorApp() {
           scenarioCount={libraryEntries.length}
           speedMultiplier={speedMultiplier}
           onResultsModeChange={setResultsMode}
-          onSpeedChange={(speed) => setSpeedMultiplier(speed)}
+          onSpeedChange={setSpeedMultiplier}
           onStartPause={startPauseWithInspectorReset}
           onReset={resetSimulationView}
           onSaveCurrentScenario={saveCommittedScenarioToLibrary}
@@ -714,7 +404,7 @@ export default function SimulatorApp() {
           </div>
         ) : null}
 
-          <div
+        <div
           className={`content-shell ${isParameterRailOpen ? "rail-open" : "rail-collapsed"}`}
           style={{ "--parameter-rail-width": `${parameterRailWidth}px` } as CSSProperties}
         >
@@ -725,125 +415,34 @@ export default function SimulatorApp() {
               editable
               isRailOpen={isParameterRailOpen}
               railWidth={parameterRailWidth}
-              minRailWidth={PARAMETER_RAIL_MIN_WIDTH}
-              maxRailWidth={getParameterRailMaxWidth(typeof window === "undefined" ? 1440 : window.innerWidth)}
-              onToggleRail={() => setIsParameterRailOpen((current) => !current)}
-              onRailWidthChange={(nextWidth) =>
-                setParameterRailWidth(
-                  clampParameterRailWidth(nextWidth, typeof window === "undefined" ? 1440 : window.innerWidth)
-                )
-              }
+              minRailWidth={parameterRailMinWidth}
+              maxRailWidth={parameterRailMaxWidth}
+              onToggleRail={toggleParameterRail}
+              onRailWidthChange={setParameterRailWidth}
               onChange={updateScenarioValue}
             />
           </aside>
 
-          <main className={`center-stage ${isFlowMode ? "center-stage-flow" : "reports-mode"}`}>
-            {!isFlowMode ? (
-              <>
-                <div className="stage-toolbar">
-                  <div className="stage-title-block">
-                    <p className="stage-eyebrow">Primary Workspace</p>
-                    <h2>{RESULTS_MODE_LABELS[resultsMode]}</h2>
-                  </div>
-                  <div className="stage-toolbar-actions">
-                    <button
-                      type="button"
-                      className="secondary"
-                      onClick={() => setIsParameterRailOpen((current) => !current)}
-                    >
-                      {isParameterRailOpen ? "Hide Parameters" : "Show Parameters"}
-                    </button>
-                  </div>
-                </div>
-                <KpiRow
-                  kpis={activeKpis}
-                  metrics={activeMetrics}
-                  featuredKey={activeKpis[0]?.key}
-                  variant="compact"
-                />
-              </>
-            ) : null}
-            {resultsMode === "flow" ? (
-              <div className="flow-stage-shell">
-                <KpiRow
-                  kpis={flowOverlayKpis}
-                  metrics={output.globalMetrics}
-                  featuredKey={flowOverlayKpis[0]?.key}
-                  variant="overlay"
-                />
-                <GraphCanvas
-                  graph={forecastModel.graph}
-                  output={output}
-                  nodeCardFields={dashboardConfig.nodeCardFields}
-                  showProbabilities={dashboardConfig.graphStyle?.showProbabilities ?? true}
-                  animateEdges={dashboardConfig.graphStyle?.edgeAnimation !== "none" && !isPaused}
-                  resetViewSignal={resetViewSignal}
-                  viewportStorageKey={flowViewportStorageKey}
-                  parameterToggleLabel={isParameterRailOpen ? "Hide Parameters" : "Show Parameters"}
-                  onParameterToggle={() => setIsParameterRailOpen((current) => !current)}
-                  onNodeDoubleClick={(nodeId, anchor) => openStepInspector(nodeId, anchor)}
-                />
-              </div>
-            ) : null}
-
-            {resultsMode === "diagnosis" ? (
-              <OperationalDiagnosisCard diagnosis={operationalDiagnosis} />
-            ) : null}
-
-            {resultsMode === "kaizen" ? (
-              <KaizenReportPanel report={kaizenReport} onOpenPdf={openKaizenPdf} />
-            ) : null}
-
-            {resultsMode === "throughput" ? (
-              <ThroughputAnalysisPanel
-                analysis={{
-                  ...throughputAnalysis,
-                  scenarioLabel: throughputAnalysis.scenarioLabel || dashboardConfig.appTitle
-                }}
-                onExportSummaryCsv={() =>
-                  downloadTextFile(
-                    "throughput-analysis-summary.csv",
-                    buildThroughputSummaryCsv(throughputAnalysis),
-                    "text/csv;charset=utf-8"
-                  )
-                }
-                onExportStepCsv={() =>
-                  downloadTextFile(
-                    "throughput-analysis-step-costs.csv",
-                    buildThroughputStepCsv(throughputAnalysis),
-                    "text/csv;charset=utf-8"
-                  )
-                }
-              />
-            ) : null}
-
-            {resultsMode === "waste" ? (
-              <WasteAnalysisPanel
-                analysis={{
-                  ...wasteAnalysis,
-                  scenarioLabel: wasteAnalysis.scenarioLabel || dashboardConfig.appTitle
-                }}
-                onExportSummaryCsv={() =>
-                  downloadTextFile(
-                    "waste-analysis-summary.csv",
-                    buildWasteSummaryCsv(wasteAnalysis),
-                    "text/csv;charset=utf-8"
-                  )
-                }
-                onExportStepCsv={() =>
-                  downloadTextFile(
-                    "waste-analysis-steps.csv",
-                    buildWasteStepCsv(wasteAnalysis),
-                    "text/csv;charset=utf-8"
-                  )
-                }
-              />
-            ) : null}
-
-            {resultsMode === "assumptions" ? (
-              <AssumptionsReportPanel report={assumptionsReport} />
-            ) : null}
-          </main>
+          <SimulatorResultsStage
+            resultsMode={resultsMode}
+            isParameterRailOpen={isParameterRailOpen}
+            activeKpis={activeKpis}
+            activeMetrics={activeMetrics}
+            output={output}
+            forecastModel={forecastModel}
+            dashboardConfig={dashboardConfig}
+            isPaused={isPaused}
+            resetViewSignal={resetViewSignal}
+            flowViewportStorageKey={flowViewportStorageKey}
+            operationalDiagnosis={operationalDiagnosis}
+            kaizenReport={kaizenReport}
+            throughputAnalysis={throughputAnalysis}
+            wasteAnalysis={wasteAnalysis}
+            assumptionsReport={assumptionsReport}
+            onToggleParameterRail={toggleParameterRail}
+            onOpenStepInspector={openStepInspector}
+            onOpenKaizenPdf={openKaizenPdf}
+          />
         </div>
 
         <StepInspector
@@ -875,15 +474,9 @@ export default function SimulatorApp() {
             }
             discardStepOverrides(inspectorStep.stepId);
           }}
-          onStage={() => {
-            setInspectorStepId(null);
-            setInspectorAnchor(null);
-          }}
+          onStage={closeInspector}
           onApplyResume={startPauseWithInspectorReset}
-          onClose={() => {
-            setInspectorStepId(null);
-            setInspectorAnchor(null);
-          }}
+          onClose={closeInspector}
         />
 
         <ScenarioLibraryPanel
@@ -912,19 +505,14 @@ export default function SimulatorApp() {
             if (!file) {
               return;
             }
+
             try {
               await importLibraryFile(file);
-              setAppNotice({
-                tone: "success",
-                text: `Loaded scenario library: ${file.name}`
-              });
+              showNotice("success", `Loaded scenario library: ${file.name}`);
               setIsScenarioLibraryOpen(true);
             } catch (error) {
               const message = error instanceof Error ? error.message : "Scenario library could not be read.";
-              setAppNotice({
-                tone: "error",
-                text: `Library open failed: ${message}`
-              });
+              showNotice("error", `Library open failed: ${message}`);
             }
           }}
         />
