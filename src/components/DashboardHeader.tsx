@@ -68,6 +68,7 @@ interface DashboardHeaderProps {
   onReset: () => void;
   onSaveCurrentScenario: () => void;
   onOpenExecutivePdf: () => void;
+  onOpenQuickStartGuide: () => void;
   onToggleScenarioLibrary: () => void;
   onFocusConstraint: () => void;
   onSimHorizonChange: (value: string) => void;
@@ -105,11 +106,13 @@ export function DashboardHeader({
   onReset,
   onSaveCurrentScenario,
   onOpenExecutivePdf,
+  onOpenQuickStartGuide,
   onToggleScenarioLibrary,
   onFocusConstraint,
   onSimHorizonChange
 }: DashboardHeaderProps) {
   const [isRecommendedMoveOpen, setIsRecommendedMoveOpen] = useState(true);
+  const [resetPending, setResetPending] = useState(false);
 
   return (
     <header className="header-shell">
@@ -120,6 +123,11 @@ export function DashboardHeader({
           {subtitle.trim().length > 0 ? <p className="subtitle">{subtitle}</p> : null}
         </div>
         <div className="header-meta-row" aria-label="simulation status">
+          <div className="header-guide-slot">
+            <button type="button" className="secondary hero-guide-btn" onClick={onOpenQuickStartGuide}>
+              Quick Start Guide
+            </button>
+          </div>
           <div className="status-chip timer-chip is-active">
             <div className="timer-chip-main">
               <span className="status-chip-label">Sim Time</span>
@@ -142,20 +150,18 @@ export function DashboardHeader({
                 ))}
               </select>
             </label>
-          </div>
-          <div className="meta-progress-chip">
-            <div className="sim-progress-meta">
-              <span>Progress</span>
-              <strong>{simProgressPct.toFixed(1)}%</strong>
-            </div>
-            <div
-              className="sim-progress-track"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={simProgressPct}
-            >
-              <span className="sim-progress-fill" style={{ width: `${simProgressPct}%` }} />
+            <div className="timer-chip-progress">
+              <div
+                className="sim-progress-track"
+                role="progressbar"
+                aria-label="Simulation progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={simProgressPct}
+              >
+                <span className="sim-progress-fill" style={{ width: `${simProgressPct}%` }} />
+              </div>
+              <span className="timer-chip-progress-pct">{simProgressPct.toFixed(1)}%</span>
             </div>
           </div>
           <div className={`live-pill ${isPaused ? "is-paused" : "is-live"}`}>
@@ -163,23 +169,32 @@ export function DashboardHeader({
             {isPaused ? "Paused" : "Live"}
           </div>
           <button type="button" className="status-chip scenario-chip-button" onClick={onToggleScenarioLibrary}>
-            <span className="status-chip-value">Scenarios {scenarioCount}</span>
+            <span className="scenario-chip-add" aria-hidden="true">+</span>
+            <span className="status-chip-label">Scenarios</span>
+            <span className="status-chip-value">{scenarioCount}</span>
           </button>
         </div>
       </div>
 
       <section className="header-control-card actions-card actions-card-promoted" aria-label="actions">
-        <p className="header-control-label">Controls</p>
+        <p className="header-control-label">Simulation</p>
         <div className="actions-toolbar-row">
           <div className="header-controls actions-grid actions-grid-compact">
             <button className="primary" onClick={onStartPause}>
               {isPaused ? "Start" : "Pause"}
             </button>
-            <button className="secondary" onClick={onReset}>
-              Reset Time
+            <button
+              className={`secondary${resetPending ? " is-confirming" : ""}`}
+              onClick={resetPending ? () => { onReset(); setResetPending(false); } : () => setResetPending(true)}
+              onBlur={() => setResetPending(false)}
+            >
+              {resetPending ? "Confirm reset?" : "Reset Time"}
             </button>
             <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
               Save Scenario
+            </button>
+            <button type="button" className="secondary export-report-btn" onClick={onOpenExecutivePdf}>
+              Open Executive PDF
             </button>
           </div>
           <div className="actions-inline-meta">
@@ -199,9 +214,6 @@ export function DashboardHeader({
                 ))}
               </div>
             </div>
-            <button type="button" className="secondary export-report-btn" onClick={onOpenExecutivePdf}>
-              Open Executive PDF
-            </button>
           </div>
         </div>
       </section>
@@ -223,7 +235,7 @@ export function DashboardHeader({
                 onClick={() => setIsRecommendedMoveOpen((current) => !current)}
                 aria-expanded={isRecommendedMoveOpen}
               >
-                {isRecommendedMoveOpen ? "less" : "more"}
+                {isRecommendedMoveOpen ? "▲ Hide" : "▼ Details"}
               </button>
             </div>
           </div>

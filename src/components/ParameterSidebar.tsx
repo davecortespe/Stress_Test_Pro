@@ -164,10 +164,10 @@ export function ParameterSidebar({
           type="button"
           className="parameter-rail-tab"
           onClick={onToggleRail}
-          aria-label="Show what-if controls"
+          aria-label="Show parameters"
         >
           <span className="parameter-rail-tab-kicker">Open</span>
-          <span className="parameter-rail-tab-title">What-if Controls</span>
+          <span className="parameter-rail-tab-title">Parameters</span>
           <span className="parameter-rail-tab-arrow" aria-hidden="true">
             ›
           </span>
@@ -175,8 +175,8 @@ export function ParameterSidebar({
       ) : null}
       <div className="panel-toolbar">
         <div>
-          <p className="parameter-eyebrow">What-if Controls</p>
-          <h2>{isRailOpen ? "Parameters" : "What-if"}</h2>
+          <p className="parameter-eyebrow">Parameters</p>
+          <h2>Parameters</h2>
         </div>
         {isRailOpen ? (
           <button type="button" className="secondary panel-toggle" onClick={onToggleRail}>

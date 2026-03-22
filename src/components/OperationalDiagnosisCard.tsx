@@ -1,3 +1,4 @@
+import { useRef, useLayoutEffect } from "react";
 import type { OperationalDiagnosis } from "../types/contracts";
 
 interface OperationalDiagnosisCardProps {
@@ -52,6 +53,8 @@ function confidenceLabel(confidence: OperationalDiagnosis["confidence"]): string
   return "Low";
 }
 
+const HEADLINE_FONT_STEPS = [32, 28, 24, 20];
+
 export function OperationalDiagnosisCard({ diagnosis, metrics }: OperationalDiagnosisCardProps) {
   const pressure = readNumber(metrics, "bottleneckIndex");
   const totalWip = readNumber(metrics, "totalWipQty");
@@ -59,8 +62,31 @@ export function OperationalDiagnosisCard({ diagnosis, metrics }: OperationalDiag
   const totalCompletedLots = readNumber(metrics, "totalCompletedOutputPieces");
   const waitShare = readNumber(metrics, "waitSharePct");
   const bannerTone = statusTone(diagnosis.status);
-  const missingFieldText =
-    diagnosis.missingFields.length > 0 ? diagnosis.missingFields.join(", ") : "None noted";
+
+  // Confidence — deduplicated single-sentence format
+  const uniqueFields = [...new Set(diagnosis.missingFields)];
+  const confidenceSentence =
+    uniqueFields.length > 0
+      ? `Confidence: ${confidenceLabel(diagnosis.confidence)}. Key inputs incomplete — missing: ${uniqueFields.join(", ")}.`
+      : `Confidence: ${confidenceLabel(diagnosis.confidence)}.`;
+
+  // Output rate health color
+  const outputRateColor =
+    diagnosis.outputRatePerHour >= diagnosis.demandRatePerHour
+      ? "var(--ls-color-success)"
+      : "var(--ls-color-danger)";
+
+  // Headline dynamic font scaling
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+  useLayoutEffect(() => {
+    const el = headlineRef.current;
+    if (!el) return;
+    for (const size of HEADLINE_FONT_STEPS) {
+      el.style.fontSize = `${size}px`;
+      const lineH = parseFloat(getComputedStyle(el).lineHeight) || size * 1.15;
+      if (el.scrollHeight <= lineH * 2 + 4) break;
+    }
+  }, [diagnosis.primaryConstraint]);
   const kpis = [
     {
       label: "Forecast Output / hr",
@@ -147,17 +173,21 @@ export function OperationalDiagnosisCard({ diagnosis, metrics }: OperationalDiag
             <span className={`diagnosis-state-pill tone-${bannerTone}`}>{TitleCaseStatus(diagnosis.status)}</span>
             <p>Operational diagnosis</p>
           </div>
-          <h2>{clampSentences(diagnosis.primaryConstraint, 1)}</h2>
+          <h2 ref={headlineRef}>{clampSentences(diagnosis.primaryConstraint, 1)}</h2>
           <p className="diagnosis-banner-summary">{clampSentences(diagnosis.constraintMechanism, 1)}</p>
           <div className="diagnosis-banner-metrics">
-            <span>Input rate: {formatNumber(diagnosis.demandRatePerHour, 1)} units/hr</span>
-            <span>Output rate: {formatNumber(diagnosis.outputRatePerHour, 1)} units/hr</span>
+            <span style={{ color: "var(--ls-color-text-muted)" }}>
+              Input rate: {formatNumber(diagnosis.demandRatePerHour, 1)} units/hr
+            </span>
+            <span style={{ color: outputRateColor }}>
+              Output rate: {formatNumber(diagnosis.outputRatePerHour, 1)} units/hr
+            </span>
           </div>
         </div>
         <div className="diagnosis-banner-confidence">
           <span>Confidence</span>
           <strong>{confidenceLabel(diagnosis.confidence)}</strong>
-          <p>Missing: {missingFieldText}</p>
+          <p>{uniqueFields.length > 0 ? `Missing: ${uniqueFields.join(", ")}` : "All key inputs present."}</p>
         </div>
       </section>
 
@@ -211,8 +241,16 @@ export function OperationalDiagnosisCard({ diagnosis, metrics }: OperationalDiag
         <span className="diagnosis-section-rule" aria-hidden="true" />
       </div>
       <div className="diagnosis-opportunity-grid">
-        {opportunityCards.map((card) => (
-          <article key={card.title} className="diagnosis-opportunity-card">
+        {opportunityCards.map((card, i) => (
+          <article
+            key={card.title}
+            className={[
+              "diagnosis-opportunity-card",
+              i === opportunityCards.length - 1 && opportunityCards.length % 2 === 1
+                ? "diagnosis-opportunity-card--summary"
+                : ""
+            ].filter(Boolean).join(" ")}
+          >
             <h3>{card.title}</h3>
             <p>{clampSentences(card.description, 2)}</p>
           </article>
@@ -224,8 +262,7 @@ export function OperationalDiagnosisCard({ diagnosis, metrics }: OperationalDiag
         <span className="diagnosis-section-rule" aria-hidden="true" />
       </div>
       <footer className="diagnosis-confidence-footer">
-        <strong>Confidence: {confidenceLabel(diagnosis.confidence)}.</strong> {diagnosis.confidenceNote} Missing fields:{" "}
-        {missingFieldText}.
+        {confidenceSentence}
       </footer>
     </section>
   );

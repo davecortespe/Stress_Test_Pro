@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { useLocation } from "react-router-dom";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { ParameterSidebar } from "../components/ParameterSidebar";
+import { QuickStartGuideDialog } from "../components/QuickStartGuideDialog";
 import { ScenarioLibraryPanel } from "../components/ScenarioLibraryPanel";
 import { StepInspector } from "../components/StepInspector";
 import { buildAssumptionsReport } from "../lib/assumptionsReport";
@@ -100,6 +101,7 @@ export default function SimulatorApp() {
     getInitialResultsMode(location.search)
   );
   const [isScenarioLibraryOpen, setIsScenarioLibraryOpen] = useState(false);
+  const [isQuickStartGuideOpen, setIsQuickStartGuideOpen] = useState(false);
   const isReportMode = resultsMode !== "flow";
 
   const {
@@ -382,6 +384,7 @@ export default function SimulatorApp() {
           onReset={resetSimulationView}
           onSaveCurrentScenario={saveCommittedScenarioToLibrary}
           onOpenExecutivePdf={openExecutivePdf}
+          onOpenQuickStartGuide={() => setIsQuickStartGuideOpen(true)}
           onToggleScenarioLibrary={() => setIsScenarioLibraryOpen((current) => !current)}
           onFocusConstraint={() => setResultsMode("diagnosis")}
           onSimHorizonChange={(value) => updateScenarioValue("simulationHorizonHours", value)}
@@ -489,6 +492,12 @@ export default function SimulatorApp() {
           onSaveCurrent={saveCommittedScenarioToLibrary}
           onLoadScenario={loadScenarioFromLibrary}
           onClose={() => setIsScenarioLibraryOpen(false)}
+        />
+
+        <QuickStartGuideDialog
+          isOpen={isQuickStartGuideOpen}
+          onClose={() => setIsQuickStartGuideOpen(false)}
+          onOpenExecutivePdf={openExecutivePdf}
         />
 
         <input
