@@ -67,7 +67,7 @@ interface DashboardHeaderProps {
   onStartPause: () => void;
   onReset: () => void;
   onSaveCurrentScenario: () => void;
-  onExportConsultingReport: () => void;
+  onOpenExecutivePdf: () => void;
   onToggleScenarioLibrary: () => void;
   onFocusConstraint: () => void;
   onSimHorizonChange: (value: string) => void;
@@ -104,12 +104,12 @@ export function DashboardHeader({
   onStartPause,
   onReset,
   onSaveCurrentScenario,
-  onExportConsultingReport,
+  onOpenExecutivePdf,
   onToggleScenarioLibrary,
   onFocusConstraint,
   onSimHorizonChange
 }: DashboardHeaderProps) {
-  const [isRecommendedMoveOpen, setIsRecommendedMoveOpen] = useState(false);
+  const [isRecommendedMoveOpen, setIsRecommendedMoveOpen] = useState(true);
 
   return (
     <header className="header-shell">
@@ -169,46 +169,45 @@ export function DashboardHeader({
       </div>
 
       <section className="header-control-card actions-card actions-card-promoted" aria-label="actions">
-        <p className="header-control-label">Actions</p>
-        <div className="header-controls actions-grid actions-grid-compact">
-          <button className="primary" onClick={onStartPause}>
-            {isPaused ? "Start" : "Pause"}
-          </button>
-          <button className="secondary" onClick={onReset}>
-            Reset Time
-          </button>
-          <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
-            Save Scenario
-          </button>
-        </div>
-        <div className="actions-meta-row actions-meta-row-compact">
-          <div className="header-control-subsection compact speed-subsection">
-            <p className="header-subsection-label">Playback</p>
-            <div className="speed-group speed-group-compact" role="group" aria-label="simulation speed">
-              {SPEED_OPTIONS.map((speed) => (
-                <button
-                  key={speed.value}
-                  type="button"
-                  className={`speed-pill ${speedMultiplier === speed.value ? "is-active" : ""}`}
-                  onClick={() => onSpeedChange(speed.value)}
-                  title={speed.hint}
-                >
-                  {speed.label}
-                </button>
-              ))}
-            </div>
+        <p className="header-control-label">Controls</p>
+        <div className="actions-toolbar-row">
+          <div className="header-controls actions-grid actions-grid-compact">
+            <button className="primary" onClick={onStartPause}>
+              {isPaused ? "Start" : "Pause"}
+            </button>
+            <button className="secondary" onClick={onReset}>
+              Reset Time
+            </button>
+            <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
+              Save Scenario
+            </button>
           </div>
-          <div className="header-control-subsection export-subsection">
-            <p className="header-subsection-label">Export</p>
-            <button type="button" className="secondary export-report-btn" onClick={onExportConsultingReport}>
-              Export Consulting Report
+          <div className="actions-inline-meta">
+            <div className="speed-inline-group" role="group" aria-label="simulation speed">
+              <span className="header-subsection-label">Playback</span>
+              <div className="speed-group speed-group-compact">
+                {SPEED_OPTIONS.map((speed) => (
+                  <button
+                    key={speed.value}
+                    type="button"
+                    className={`speed-pill ${speedMultiplier === speed.value ? "is-active" : ""}`}
+                    onClick={() => onSpeedChange(speed.value)}
+                    title={speed.hint}
+                  >
+                    {speed.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button type="button" className="secondary export-report-btn" onClick={onOpenExecutivePdf}>
+              Open Executive PDF
             </button>
           </div>
         </div>
       </section>
 
       <div className="header-bottom-row header-bottom-row-promoted">
-        <section className="decision-card decision-card-compact decision-card-deemphasized" aria-label="recommended action">
+        <section className="decision-card decision-card-compact" aria-label="recommended action">
           <div className="decision-card-top">
             <div>
               <p className="header-control-label">Recommended move</p>

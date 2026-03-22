@@ -14,7 +14,7 @@ export const RESULTS_MODE_LABELS: Record<SimulatorResultsMode, string> = {
   assumptions: "Assumptions Review"
 };
 
-export const KAIZEN_PDF_URL = "/generated/kaizen-executive-report.pdf";
+export const EXECUTIVE_PDF_URL = "/generated/leanstorming-executive-report.pdf";
 export const PARAMETER_RAIL_WIDTH_STORAGE_KEY = "stress-test-pro.parameter-rail-width-v1";
 export const PARAMETER_RAIL_MIN_WIDTH = 290;
 export const PARAMETER_RAIL_DEFAULT_WIDTH = 320;

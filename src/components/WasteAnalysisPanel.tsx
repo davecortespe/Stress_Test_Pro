@@ -52,89 +52,136 @@ function formatFlags(flags: {
   return values.length > 0 ? values.join(", ") : "OK";
 }
 
+function clampSentences(text: string, maxSentences: number): string {
+  const parts = text
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length <= maxSentences) {
+    return text;
+  }
+  return parts.slice(0, maxSentences).join(" ");
+}
+
+function warningTone(warningCount: number): "good" | "warning" {
+  return warningCount > 0 ? "warning" : "good";
+}
+
 export function WasteAnalysisPanel({
   analysis,
   onExportSummaryCsv,
   onExportStepCsv
 }: WasteAnalysisPanelProps) {
+  const bannerTone = warningTone(analysis.summary.warningCount);
+  const topActions = analysis.insights.slice(0, 3);
+  const validationSummary =
+    analysis.validations.length > 0 ? `${analysis.validations.length} checks need review` : "No blocking data checks";
+
   return (
-    <section className="throughput-panel">
-      <div className="throughput-toolbar">
-        <div>
-          <p className="throughput-eyebrow">Waste Analysis</p>
-          <h2>{analysis.scenarioLabel}</h2>
-          <p className="throughput-meta">LT is total elapsed time. CT is hands-on work time.</p>
-        </div>
-        <div className="throughput-toolbar-actions">
-          <button type="button" className="secondary" onClick={onExportSummaryCsv}>
-            Export Summary CSV
-          </button>
-          <button type="button" className="secondary" onClick={onExportStepCsv}>
-            Export Step Waste CSV
-          </button>
-          <div className={`efficiency-badge ${analysis.summary.warningCount > 0 ? "efficiency-medium" : "efficiency-high"}`}>
-            <span>Warnings</span>
-            <strong>{analysis.summary.warningCount}</strong>
-          </div>
-        </div>
+    <section className="throughput-panel waste-report-panel">
+      <div className="diagnosis-section-head">
+        <p className="diagnosis-eyebrow">Waste Analysis</p>
+        <span className="diagnosis-section-rule" aria-hidden="true" />
       </div>
 
-      {analysis.validations.length > 0 ? (
-        <section className="throughput-validations">
-          <h3>Check Before Use</h3>
-          <ul>
-            {analysis.validations.map((validation) => (
-              <li
-                key={`${validation.code}-${validation.stepId ?? validation.metricKey ?? ""}`}
-                className={`validation-${validation.severity}`}
-              >
-                {validation.message}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <div className="throughput-summary-shell">
-        <article className="throughput-hero-card">
-          <h3>Delay Vs Touch Time</h3>
-          <dl>
-            <div>
-              <dt>Total elapsed time</dt>
-              <dd>{formatValue({ key: "lt", label: "", value: analysis.summary.totalLeadTimeMinutes, format: "duration" })}</dd>
-            </div>
-            <div>
-              <dt>Total hands-on time</dt>
-              <dd>{formatValue({ key: "ct", label: "", value: analysis.summary.totalTouchTimeMinutes, format: "duration" })}</dd>
-            </div>
-            <div>
-              <dt>Total delay time</dt>
-              <dd>{formatValue({ key: "waste", label: "", value: analysis.summary.totalWasteMinutes, format: "duration" })}</dd>
-            </div>
-            <div>
-              <dt>Biggest delay step</dt>
-              <dd>{analysis.summary.topWasteStep}</dd>
-            </div>
-          </dl>
-        </article>
-
-        <article className="throughput-insights-card">
-          <h3>What To Do</h3>
-          <div className="throughput-insights-grid">
-            {analysis.insights.map((insight, index) => (
-              <article key={`${insight.finding}-${index}`} className="throughput-insight">
-                <h4>{insight.finding}</h4>
-                <p>{insight.impactEstimate}</p>
-                <p>{insight.recommendedAction}</p>
-              </article>
-            ))}
+      <section className={`report-status-banner tone-${bannerTone}`}>
+        <div className="report-status-main">
+          <div className="report-status-line">
+            <span className={`diagnosis-state-pill tone-${bannerTone}`}>Waste</span>
+            <p>Delay and friction view</p>
           </div>
+          <h2>{analysis.summary.topWasteStep} is the largest visible source of modeled delay and hidden flow loss.</h2>
+          <p className="report-banner-summary">
+            Total elapsed time is {formatValue({ key: "lt", label: "", value: analysis.summary.totalLeadTimeMinutes, format: "duration" })}, while hands-on work is only{" "}
+            {formatValue({ key: "ct", label: "", value: analysis.summary.totalTouchTimeMinutes, format: "duration" })}.
+          </p>
+          <div className="report-banner-metrics">
+            <span>Total waste: {formatValue({ key: "waste", label: "", value: analysis.summary.totalWasteMinutes, format: "duration" })}</span>
+            <span>Waste share: {formatValue({ key: "waste-pct", label: "", value: analysis.summary.totalWastePct, format: "percent", decimals: 1 })}</span>
+            <span>Top waste step: {analysis.summary.topWasteStep}</span>
+          </div>
+        </div>
+        <div className="report-banner-aside">
+          <div className="report-banner-actions">
+            <button type="button" className="secondary" onClick={onExportSummaryCsv}>
+              Export Summary CSV
+            </button>
+            <button type="button" className="secondary" onClick={onExportStepCsv}>
+              Export Step Waste CSV
+            </button>
+          </div>
+          <div className="report-banner-aside-block">
+            <span>Warnings</span>
+            <strong>{analysis.summary.warningCount}</strong>
+            <p>{validationSummary}</p>
+          </div>
+        </div>
+      </section>
+
+      <div className="diagnosis-section-head">
+        <p className="diagnosis-eyebrow">Recommended Actions</p>
+        <span className="diagnosis-section-rule" aria-hidden="true" />
+      </div>
+
+      <section className="report-action-band">
+        <div className="report-action-band-copy">
+          <h3>Recommended next moves</h3>
+          <p>Start where delay is structurally compounding, then separate true touch time from queue, handoff, and fallback artifacts before chasing local optimizations.</p>
+        </div>
+        <div className="report-priority-grid">
+          {topActions.map((insight, index) => (
+            <article key={`${insight.finding}-${index}`} className={`report-priority-card tone-${bannerTone}`}>
+              <div className="report-priority-header">
+                <div>
+                  <p className="kaizen-rank">Priority {index + 1}</p>
+                  <h4>{insight.finding}</h4>
+                </div>
+              </div>
+              <div className="report-priority-detail">
+                <h5>Why this matters</h5>
+                <p>{clampSentences(insight.impactEstimate, 2)}</p>
+              </div>
+              <div className="report-priority-detail">
+                <h5>Recommended move</h5>
+                <p>{clampSentences(insight.recommendedAction, 2)}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <div className="diagnosis-section-head">
+        <p className="diagnosis-eyebrow">Decision Framing</p>
+        <span className="diagnosis-section-rule" aria-hidden="true" />
+      </div>
+
+      <div className="report-framing-grid">
+        <article className="report-framing-card">
+          <h3>Total elapsed time</h3>
+          <p>{formatValue({ key: "lt", label: "", value: analysis.summary.totalLeadTimeMinutes, format: "duration" })}</p>
         </article>
+        <article className="report-framing-card">
+          <h3>Total touch time</h3>
+          <p>{formatValue({ key: "ct", label: "", value: analysis.summary.totalTouchTimeMinutes, format: "duration" })}</p>
+        </article>
+        <article className="report-framing-card">
+          <h3>Total delay time</h3>
+          <p>{formatValue({ key: "waste", label: "", value: analysis.summary.totalWasteMinutes, format: "duration" })}</p>
+        </article>
+        <article className="report-framing-card">
+          <h3>Value-add ratio</h3>
+          <p>{formatValue({ key: "va-ratio", label: "", value: analysis.summary.valueAddRatio, format: "percent", decimals: 1 })}</p>
+        </article>
+      </div>
+
+      <div className="diagnosis-section-head">
+        <p className="diagnosis-eyebrow">Evidence Tables</p>
+        <span className="diagnosis-section-rule" aria-hidden="true" />
       </div>
 
       <div className="throughput-table-grid">
         <article className="throughput-table-card">
-          <h3>Key Numbers</h3>
+          <h3>Key numbers</h3>
           <div className="throughput-table-scroll">
             <table className="throughput-table">
               <tbody>
@@ -150,7 +197,7 @@ export function WasteAnalysisPanel({
         </article>
 
         <article className="throughput-table-card">
-          <h3>Delay By Step</h3>
+          <h3>Delay by step</h3>
           <div className="throughput-table-scroll">
             <table className="throughput-table throughput-steps-table">
               <thead>
@@ -185,6 +232,16 @@ export function WasteAnalysisPanel({
           </div>
         </article>
       </div>
+
+      <div className="diagnosis-section-head">
+        <p className="diagnosis-eyebrow">Confidence Note</p>
+        <span className="diagnosis-section-rule" aria-hidden="true" />
+      </div>
+      <footer className="report-note-footer">
+        {analysis.validations.length > 0
+          ? `Check before use: ${analysis.validations.map((validation) => validation.message).join(" ")}`
+          : `Model fallbacks used: ${analysis.summary.fallbackCount}. No blocking waste validation issues were flagged in the current run.`}
+      </footer>
     </section>
   );
 }

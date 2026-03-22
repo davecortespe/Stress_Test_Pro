@@ -213,12 +213,21 @@
 }
 
 .ls-hero-kicker {
-  margin: 18px 0 0;
+  margin: 22px 0 0;
   color: var(--ls-color-text-strong);
   font-family: "Oswald", "IBM Plex Sans", sans-serif;
-  font-size: clamp(1.6rem, 2.6vw, 2.3rem);
-  line-height: 1.12;
-  max-width: 16ch;
+  font-size: clamp(1.35rem, 2.2vw, 1.95rem);
+  line-height: 1.18;
+  max-width: 18ch;
+}
+
+.ls-hero-brand-line {
+  margin: 18px 0 0;
+  color: var(--ls-color-gold-soft);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .ls-brand-callout {
@@ -250,8 +259,8 @@
 }
 
 .ls-hero-description {
-  margin: 24px 0 0;
-  max-width: 38ch;
+  margin: 18px 0 0;
+  max-width: 42ch;
   font-size: 1rem;
   line-height: 1.75;
   color: #bcc8da;
@@ -364,6 +373,13 @@
   border-bottom-color: rgba(184, 202, 220, 0.8);
 }
 
+.ls-cta-support {
+  max-width: 44ch;
+  margin: 18px 0 0;
+  color: var(--ls-color-text-muted);
+  line-height: 1.65;
+}
+
 .report-showcase {
   padding: 18px;
   background:
@@ -473,6 +489,17 @@
   justify-content: space-between;
 }
 
+.report-preview-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.report-preview-link {
+  margin-top: 0;
+}
+
 .report-preview-proof > span {
   color: var(--ls-color-text-muted);
   font-size: 0.82rem;
@@ -565,6 +592,11 @@
 }
 
 .ls-services-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ls-decision-grid,
+.ls-why-click-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -663,6 +695,11 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
+  .ls-decision-grid,
+  .ls-why-click-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   #scenario-lab .ls-services-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -753,12 +790,13 @@
     padding: 36px;
   }
 
-  .report-showcase {
-    order: -1;
-  }
-
   .ls-services-grid,
   .ls-method-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ls-decision-grid,
+  .ls-why-click-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -796,6 +834,11 @@
     max-width: 100%;
   }
 
+  .ls-hero-brand-line {
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
   .ls-hero-description {
     max-width: 100%;
   }
@@ -816,6 +859,11 @@
     grid-template-columns: 1fr;
   }
 
+  .ls-decision-grid,
+  .ls-why-click-grid {
+    grid-template-columns: 1fr;
+  }
+
   .report-mode-tab {
     flex: 1 1 calc(50% - 10px);
     justify-content: center;
@@ -831,6 +879,7 @@
   }
 
   .ls-cta-row,
+  .report-preview-actions,
   .ls-contact-actions,
   .ls-footer,
   .ls-footer-links {
@@ -841,6 +890,11 @@
   .ls-btn,
   .ls-footer-links a:last-child {
     width: 100%;
+  }
+
+  .report-preview-actions .ls-inline-link {
+    width: 100%;
+    justify-content: center;
   }
 
   .ls-footer {

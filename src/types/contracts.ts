@@ -134,6 +134,9 @@ export interface OperationalDiagnosis {
   economicInterpretation: string;
   recommendedAction: string;
   scenarioGuidance: string;
+  demandRatePerHour: number;
+  outputRatePerHour: number;
+  missingFields: string[];
   aiOpportunityLens: {
     dataAlreadyExists: string;
     manualPatternDecisions: string;

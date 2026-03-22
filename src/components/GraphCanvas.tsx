@@ -8,6 +8,7 @@ interface GraphCanvasProps {
   nodeCardFields: string[];
   showProbabilities: boolean;
   animateEdges: boolean;
+  isPaused: boolean;
   viewportStorageKey?: string;
   parameterToggleLabel?: string;
   onParameterToggle?: () => void;
@@ -19,6 +20,10 @@ const VIEWBOX_WIDTH = 1280;
 const VIEWBOX_HEIGHT = 720;
 const ZOOM_MIN = 0.45;
 const ZOOM_MAX = 2.6;
+const NODE_CARD_WIDTH = 178;
+const NODE_CARD_HEIGHT = 186;
+const EDGE_LABEL_WIDTH = 128;
+const EDGE_LABEL_HEIGHT = 38;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -186,6 +191,7 @@ export function GraphCanvas({
   nodeCardFields,
   showProbabilities,
   animateEdges,
+  isPaused,
   viewportStorageKey,
   parameterToggleLabel,
   onParameterToggle,
@@ -193,9 +199,9 @@ export function GraphCanvas({
   resetViewSignal
 }: GraphCanvasProps) {
   const positions = useMemo(() => computeNodeLayout(graph), [graph]);
-  const nodeCardHeight = 184;
-  const nodeCardWidth = 170;
-  const nodeMetricSpacing = 12;
+  const nodeCardHeight = NODE_CARD_HEIGHT;
+  const nodeCardWidth = NODE_CARD_WIDTH;
+  const nodeMetricSpacing = 13;
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [dragState, setDragState] = useState<{
@@ -361,7 +367,7 @@ export function GraphCanvas({
   }, [focusStartLane, graph.nodes.length, graph.edges.length, resetViewSignal, readSavedViewport]);
 
   return (
-    <section className="graph-stage">
+    <section className={`graph-stage ${isPaused ? "is-paused" : "is-live"}`}>
       <div className="graph-toolbar">
         {parameterToggleLabel && onParameterToggle ? (
           <button type="button" onClick={onParameterToggle}>
@@ -387,6 +393,7 @@ export function GraphCanvas({
         </button>
         <div className="graph-zoom-readout">{Math.round(zoom * 100)}%</div>
       </div>
+      {isPaused ? <div className="graph-paused-watermark">PAUSED</div> : null}
       <svg
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
         onWheel={(event) => {
@@ -459,7 +466,10 @@ export function GraphCanvas({
               return null;
             }
 
-            const startX = source.x + 170;
+            const sourceMetrics = output.nodeMetrics[edge.from];
+            const completedLotValue = metricValue(sourceMetrics?.completedQty, "completedQty");
+            const showCompletedLot = completedLotValue !== "--";
+            const startX = source.x + nodeCardWidth;
             const startY = source.y + 44;
             const endX = target.x;
             const endY = target.y + 44;
@@ -480,6 +490,25 @@ export function GraphCanvas({
                     {(edge.probability * 100).toFixed(0)}%
                   </text>
                 ) : null}
+                {showCompletedLot ? (
+                  <g transform={`translate(${midX - EDGE_LABEL_WIDTH / 2}, ${midY + 8})`}>
+                    <rect
+                      className="edge-lot-badge"
+                      width={EDGE_LABEL_WIDTH}
+                      height={EDGE_LABEL_HEIGHT}
+                      rx="19"
+                      ry="19"
+                    />
+                    <text
+                      x={EDGE_LABEL_WIDTH / 2}
+                      y={25}
+                      textAnchor="middle"
+                      className="edge-lot-value"
+                    >
+                      {completedLotValue}
+                    </text>
+                  </g>
+                ) : null}
               </g>
             );
           })}
@@ -499,23 +528,24 @@ export function GraphCanvas({
             const wipFill = wipFillRatio(metrics?.wipQty, metrics?.capacityPerHour);
             const filledSegments = Math.round(wipFill * 10);
             const wipClass = wipLoadClass(wipFill);
-            const titleLines = clampTitleLines(node.label, 12);
+            const utilizationValue = metricValue(metrics?.utilization, "utilization");
+            const titleLines = clampTitleLines(node.label, 13);
             const titleLineCount = titleLines.length;
-            const completedLotValue = metricValue(metrics?.completedQty, "completedQty");
-            const displayFields = nodeCardFields.filter((field) => field !== "completedQty").slice(0, 3);
-            const titleBaseY = 24;
-            const titleLineHeight = 12;
+            const displayFields = nodeCardFields
+              .filter((field) => field !== "completedQty" && field !== "utilization")
+              .slice(0, 3);
+            const titleBaseY = 26;
+            const titleLineHeight = 13;
             const titleBottomY = titleBaseY + (titleLineCount - 1) * titleLineHeight;
-            const cornerLabelY = 22;
-            const cornerValueY = 44;
-            const subtitleY = titleBottomY + 14;
-            const nodeMetricY = subtitleY + 18;
+            const subtitleY = titleBottomY + 16;
+            const dividerY = subtitleY + 10;
+            const nodeMetricY = dividerY + 18;
             return (
               <g key={node.id} transform={`translate(${pos.x}, ${pos.y})`}>
                 <title>{node.label}</title>
                 <rect
                   className={`node-card node-card-${nodeStatus} node-heat-${heatBand} ${isBottleneck ? "node-card-bottleneck" : ""} ${onNodeDoubleClick ? "node-card-interactive" : ""}`}
-                  width="170"
+                  width={nodeCardWidth}
                   height={nodeCardHeight}
                   rx="12"
                   ry="12"
@@ -540,13 +570,19 @@ export function GraphCanvas({
                 <text x="12" y={subtitleY} className="node-subtitle">
                   {node.type}
                 </text>
-
-                <text x="158" y={cornerLabelY} textAnchor="end" className="node-corner-label">
-                  Completed Lot
+                <text x={nodeCardWidth - 14} y="22" textAnchor="end" className="node-util-kicker">
+                  util
                 </text>
-                <text x="158" y={cornerValueY} textAnchor="end" className="node-corner-value">
-                  {completedLotValue}
+                <text x={nodeCardWidth - 14} y="46" textAnchor="end" className="node-util-value">
+                  {utilizationValue}
                 </text>
+                <line
+                  x1="12"
+                  y1={dividerY}
+                  x2={nodeCardWidth - 12}
+                  y2={dividerY}
+                  className="node-divider"
+                />
 
                 {displayFields.map((field, index) => (
                   <text

@@ -11,12 +11,6 @@ export interface MarketingCard {
   label?: string;
 }
 
-export interface MarketingStep {
-  step: number;
-  title: string;
-  body: string;
-}
-
 export interface HeroMetric {
   label: string;
   value: string;
@@ -38,9 +32,9 @@ export const heroMockData: {
   metrics: HeroMetric[];
 } = {
   metrics: [
-    { label: "Report Views", value: "6 analytics modes", tone: "good" },
-    { label: "Scenario Controls", value: "Demand, labor, shifts, downtime", tone: "neutral" },
-    { label: "Decision Focus", value: "Constraint, cost, waste, kaizen", tone: "alert" }
+    { label: "Start Point", value: "Diagnosis-first entry", tone: "good" },
+    { label: "Shared Model", value: "Flow, diagnosis, throughput, waste, kaizen", tone: "neutral" },
+    { label: "Decision Aim", value: "See what to change first", tone: "alert" }
   ]
 };
 
@@ -48,74 +42,74 @@ export const reportShowcase: ReportShowcaseItem[] = [
   {
     id: "flow",
     label: "FLOW MAP",
-    eyebrow: "Live system view",
-    title: "See the modeled flow, not just the static map",
+    eyebrow: "Behaving system view",
+    title: "See the operation as a behaving system, not a static diagram",
     summary:
-      "The flow view turns the value stream into an operational picture with node status, WIP, completed output, queue exposure, and bottleneck movement.",
+      "Open the modeled flow to see where work accumulates, how instability moves, and which step is becoming the operational constraint under the current conditions.",
     bullets: [
-      "Graph-based flow map with live node performance state",
-      "Forecast throughput, brittleness, WIP, and completed output KPIs",
-      "Bottleneck migration visibility as scenario inputs change"
+      "See queue build, completed output, WIP, and bottleneck movement in one view",
+      "Watch how operational stress appears across the line as conditions change",
+      "Use the same model that powers diagnosis, economics, waste, and scenario testing"
     ],
     proofLabel: "Best for",
-    proofValue: "Spotting where instability starts"
+    proofValue: "Seeing where instability begins"
   },
   {
     id: "diagnosis",
     label: "DIAGNOSIS",
-    eyebrow: "Leader-ready readout",
-    title: "Translate simulation output into the operational story",
+    eyebrow: "Operational story first",
+    title: "Identify what is breaking and why",
     summary:
-      "The diagnosis view explains system status, the primary constraint, its mechanism, downstream effects, economic meaning, and the smallest stabilizing action.",
+      "Start with a plain-English diagnosis of system status, the primary constraint, downstream effects, economic meaning, and the first change most likely to stabilize the operation.",
     bullets: [
-      "Status classification: stable, stressed, brittle, or overloaded",
-      "Constraint mechanism and downstream blockage explained in plain language",
-      "Recommended next action tied to business impact"
+      "Translate model output into a decision-ready operational readout",
+      "Explain the constraint mechanism and downstream effects in direct language",
+      "Surface the first stabilizing action before teams dive into controls"
     ],
     proofLabel: "Best for",
-    proofValue: "Turning output into action"
+    proofValue: "Starting with operational clarity"
   },
   {
     id: "kaizen",
     label: "KAIZEN",
     eyebrow: "Improvement prioritization",
-    title: "Prioritize improvement events with evidence, not instinct",
+    title: "Prioritize the changes most likely to move output",
     summary:
-      "The kaizen report ranks the top improvement opportunities, surfaces likely root causes, and organizes them into a 5M fishbone so teams know where to focus first.",
+      "Use ranked improvement opportunities, likely root causes, and fishbone framing to focus teams on the next intervention with the strongest operational leverage.",
     bullets: [
-      "Top ranked improvement events with score and rationale",
-      "Fishbone categories across manpower, machine, method, material, and measurement",
-      "Missing-signal warnings that reduce improvement confidence"
+      "See which improvement events are most likely to move the system first",
+      "Connect evidence to likely root causes across people, method, machine, material, and measurement",
+      "Reduce wasted effort on low-leverage kaizen activity"
     ],
     proofLabel: "Best for",
-    proofValue: "Choosing the next kaizen event"
+    proofValue: "Choosing the next high-value intervention"
   },
   {
     id: "throughput",
     label: "THROUGHPUT",
-    eyebrow: "Economic leverage",
-    title: "Expose throughput economics at the step and P&L level",
+    eyebrow: "Performance and economics",
+    title: "Understand performance and economics together",
     summary:
-      "The throughput analysis connects operating performance to money: throughput per unit, profit per unit, bottleneck leverage, step costs, and improvement upside.",
+      "See how the current bottleneck changes throughput, leverage, and profit so teams can connect operational decisions to financial consequence without leaving the workspace.",
     bullets: [
-      "Summary analysis for TOC throughput, profit, and leverage",
-      "Step-level labor, equipment, and material cost breakdown",
-      "P&L view plus exportable CSV reports"
+      "Tie throughput, profit, and bottleneck leverage to the same system model",
+      "Expose the cost and gain logic behind constraint-relief decisions",
+      "Support decisions that must be sold beyond the dashboard"
     ],
     proofLabel: "Best for",
-    proofValue: "Quantifying the gain from constraint relief"
+    proofValue: "Quantifying the gain from change"
   },
   {
     id: "waste",
     label: "WASTE",
-    eyebrow: "Lead-time decomposition",
-    title: "Separate touch time from delay and expose hidden waste",
+    eyebrow: "Delay and loss visibility",
+    title: "Separate delay, touch time, and hidden loss",
     summary:
-      "The waste analysis compares lead time against touch time by step, highlights weighted waste across the route, and flags poor or missing timing signals.",
+      "Break lead time away from touch time, see where delay compounds across the route, and expose hidden loss that static maps or top-line dashboards tend to blur together.",
     bullets: [
-      "LT vs CT comparison across the line and by step",
-      "Weighted waste minutes and value-add ratio visibility",
-      "Data-quality flags for missing or contradictory timing inputs"
+      "Show where delay is compounding beyond the actual work content",
+      "Identify where hidden loss is building by step and across the route",
+      "Keep timing interpretation tied to the same modeled operation"
     ],
     proofLabel: "Best for",
     proofValue: "Finding where delay compounds"
@@ -123,17 +117,17 @@ export const reportShowcase: ReportShowcaseItem[] = [
   {
     id: "assumptions",
     label: "ASSUMPTIONS",
-    eyebrow: "Trust and data quality",
-    title: "Show what the model assumed before people act on the result",
+    eyebrow: "Trust before action",
+    title: "See what the model is assuming before acting on the result",
     summary:
-      "The assumptions report turns hidden defaults and estimated inputs into a plain-language checklist so end users know what is solid, what needs review, and what to verify first.",
+      "Review defaults, estimates, and missing signals in plain language so the team knows how much to trust the result and what to verify before making a bigger call.",
     bullets: [
-      "Trust level summary for the current scenario",
-      "Plain-language explanation of estimated or defaulted inputs",
-      "Priority checks before using the report for bigger decisions"
+      "Show trust level and major assumption exposure before action",
+      "Make hidden defaults visible to leaders and operators",
+      "Focus verification on the few inputs most likely to change the decision"
     ],
     proofLabel: "Best for",
-    proofValue: "Seeing how much to trust the result"
+    proofValue: "Checking decision confidence"
   }
 ];
 
@@ -144,106 +138,75 @@ export const marketingContent = {
   leanStormingUrl: "{{LEANSTORMING_URL}}",
 
   nav: [
-    { id: "analytics", label: "Analytics Views" },
-    { id: "scenario-lab", label: "Scenario Lab" },
-    { id: "exports", label: "Exports" },
-    { id: "about", label: "Platform" },
-    { id: "enter", label: "Enter Simulation" }
+    { id: "decision-views", label: "Decision Views" },
+    { id: "enter", label: "Start Now" }
   ] satisfies MarketingNavItem[],
 
   hero: {
     eyebrow: "Operational analytics for value stream systems",
-    kicker: "Simulation-backed reports that show what is breaking, why it is breaking, and what to change first.",
-    headline: "Sell the decision, not just the dashboard.",
+    headline: "Turn your value stream map into a working operational model.",
+    supportLine: "See what is breaking, why it is breaking, and what to change first.",
+    brandLine: "Sell the decision, not just the dashboard.",
     description:
-      "This app converts a value stream map into a modeled flow system, then turns the output into five decision views: flow behavior, diagnosis, kaizen priorities, throughput economics, and waste analysis.",
-    primaryCta: "Review Analytics Views",
-    secondaryCta: "See Scenario Controls",
-    workspaceCta: "Enter the simulation"
+      "LeanStorming converts mapped operations into simulation-backed decision views for diagnosis, throughput, kaizen prioritization, waste analysis, and scenario testing.",
+    primaryCta: "Start the diagnosis",
+    secondaryCta: "Explore analytics views",
+    workspaceCta: "Go straight to simulation",
+    supportText:
+      "Enter the same modeled operation through flow, diagnosis, throughput, waste, assumptions, or scenario controls."
   },
 
-  analytics: {
-    eyebrow: "Analytics Views",
-    title: "Five report modes built from the same modeled operation",
+  decisionViews: {
+    eyebrow: "Decision Views",
+    title: "One model. Five ways to decide what to do next.",
     body: [
-      "The landing experience now sells the app the way the simulator works: one operational model, multiple analysis surfaces, each designed for a different decision."
+      "LeanStorming gives you multiple decision readouts from the same operational model, so you can move from bottleneck visibility to diagnosis, economics, waste, and intervention testing without changing tools or rebuilding the story."
     ]
   },
 
-  scenarioLab: {
-    eyebrow: "Scenario Lab",
-    title: "Test the interventions operators actually debate",
+  whyClickNow: {
+    eyebrow: "Why Enter Now",
+    title: "Why enter now",
     body: [
-      "The simulator is built around editable inputs from the dashboard configuration and runtime model. Teams can stage changes, run the clock, compare behavior, and save scenarios into a reusable library."
+      "The click opens a serious decision environment, not a generic dashboard. You enter the modeled operation with immediate paths into diagnosis, flow, throughput, waste, assumptions, and scenario testing.",
+      "That means less time interpreting the tool and more time understanding what is breaking, what it costs, and what to change first."
     ],
     cards: [
       {
-        label: "Demand",
-        title: "Load demand and mix changes into the model",
+        label: "Start with diagnosis",
+        title: "Begin with the operational story, not raw controls",
         body:
-          "Test demand multiplier and mix profile changes to see where constraints migrate and whether the line becomes brittle under surge conditions."
+          "Open directly into diagnosis-first mode so the first screen explains what is happening in the system before you dig into interventions."
       },
       {
-        label: "Capacity",
-        title: "Stress staffing, equipment, downtime, and setup loss",
+        label: "Compare interventions",
+        title: "Move from bottleneck visibility to scenario testing in one workspace",
         body:
-          "Model labor and equipment multipliers, unplanned downtime, and setup penalties so capacity decisions are tested before the floor absorbs the risk."
+          "Shift from the behaving flow to economics, waste, kaizen, and scenario changes without losing the shared model underneath the decision."
       },
       {
-        label: "Execution",
-        title: "Stage, save, and replay scenarios",
+        label: "Support the decision",
+        title: "Use the workspace to justify action, not just display metrics",
         body:
-          "Pause the run, stage edits, save the current configuration, import scenario libraries from CSV, and reload scenarios without rebuilding the model."
+          "LeanStorming helps teams explain why a change matters, what happens downstream, and why this move should come first."
       }
     ] satisfies MarketingCard[]
   },
 
-  exports: {
-    eyebrow: "Exports And Reporting",
-    title: "Move from insight to handoff without rebuilding the story",
-    body: [
-      "The app supports CSV exports for analysis tables plus committed scenario/export workflows for packaging the accepted forecast, metrics, and diagnosis."
-    ],
-    steps: [
-      {
-        step: 1,
-        title: "Run the scenario",
-        body: "Set the horizon, operating shifts, and intervention assumptions, then run the model until the system behavior is clear."
-      },
-      {
-        step: 2,
-        title: "Capture the readout",
-        body: "Export throughput and waste CSVs, save the scenario library entry, and generate a diagnosis aligned to the committed case."
-      },
-      {
-        step: 3,
-        title: "Hand off the decision package",
-        body: "Use the accepted scenario bundle workflow to preserve the model, committed scenario, metrics, and diagnosis together."
-      }
-    ] satisfies MarketingStep[]
-  },
-
-  about: {
-    eyebrow: "Platform",
-    title: "A reusable simulator shell for operational analytics",
-    body:
-      "The repository is designed as a reusable starter for simulation projects: configurable dashboard shell, lazy-loaded simulator route, deterministic forecast outputs, scenario library support, and leader-ready diagnosis.\n\nThat makes the landing page strongest when it sells the analytics outputs and the scenario-testing workflow, not just the visual theme."
-  },
-
   enter: {
-    eyebrow: "Enter Simulation",
-    title: "Go straight into the workspace when you are ready to test the system",
+    eyebrow: "Enter The Modeled Operation",
+    title: "Enter the modeled operation and begin with diagnosis.",
     body: [
-      "The landing page should close with a direct route into `/sim` so visitors can move from the product story to the actual controls without friction."
+      "Move from map to diagnosis, throughput, waste, and scenario testing in one workspace built for operational decisions under stress."
     ],
-    primaryCta: "Open /sim Workspace",
-    secondaryCta: "Visit LeanStorming.com"
+    primaryCta: "Start the diagnosis",
+    secondaryCta: "Go straight to simulation"
   },
 
   footer: {
     attribution: "LeanStorming Operational Intelligence Platform",
     builtFor: "Built for {{COMPANY_NAME}}",
-    poweredBy: "Simulation-backed analytics and operator-ready reports",
+    poweredBy: "Operational decision intelligence for value stream systems",
     url: "LeanStorming.com",
     signoff: "\u00A92026 by LeanStorming.com"
   }

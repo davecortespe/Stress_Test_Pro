@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { KpiConfig } from "../types/contracts";
 
 interface KpiRowProps {
@@ -80,6 +80,77 @@ function formatValue(value: number | string, format?: KpiConfig["format"], decim
   return value.toFixed(decimals);
 }
 
+function buildDeltaLabel(key: string, current: number, previous: number, format?: KpiConfig["format"]): string {
+  const delta = current - previous;
+  if (Math.abs(delta) < 1e-6) {
+    return "No change";
+  }
+  const sign = delta > 0 ? "+" : "";
+  if (format === "percent") {
+    return `${sign}${(delta * 100).toFixed(1)} pts`;
+  }
+  if (key === "forecastThroughput") {
+    return `${sign}${delta.toFixed(2)} /hr`;
+  }
+  return `${sign}${Math.round(delta)}`;
+}
+
+function getSeverityMeta(key: string, rawValue: number | string): { tone: "neutral" | "good" | "watch" | "alert"; label: string } | null {
+  if (typeof rawValue !== "number") {
+    return null;
+  }
+  if (key === "bottleneckIndex") {
+    if (rawValue >= 0.95) {
+      return { tone: "alert", label: "Critical" };
+    }
+    if (rawValue >= 0.85) {
+      return { tone: "watch", label: "Tight" };
+    }
+    if (rawValue >= 0.7) {
+      return { tone: "neutral", label: "Elevated" };
+    }
+    return { tone: "good", label: "Controlled" };
+  }
+  if (key === "totalWipQty") {
+    if (rawValue >= 1500) {
+      return { tone: "alert", label: "High WIP" };
+    }
+    if (rawValue >= 750) {
+      return { tone: "watch", label: "Building" };
+    }
+    return { tone: "good", label: "Contained" };
+  }
+  if (key === "forecastThroughput") {
+    if (rawValue < 3) {
+      return { tone: "alert", label: "Low output" };
+    }
+    if (rawValue < 5) {
+      return { tone: "watch", label: "Constrained" };
+    }
+    return { tone: "good", label: "Stable" };
+  }
+  if (key === "totalCompletedOutputPieces") {
+    return { tone: "neutral", label: "Run total" };
+  }
+  return null;
+}
+
+function buildSparklinePoints(values: number[], width = 72, height = 22): string {
+  if (values.length === 0) {
+    return "";
+  }
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = Math.max(max - min, 1e-6);
+  return values
+    .map((value, index) => {
+      const x = values.length === 1 ? width / 2 : (index / (values.length - 1)) * width;
+      const y = height - ((value - min) / span) * height;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+}
+
 function KpiCard({
   kpi,
   rawValue,
@@ -93,6 +164,9 @@ function KpiCard({
 }) {
   const prevRef = useRef<number | string>(rawValue);
   const [trend, setTrend] = useState<"flat" | "up" | "down">("flat");
+  const [history, setHistory] = useState<number[]>(() =>
+    typeof rawValue === "number" ? [rawValue] : []
+  );
   const numericTarget = typeof rawValue === "number" ? rawValue : 0;
   const animatedNumeric = useAnimatedNumber(numericTarget);
 
@@ -112,6 +186,17 @@ function KpiCard({
     prevRef.current = rawValue;
   }, [rawValue]);
 
+  useEffect(() => {
+    if (typeof rawValue !== "number") {
+      setHistory([]);
+      return;
+    }
+    setHistory((current) => {
+      const next = [...current, rawValue];
+      return next.slice(-12);
+    });
+  }, [rawValue]);
+
   const displayValue =
     typeof rawValue === "number"
       ? formatValue(animatedNumeric, kpi.format, kpi.decimals ?? 1)
@@ -120,12 +205,19 @@ function KpiCard({
   const tooltipId = `kpi-help-${kpi.key.replace(/[^a-z0-9_-]/gi, "-").toLowerCase()}`;
   const showHelp = variant !== "overlay";
   const isTotalCompletedLots = kpi.key === "totalCompletedOutputPieces";
+  const deltaLabel =
+    typeof rawValue === "number" && typeof prevRef.current === "number"
+      ? buildDeltaLabel(kpi.key, rawValue, prevRef.current, kpi.format)
+      : null;
+  const severityMeta = getSeverityMeta(kpi.key, rawValue);
+  const sparklinePoints = useMemo(() => buildSparklinePoints(history), [history]);
+  const showContext = typeof rawValue === "number" && variant !== "compact";
 
   return (
     <article
       className={`kpi-card kpi-${trend} kpi-${variant} ${isFeatured ? "kpi-featured" : ""} ${
         isTotalCompletedLots ? "kpi-magenta-outline" : ""
-      }`}
+      } ${severityMeta ? `kpi-tone-${severityMeta.tone}` : ""}`}
     >
       <div className="kpi-label-row">
         <p>{kpi.label}</p>
@@ -146,6 +238,21 @@ function KpiCard({
         ) : null}
       </div>
       <h2>{displayValue}</h2>
+      {showContext ? (
+        <div className="kpi-context-row">
+          <div className="kpi-context-chips">
+            {severityMeta ? (
+              <span className={`kpi-context-chip tone-${severityMeta.tone}`}>{severityMeta.label}</span>
+            ) : null}
+            {deltaLabel ? <span className="kpi-context-chip tone-muted">{deltaLabel}</span> : null}
+          </div>
+          {sparklinePoints ? (
+            <svg viewBox="0 0 72 22" className={`kpi-sparkline trend-${trend}`} aria-hidden="true">
+              <polyline points={sparklinePoints} />
+            </svg>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }

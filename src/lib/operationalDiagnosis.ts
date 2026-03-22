@@ -273,6 +273,9 @@ export function buildOperationalDiagnosis(
     economicInterpretation,
     recommendedAction,
     scenarioGuidance,
+    demandRatePerHour: demandRate,
+    outputRatePerHour: Math.max(throughput, bottleneckCapacity || throughput),
+    missingFields: [...missingSignals, ...missingModelFields],
     aiOpportunityLens: {
       dataAlreadyExists:
         "Utilization, queue, WIP, and lead-time data already exist here but are usually reviewed as separate metrics instead of as one flow signal.",
@@ -315,6 +318,10 @@ export function formatOperationalDiagnosisMarkdown(diagnosis: OperationalDiagnos
     `**7. Scenario Guidance**`,
     diagnosis.scenarioGuidance,
     "",
+    `**Rates**`,
+    `Demand rate: ${oneDecimal(diagnosis.demandRatePerHour)} units/hr`,
+    `Output rate: ${oneDecimal(diagnosis.outputRatePerHour)} units/hr`,
+    "",
     `**AI Opportunity Lens**`,
     `- Data already exists but is underused: ${diagnosis.aiOpportunityLens.dataAlreadyExists}`,
     `- Manual but pattern-based decisions: ${diagnosis.aiOpportunityLens.manualPatternDecisions}`,
@@ -323,6 +330,9 @@ export function formatOperationalDiagnosisMarkdown(diagnosis: OperationalDiagnos
     `- Visibility gaps causing profit leakage: ${diagnosis.aiOpportunityLens.visibilityGap}`,
     "",
     `**Confidence**`,
-    `${diagnosis.confidence} - ${diagnosis.confidenceNote}`
+    `${diagnosis.confidence} - ${diagnosis.confidenceNote}`,
+    diagnosis.missingFields.length > 0
+      ? `Missing fields: ${diagnosis.missingFields.join(", ")}`
+      : "Missing fields: none noted"
   ].join("\n");
 }

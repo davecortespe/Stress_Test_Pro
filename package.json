@@ -13,7 +13,7 @@
     "analyze:lead-time": "node scripts/analyze-lead-time-impact.mjs",
     "export:consulting-report": "node scripts/export-consulting-report.mjs",
     "export:bundle": "node scripts/export-scenario-bundle.mjs",
-    "export:pdf-report": "python scripts/export_kaizen_report_pdf.py",
+    "export:pdf-report": "python scripts/export_executive_report_pdf.py",
     "export:replit": "node scripts/export-replit-bundle.mjs",
     "validate:models": "node scripts/validate-models.mjs",
     "test:throughput": "node scripts/run-throughput-tests.mjs",

@@ -21,6 +21,8 @@ interface UseSimulatorModelDataResult {
   flowViewportStorageKey: string;
 }
 
+const DEFAULT_SIMULATION_HORIZON_HOURS = "24";
+
 export function useSimulatorModelData(): UseSimulatorModelDataResult {
   const exportBundleData = useMemo(() => getExportBundleData(), []);
 
@@ -39,6 +41,7 @@ export function useSimulatorModelData(): UseSimulatorModelDataResult {
   const baselineScenario = useMemo(
     () => ({
       ...getDefaultScenario(boundParameterGroups, forecastModel.inputDefaults),
+      simulationHorizonHours: DEFAULT_SIMULATION_HORIZON_HOURS,
       ...(startupScenarioOverride ?? {})
     }),
     [boundParameterGroups, forecastModel.inputDefaults, startupScenarioOverride]

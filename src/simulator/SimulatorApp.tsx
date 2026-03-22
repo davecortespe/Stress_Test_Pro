@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useLocation } from "react-router-dom";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { ParameterSidebar } from "../components/ParameterSidebar";
 import { ScenarioLibraryPanel } from "../components/ScenarioLibraryPanel";
@@ -12,7 +13,6 @@ import {
 import {
   buildWasteAnalysis
 } from "../lib/wasteAnalysis";
-import consultingReportSpecJson from "../../models/active/consulting_report_export.json";
 import type { SimulatorResultsMode } from "../types/contracts";
 import {
   buildInspectorValues,
@@ -24,7 +24,7 @@ import {
   assumptionsKpis,
   downloadTextFile,
   ExportNotice,
-  KAIZEN_PDF_URL,
+  EXECUTIVE_PDF_URL,
   kaizenKpis,
   throughputKpis,
   wasteKpis
@@ -35,16 +35,27 @@ import { SimulatorResultsStage } from "./SimulatorResultsStage";
 import { useSimulatorModelData } from "./useSimulatorModelData";
 import "./simulator.css";
 
-function buildFileSafeBaseName(value: string, fallback: string): string {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return normalized || fallback;
+const DEFAULT_RESULTS_MODE: SimulatorResultsMode = "flow";
+const RESULTS_MODE_OPTIONS = new Set<SimulatorResultsMode>([
+  "flow",
+  "diagnosis",
+  "kaizen",
+  "throughput",
+  "waste",
+  "assumptions"
+]);
+
+function getInitialResultsMode(search: string): SimulatorResultsMode {
+  const params = new URLSearchParams(search);
+  const requestedView = params.get("view");
+  if (requestedView && RESULTS_MODE_OPTIONS.has(requestedView as SimulatorResultsMode)) {
+    return requestedView as SimulatorResultsMode;
+  }
+  return DEFAULT_RESULTS_MODE;
 }
 
 export default function SimulatorApp() {
+  const location = useLocation();
   const libraryFileInputRef = useRef<HTMLInputElement | null>(null);
   const {
     dashboardConfig,
@@ -85,8 +96,11 @@ export default function SimulatorApp() {
   const [inspectorStepId, setInspectorStepId] = useState<string | null>(null);
   const [inspectorAnchor, setInspectorAnchor] = useState<{ x: number; y: number } | null>(null);
   const [appNotice, setAppNotice] = useState<ExportNotice | null>(null);
-  const [resultsMode, setResultsMode] = useState<SimulatorResultsMode>("flow");
+  const [resultsMode, setResultsMode] = useState<SimulatorResultsMode>(() =>
+    getInitialResultsMode(location.search)
+  );
   const [isScenarioLibraryOpen, setIsScenarioLibraryOpen] = useState(false);
+  const isReportMode = resultsMode !== "flow";
 
   const {
     libraryEntries,
@@ -265,6 +279,7 @@ export default function SimulatorApp() {
 
   const resetSimulationView = () => {
     resetSimulation();
+    setResultsMode(DEFAULT_RESULTS_MODE);
     closeInspector();
   };
 
@@ -313,33 +328,12 @@ export default function SimulatorApp() {
     }
   };
 
-  const openKaizenPdf = () => {
-    window.open(KAIZEN_PDF_URL, "_blank", "noopener,noreferrer");
+  const openExecutivePdf = () => {
+    window.open(EXECUTIVE_PDF_URL, "_blank", "noopener,noreferrer");
     showNotice(
       "success",
-      "Opened the latest Kaizen PDF report. If it looks stale, rerun npm run export:pdf-report first."
+      "Opened the latest executive PDF report. If it looks stale, rerun npm run export:pdf-report first."
     );
-  };
-
-  const exportConsultingReport = async () => {
-    const reportBase = `${buildFileSafeBaseName(dashboardConfig.appTitle, "consulting-report")}-consulting-report`;
-    const mdUrl = new URL("../../models/active/consulting_report_export.md", import.meta.url);
-    const htmlUrl = new URL("../../models/active/consulting_report_export.html", import.meta.url);
-
-    try {
-      const [mdResponse, htmlResponse] = await Promise.all([fetch(mdUrl), fetch(htmlUrl)]);
-      if (!mdResponse.ok || !htmlResponse.ok) {
-        throw new Error("Consulting report assets could not be loaded.");
-      }
-      const [mdText, htmlText] = await Promise.all([mdResponse.text(), htmlResponse.text()]);
-      downloadTextFile(`${reportBase}.json`, `${JSON.stringify(consultingReportSpecJson, null, 2)}\n`);
-      downloadTextFile(`${reportBase}.md`, mdText);
-      downloadTextFile(`${reportBase}.html`, htmlText, "text/html;charset=utf-8");
-      showNotice("success", `Exported consulting report package: ${reportBase}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Consulting report export failed.";
-      showNotice("error", `Consulting report export failed: ${message}`);
-    }
   };
 
   const loadScenarioFromLibrary = (scenarioId: string) => {
@@ -353,6 +347,7 @@ export default function SimulatorApp() {
       ...baselineScenario,
       ...scenario
     });
+    setResultsMode(DEFAULT_RESULTS_MODE);
     closeInspector();
     setIsScenarioLibraryOpen(false);
 
@@ -361,8 +356,8 @@ export default function SimulatorApp() {
   };
 
   return (
-    <div className="simulator-page">
-      <div className="app-shell">
+    <div className={`simulator-page ${isReportMode ? "reports-layout" : "flow-layout"}`}>
+      <div className={`app-shell ${isReportMode ? "reports-layout" : "flow-layout"}`}>
         <DashboardHeader
           brandLabel="LeanStorming Operational Stress Labs"
           title={dashboardConfig.appTitle}
@@ -386,7 +381,7 @@ export default function SimulatorApp() {
           onStartPause={startPauseWithInspectorReset}
           onReset={resetSimulationView}
           onSaveCurrentScenario={saveCommittedScenarioToLibrary}
-          onExportConsultingReport={exportConsultingReport}
+          onOpenExecutivePdf={openExecutivePdf}
           onToggleScenarioLibrary={() => setIsScenarioLibraryOpen((current) => !current)}
           onFocusConstraint={() => setResultsMode("diagnosis")}
           onSimHorizonChange={(value) => updateScenarioValue("simulationHorizonHours", value)}
@@ -405,7 +400,9 @@ export default function SimulatorApp() {
         ) : null}
 
         <div
-          className={`content-shell ${isParameterRailOpen ? "rail-open" : "rail-collapsed"}`}
+          className={`content-shell ${isParameterRailOpen ? "rail-open" : "rail-collapsed"} ${
+            isReportMode ? "reports-layout" : "flow-layout"
+          }`}
           style={{ "--parameter-rail-width": `${parameterRailWidth}px` } as CSSProperties}
         >
           <aside className="left-rail">
@@ -441,7 +438,7 @@ export default function SimulatorApp() {
             assumptionsReport={assumptionsReport}
             onToggleParameterRail={toggleParameterRail}
             onOpenStepInspector={openStepInspector}
-            onOpenKaizenPdf={openKaizenPdf}
+            onOpenExecutivePdf={openExecutivePdf}
           />
         </div>
 

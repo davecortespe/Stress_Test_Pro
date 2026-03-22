@@ -6,6 +6,8 @@ import type { SimulatorResultsMode } from "../types/contracts";
 import { heroMockData, marketingContent, reportShowcase } from "./marketingContent";
 import "./landing.css";
 
+const SIMULATOR_ENTRY_PATH = "/sim";
+
 function hasTemplateToken(value: string): boolean {
   return value.includes("{{") && value.includes("}}");
 }
@@ -32,7 +34,10 @@ function scrollToSection(sectionId: string): void {
   }
 }
 
-const companyName = resolveTemplate(import.meta.env.VITE_COMPANY_NAME || marketingContent.companyName, "your operations team");
+const companyName = resolveTemplate(
+  import.meta.env.VITE_COMPANY_NAME || marketingContent.companyName,
+  "your operations team"
+);
 const clientLogo = resolveTemplate(import.meta.env.VITE_CLIENT_LOGO_URL || marketingContent.clientLogo, "");
 const simulationName = resolveTemplate(
   import.meta.env.VITE_SIMULATION_NAME || marketingContent.simulationName,
@@ -65,18 +70,20 @@ function SectionIntro({
 function ReportShowcase({
   activeMode,
   onSelectMode,
-  onEnterSimulation
+  onStartDiagnosis,
+  onGoStraightToSimulation
 }: {
   activeMode: SimulatorResultsMode;
   onSelectMode: (mode: SimulatorResultsMode) => void;
-  onEnterSimulation: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onStartDiagnosis: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onGoStraightToSimulation: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const activeReport = reportShowcase.find((item) => item.id === activeMode) ?? reportShowcase[0];
 
   return (
-    <div className="report-showcase" aria-label="Analytics showcase">
-      <p className="ls-brand-callout">Inside {operationalStressLabsBrand}</p>
-      <div className="report-mode-tabs" role="tablist" aria-label="analytics views">
+    <div className="report-showcase" aria-label="Decision view preview">
+      <p className="ls-brand-callout">One modeled operation. Multiple decision entries.</p>
+      <div className="report-mode-tabs" role="tablist" aria-label="decision views">
         {reportShowcase.map((item) => (
           <button
             key={item.id}
@@ -114,9 +121,14 @@ function ReportShowcase({
               </div>
             ))}
           </div>
-          <Link to="/sim" className="ls-btn ls-btn-primary" onClick={onEnterSimulation}>
-            Enter the simulation
-          </Link>
+          <div className="report-preview-actions">
+            <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-primary" onClick={onStartDiagnosis}>
+              {marketingContent.hero.primaryCta}
+            </Link>
+            <Link to={SIMULATOR_ENTRY_PATH} className="ls-inline-link report-preview-link" onClick={onGoStraightToSimulation}>
+              {marketingContent.hero.workspaceCta}
+            </Link>
+          </div>
         </article>
       </div>
     </div>
@@ -126,14 +138,15 @@ function ReportShowcase({
 export default function LandingPage() {
   const [activeReportMode, setActiveReportMode] = useState<SimulatorResultsMode>("diagnosis");
   const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false);
+  const [pendingSimulationPath, setPendingSimulationPath] = useState(SIMULATOR_ENTRY_PATH);
   const navigate = useNavigate();
   const builtForLabel = marketingContent.footer.builtFor.replace("{{COMPANY_NAME}}", companyName);
-  const aboutParagraphs = marketingContent.about.body.split("\n\n");
 
-  function requestSimulationEntry(event: MouseEvent<HTMLAnchorElement>): void {
+  function requestSimulationEntry(event: MouseEvent<HTMLAnchorElement>, targetPath: string): void {
     event.preventDefault();
+    setPendingSimulationPath(targetPath);
     if (hasSimulatorAccess()) {
-      navigate("/sim");
+      navigate(targetPath);
       return;
     }
     setIsAccessDialogOpen(true);
@@ -149,9 +162,6 @@ export default function LandingPage() {
           </a>
 
           <nav className="ls-nav" aria-label="Primary">
-            <a href="#hero" className="is-active">
-              Home
-            </a>
             {marketingContent.nav.map((item) => (
               <a key={item.id} href={`#${item.id}`}>
                 {item.label}
@@ -166,36 +176,43 @@ export default function LandingPage() {
           <div className="ls-hero-panel analytics-hero-panel">
             <div className="ls-hero-copy">
               <p className="ls-hero-eyebrow">{marketingContent.hero.eyebrow}</p>
-              <p className="ls-hero-kicker">{marketingContent.hero.kicker}</p>
               <h1>{marketingContent.hero.headline}</h1>
+              <p className="ls-hero-kicker">{marketingContent.hero.supportLine}</p>
+              <p className="ls-hero-brand-line">{marketingContent.hero.brandLine}</p>
               <p className="ls-hero-description">{marketingContent.hero.description}</p>
 
               <div className="ls-hero-meta">
                 {clientLogo ? <img src={clientLogo} alt={`${companyName} logo`} className="ls-client-logo" /> : null}
-            <div>
-              <p>{builtForLabel}</p>
-              <span>{simulationName}</span>
-            </div>
-          </div>
+                <div>
+                  <p>{builtForLabel}</p>
+                  <span>{simulationName}</span>
+                </div>
+              </div>
 
-          <div className="ls-cta-row">
-            <button
-                  type="button"
+              <div className="ls-cta-row">
+                <Link
+                  to={SIMULATOR_ENTRY_PATH}
                   className="ls-btn ls-btn-primary"
-                  onClick={() => scrollToSection("analytics")}
+                  onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
                 >
                   {marketingContent.hero.primaryCta}
-                </button>
+                </Link>
                 <button
                   type="button"
                   className="ls-btn ls-btn-secondary"
-                  onClick={() => scrollToSection("scenario-lab")}
+                  onClick={() => scrollToSection("decision-views")}
                 >
                   {marketingContent.hero.secondaryCta}
                 </button>
               </div>
 
-              <Link to="/sim" className="ls-inline-link" onClick={requestSimulationEntry}>
+              <p className="ls-cta-support">{marketingContent.hero.supportText}</p>
+
+              <Link
+                to={SIMULATOR_ENTRY_PATH}
+                className="ls-inline-link"
+                onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
+              >
                 {marketingContent.hero.workspaceCta}
               </Link>
             </div>
@@ -203,19 +220,20 @@ export default function LandingPage() {
             <ReportShowcase
               activeMode={activeReportMode}
               onSelectMode={setActiveReportMode}
-              onEnterSimulation={requestSimulationEntry}
+              onStartDiagnosis={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
+              onGoStraightToSimulation={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
             />
           </div>
         </section>
 
-        <section id="analytics" className="ls-section section-shell">
+        <section id="decision-views" className="ls-section section-shell">
           <SectionIntro
-            eyebrow={marketingContent.analytics.eyebrow}
-            title={marketingContent.analytics.title}
-            body={marketingContent.analytics.body}
+            eyebrow={marketingContent.decisionViews.eyebrow}
+            title={marketingContent.decisionViews.title}
+            body={marketingContent.decisionViews.body}
           />
 
-          <div className="ls-card-grid ls-services-grid">
+          <div className="ls-card-grid ls-services-grid ls-decision-grid">
             {reportShowcase.map((item) => (
               <article key={item.id} className="ls-surface-card ls-service-card">
                 <span className="ls-card-label">{item.label}</span>
@@ -226,50 +244,21 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="scenario-lab" className="ls-section section-shell">
+        <section id="why-enter" className="ls-section section-shell">
           <div className="ls-panel-shell">
             <SectionIntro
-              eyebrow={marketingContent.scenarioLab.eyebrow}
-              title={marketingContent.scenarioLab.title}
-              body={marketingContent.scenarioLab.body}
+              eyebrow={marketingContent.whyClickNow.eyebrow}
+              title={marketingContent.whyClickNow.title}
+              body={marketingContent.whyClickNow.body}
             />
 
-            <div className="ls-card-grid ls-services-grid">
-              {marketingContent.scenarioLab.cards.map((card) => (
+            <div className="ls-card-grid ls-why-click-grid">
+              {marketingContent.whyClickNow.cards.map((card) => (
                 <article key={card.title} className="ls-surface-card ls-service-card">
                   {card.label ? <span className="ls-card-label">{card.label}</span> : null}
                   <h3>{card.title}</h3>
                   <p>{card.body}</p>
                 </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="exports" className="ls-section section-shell">
-          <SectionIntro
-            eyebrow={marketingContent.exports.eyebrow}
-            title={marketingContent.exports.title}
-            body={marketingContent.exports.body}
-          />
-
-          <div className="ls-card-grid ls-method-grid">
-            {marketingContent.exports.steps.map((item) => (
-              <article key={item.step} className="ls-surface-card ls-method-card">
-                <span className="ls-step-index">Step {item.step}</span>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="about" className="ls-section section-shell">
-          <div className="ls-panel-shell ls-about-panel">
-            <SectionIntro eyebrow={marketingContent.about.eyebrow} title={marketingContent.about.title} />
-            <div className="ls-about-copy">
-              {aboutParagraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
               ))}
             </div>
           </div>
@@ -287,17 +276,20 @@ export default function LandingPage() {
             </div>
 
             <div className="ls-contact-actions">
-              <Link to="/sim" className="ls-btn ls-btn-primary" onClick={requestSimulationEntry}>
+              <Link
+                to={SIMULATOR_ENTRY_PATH}
+                className="ls-btn ls-btn-primary"
+                onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
+              >
                 {marketingContent.enter.primaryCta}
               </Link>
-              <a
-                href={leanStormingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to={SIMULATOR_ENTRY_PATH}
                 className="ls-btn ls-btn-secondary"
+                onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
               >
                 {marketingContent.enter.secondaryCta}
-              </a>
+              </Link>
             </div>
           </div>
         </section>
@@ -315,7 +307,12 @@ export default function LandingPage() {
           <a href={leanStormingUrl} target="_blank" rel="noopener noreferrer">
             {marketingContent.footer.url}
           </a>
-          <Link to="/sim" onClick={requestSimulationEntry}>Enter Simulation</Link>
+          <Link
+            to={SIMULATOR_ENTRY_PATH}
+            onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
+          >
+            {marketingContent.hero.primaryCta}
+          </Link>
         </div>
       </footer>
 
@@ -324,7 +321,7 @@ export default function LandingPage() {
           onValidated={() => {
             grantSimulatorAccess();
             setIsAccessDialogOpen(false);
-            navigate("/sim");
+            navigate(pendingSimulationPath);
           }}
           onCancel={() => setIsAccessDialogOpen(false)}
         />

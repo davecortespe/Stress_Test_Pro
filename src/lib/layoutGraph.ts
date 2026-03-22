@@ -10,8 +10,8 @@ export function computeNodeLayout(graph: VsmGraph): Record<string, NodePosition>
   const outgoing = new Map<string, string[]>();
   const level = new Map<string, number>();
   const byLevel = new Map<number, string[]>();
-  const maxNodeWidth = 170;
-  const maxNodeHeight = 108;
+  const maxNodeWidth = 178;
+  const maxNodeHeight = 186;
   const xGap = 130;
   const yGap = 36;
 

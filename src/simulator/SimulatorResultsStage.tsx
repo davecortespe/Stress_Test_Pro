@@ -39,7 +39,7 @@ interface SimulatorResultsStageProps {
   assumptionsReport: AssumptionsReportResult;
   onToggleParameterRail: () => void;
   onOpenStepInspector: (nodeId: string, anchor: { x: number; y: number }) => void;
-  onOpenKaizenPdf: () => void;
+  onOpenExecutivePdf: () => void;
 }
 
 export function SimulatorResultsStage({
@@ -60,13 +60,18 @@ export function SimulatorResultsStage({
   assumptionsReport,
   onToggleParameterRail,
   onOpenStepInspector,
-  onOpenKaizenPdf
+  onOpenExecutivePdf
 }: SimulatorResultsStageProps) {
   const isFlowMode = resultsMode === "flow";
+  const usesStandaloneReportShell =
+    resultsMode === "diagnosis" ||
+    resultsMode === "kaizen" ||
+    resultsMode === "throughput" ||
+    resultsMode === "waste";
 
   return (
     <main className={`center-stage ${isFlowMode ? "center-stage-flow" : "reports-mode"}`}>
-      {!isFlowMode ? (
+      {!isFlowMode && !usesStandaloneReportShell ? (
         <>
           <div className="stage-toolbar">
             <div className="stage-title-block">
@@ -106,6 +111,7 @@ export function SimulatorResultsStage({
             nodeCardFields={dashboardConfig.nodeCardFields}
             showProbabilities={dashboardConfig.graphStyle?.showProbabilities ?? true}
             animateEdges={dashboardConfig.graphStyle?.edgeAnimation !== "none" && !isPaused}
+            isPaused={isPaused}
             resetViewSignal={resetViewSignal}
             viewportStorageKey={flowViewportStorageKey}
             parameterToggleLabel={isParameterRailOpen ? "Hide Parameters" : "Show Parameters"}
@@ -116,11 +122,11 @@ export function SimulatorResultsStage({
       ) : null}
 
       {resultsMode === "diagnosis" ? (
-        <OperationalDiagnosisCard diagnosis={operationalDiagnosis} />
+        <OperationalDiagnosisCard diagnosis={operationalDiagnosis} metrics={output.globalMetrics} />
       ) : null}
 
       {resultsMode === "kaizen" ? (
-        <KaizenReportPanel report={kaizenReport} onOpenPdf={onOpenKaizenPdf} />
+        <KaizenReportPanel report={kaizenReport} onOpenPdf={onOpenExecutivePdf} />
       ) : null}
 
       {resultsMode === "throughput" ? (
