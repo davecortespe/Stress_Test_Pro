@@ -121,14 +121,14 @@ export function KaizenReportPanel({ report, onOpenPdf }: KaizenReportPanelProps)
   return (
     <section className="kaizen-panel">
       <div className="diagnosis-section-head">
-        <p className="diagnosis-eyebrow">Kaizen Report</p>
+        <p className="diagnosis-eyebrow">Improvement Priorities</p>
         <span className="diagnosis-section-rule" aria-hidden="true" />
       </div>
 
       <section className={`kaizen-status-banner tone-${bannerTone}`}>
         <div className="kaizen-status-main">
           <div className="kaizen-status-line">
-            <span className={`diagnosis-state-pill tone-${bannerTone}`}>Kaizen</span>
+            <span className={`diagnosis-state-pill tone-${bannerTone}`}>Improvement Priorities</span>
             <p>Fishbone root cause audit</p>
           </div>
           <h2>{report.headline}</h2>

@@ -1363,7 +1363,7 @@ def build_kaizen_page(kaizen_reports: list[CategoryReport], styles: dict[str, Pa
     rows = [[report.label, report.focus_step, fmt_minutes(report.queue_reduction_minutes), fmt_num(report.throughput_gain_units_per_hour, 2) + " /hr"] for report in top_reports]
     return [
         PageBreak(),
-        *section_header("KAIZEN PRIORITIES", "Kaizen Priorities", takeaway, styles),
+        *section_header("IMPROVEMENT PRIORITIES", "Improvement Priorities", takeaway, styles),
         paragraph("Priority ranking", styles["SubSection"]),
         Spacer(1, 0.04 * inch),
         chart,
@@ -1401,7 +1401,7 @@ def build_throughput_page(throughput: ThroughputSummary, diagnosis: dict[str, An
         economics_block = evidence_table(["Economics lens", "Readout"], economics_rows, [CONTENT_W * 0.40, CONTENT_W * 0.50], styles)
     return [
         PageBreak(),
-        *section_header("THROUGHPUT AND ECONOMICS", "Throughput and Economics", takeaway, styles),
+        *section_header("THROUGHPUT AND ECONOMICS", "Throughput & Economics", takeaway, styles),
         kpi_strip([("Current output (units/hr)", fmt_num(throughput.current_throughput, 3)), ("Potential lift (units/hr)", fmt_num(throughput.estimated_gain_units, 3)), ("Next limit", throughput.next_bottleneck)], styles, col_semantics=["neutral", "positive", "neutral"]),
         Spacer(1, 0.12 * inch),
         *([ ThroughputBars(num(throughput.current_throughput, 0.0), num(throughput.improved_throughput, 0.0)),
@@ -1437,7 +1437,7 @@ def build_assumptions_page(assumptions_summary: AssumptionsSummary, styles: dict
         rows = [["Model notes", "No assumptions were recorded.", "No additional validation notes were available."]]
     return [
         PageBreak(),
-        *section_header("ASSUMPTIONS AND MODEL NOTES", "Assumptions and Model Notes", takeaway, styles),
+        *section_header("MODEL ASSUMPTIONS", "Model Assumptions", takeaway, styles),
         kpi_strip([("Confidence", confidence_label(assumptions_summary.trust_level).replace("Confidence: ", "")), ("Assumptions", str(assumptions_summary.counts["total"])), ("Warnings", str(assumptions_summary.counts["warning"])), ("Blockers", str(assumptions_summary.counts["blocker"]))], styles),
         Spacer(1, 0.12 * inch),
         tinted_box([paragraph("Confidence context", styles["SmallCaps"]), Spacer(1, 0.04 * inch), Paragraph(assumptions_summary.summary, styles["Body"]), Spacer(1, 0.06 * inch), paragraph("Use with confidence for", styles["SmallCaps"]), Spacer(1, 0.03 * inch), bullet_list(assumptions_summary.safe_to_use_for[:2], styles["Bullet"])], fill=SURFACE_ALT, border=BORDER, left_accent=ACCENT),
@@ -1482,7 +1482,7 @@ def build_appendix_pages(metrics: dict[str, Any], flow_summary: FlowBehaviorSumm
 
 
 def build_report_spec(model: dict[str, Any], diagnosis: dict[str, Any], flow_summary: FlowBehaviorSummary, kaizen_reports: list[CategoryReport], throughput: ThroughputSummary, waste_summary: WasteSummary, assumptions_summary: AssumptionsSummary, actions: list[dict[str, str]]) -> dict[str, Any]:
-    return {"title": "LeanStorming Executive Report", "operation_name": clean(model.get("metadata", {}).get("name") or "Current Operation"), "generated_at": datetime.now().isoformat(), "subtitle": "Simulation-backed operational diagnosis", "sections": [{"title": "Executive Summary", "takeaway": clean(diagnosis.get("recommendedAction", ""))}, {"title": "System Diagnosis", "takeaway": clean(diagnosis.get("constraintMechanism", ""))}, {"title": "Flow and Operating Behavior", "top_queue_steps": [step.step_name for step in flow_summary.top_queue_steps]}, {"title": "Kaizen Priorities", "focus_steps": [report.focus_step for report in kaizen_reports[:3]]}, {"title": "Throughput and Economics", "primary_bottleneck": throughput.primary_bottleneck}, {"title": "Waste Analysis", "top_delay_step": waste_summary.top_delay_step}, {"title": "Assumptions and Model Notes", "trust_level": assumptions_summary.trust_level}, {"title": "Recommended Actions", "actions": actions}]}
+    return {"title": "LeanStorming Executive Report", "operation_name": clean(model.get("metadata", {}).get("name") or "Current Operation"), "generated_at": datetime.now().isoformat(), "subtitle": "Simulation-backed operational diagnosis", "sections": [{"title": "Executive Summary", "takeaway": clean(diagnosis.get("recommendedAction", ""))}, {"title": "System Diagnosis", "takeaway": clean(diagnosis.get("constraintMechanism", ""))}, {"title": "Flow and Operating Behavior", "top_queue_steps": [step.step_name for step in flow_summary.top_queue_steps]}, {"title": "Improvement Priorities", "focus_steps": [report.focus_step for report in kaizen_reports[:3]]}, {"title": "Throughput & Economics", "primary_bottleneck": throughput.primary_bottleneck}, {"title": "Waste Analysis", "top_delay_step": waste_summary.top_delay_step}, {"title": "Model Assumptions", "trust_level": assumptions_summary.trust_level}, {"title": "Recommended Actions", "actions": actions}]}
 
 
 def render_preview(pdf_path: Path, preview_dir: Path, max_pages: int = 4) -> None:

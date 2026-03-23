@@ -29,7 +29,7 @@ export function AssumptionsReportPanel({ report }: AssumptionsReportPanelProps) 
     <section className="throughput-panel assumptions-panel">
       <div className="throughput-toolbar">
         <div>
-          <p className="throughput-eyebrow">Assumptions</p>
+          <p className="throughput-eyebrow">Model Assumptions</p>
           <h2>{report.scenarioLabel}</h2>
           <p className="throughput-meta">{report.summary}</p>
         </div>
@@ -102,7 +102,7 @@ export function AssumptionsReportPanel({ report }: AssumptionsReportPanelProps) 
       </div>
 
       <article className="throughput-table-card assumptions-table-card">
-        <h3>Current Assumptions</h3>
+        <h3>Current Model Assumptions</h3>
         <div className="assumptions-card-grid">
           {report.items.map((item) => (
             <article key={item.id} className={`assumption-card severity-${item.severity}`}>

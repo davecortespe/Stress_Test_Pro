@@ -22,8 +22,8 @@ const GUIDE_NAV = [
   "Set Parameters",
   "Edit Step Cards",
   "Run the Sim",
-  "Read the Flow",
-  "Read the Diagnosis",
+  "Read the Flow Map",
+  "Read the System Diagnosis",
   "Save & Export"
 ] as const;
 
@@ -140,9 +140,9 @@ const STEP_CARD_ITEMS: GuideStepItem[] = [
       "If the floor reality differs from the source map, open a step card and tune that station without rewriting the whole scenario."
   },
   {
-    title: "Open the step editor from the flow map",
+    title: "Open the step editor from the Flow Map",
     description:
-      "Double-click a station card in Flow view to open the step editor and adjust that node directly."
+      "Double-click a station card in Flow Map view to open the step editor and adjust that node directly."
   },
   {
     title: "Use step edits for local overrides",
@@ -255,7 +255,7 @@ const STEP_CALLOUTS: GuideCallout[] = [
   {
     tone: "info",
     title: "You are ready for a client walkthrough",
-    text: "Set parameters together, run the model, open Diagnosis, and finish with the executive PDF."
+    text: "Set parameters together, run the model, open System Diagnosis, and finish with the executive PDF."
   }
 ];
 
@@ -476,10 +476,10 @@ export function QuickStartGuideDialog({
               <>
                 <h1 id="quickstart-title" className="quickstart-step-title">
                   Read the
-                  <span> station cards</span>
+                  <span> Flow Map</span>
                 </h1>
                 <p className="quickstart-step-intro">
-                  The flow lane shows each step left to right. Read utilization and pressure as a pattern across the line, not as isolated cards.
+                  The Flow Map shows each step left to right. Read utilization and pressure as a pattern across the line, not as isolated cards.
                 </p>
                 <div className="quickstart-status-grid">
                   {FLOW_STATUS.map((item) => (
@@ -497,10 +497,10 @@ export function QuickStartGuideDialog({
               <>
                 <h1 id="quickstart-title" className="quickstart-step-title">
                   Read the
-                  <span> diagnosis report</span>
+                  <span> System Diagnosis</span>
                 </h1>
                 <p className="quickstart-step-intro">
-                  Open Diagnosis and read it top to bottom. The page is already arranged in the order a leader should consume it.
+                  Open System Diagnosis and read it top to bottom. The page is already arranged in the order a leader should consume it.
                 </p>
                 <StepList items={DIAGNOSIS_ITEMS} />
               </>

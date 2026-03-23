@@ -86,14 +86,14 @@ export function ThroughputAnalysisPanel({
   return (
     <section className="throughput-panel throughput-report-panel">
       <div className="diagnosis-section-head">
-        <p className="diagnosis-eyebrow">Throughput Economics</p>
+        <p className="diagnosis-eyebrow">Throughput &amp; Economics</p>
         <span className="diagnosis-section-rule" aria-hidden="true" />
       </div>
 
       <section className={`report-status-banner tone-${bannerTone}`}>
         <div className="report-status-main">
           <div className="report-status-line">
-            <span className={`diagnosis-state-pill tone-${bannerTone}`}>Throughput</span>
+            <span className={`diagnosis-state-pill tone-${bannerTone}`}>Throughput &amp; Economics</span>
             <p>Economic constraint view</p>
           </div>
           <h2>

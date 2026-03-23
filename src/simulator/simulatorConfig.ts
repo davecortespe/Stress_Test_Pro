@@ -6,12 +6,12 @@ export interface ExportNotice {
 }
 
 export const RESULTS_MODE_LABELS: Record<SimulatorResultsMode, string> = {
-  flow: "Live Flow Map",
-  diagnosis: "Operational Diagnosis",
-  kaizen: "Fishbone Audit",
-  throughput: "Throughput Economics",
+  flow: "Flow Map",
+  diagnosis: "System Diagnosis",
+  kaizen: "Improvement Priorities",
+  throughput: "Throughput & Economics",
   waste: "Waste Analysis",
-  assumptions: "Assumptions Review"
+  assumptions: "Model Assumptions"
 };
 
 export const EXECUTIVE_PDF_URL = "/generated/leanstorming-executive-report.pdf";

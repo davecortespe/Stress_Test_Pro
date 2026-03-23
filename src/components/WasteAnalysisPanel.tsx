@@ -87,7 +87,7 @@ export function WasteAnalysisPanel({
       <section className={`report-status-banner tone-${bannerTone}`}>
         <div className="report-status-main">
           <div className="report-status-line">
-            <span className={`diagnosis-state-pill tone-${bannerTone}`}>Waste</span>
+            <span className={`diagnosis-state-pill tone-${bannerTone}`}>Waste Analysis</span>
             <p>Delay and friction view</p>
           </div>
           <h2>{analysis.summary.topWasteStep} is the largest visible source of modeled delay and hidden flow loss.</h2>

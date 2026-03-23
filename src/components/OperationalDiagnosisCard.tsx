@@ -171,7 +171,7 @@ export function OperationalDiagnosisCard({ diagnosis, metrics }: OperationalDiag
         <div className="diagnosis-status-main">
           <div className="diagnosis-status-line">
             <span className={`diagnosis-state-pill tone-${bannerTone}`}>{TitleCaseStatus(diagnosis.status)}</span>
-            <p>Operational diagnosis</p>
+            <p>System diagnosis</p>
           </div>
           <h2 ref={headlineRef}>{clampSentences(diagnosis.primaryConstraint, 1)}</h2>
           <p className="diagnosis-banner-summary">{clampSentences(diagnosis.constraintMechanism, 1)}</p>

@@ -14,32 +14,32 @@ const SPEED_OPTIONS: Array<{ value: SpeedMultiplier; label: string; hint?: strin
 const RESULTS_MODES: Array<{ key: SimulatorResultsMode; label: string; description: string }> = [
   {
     key: "flow",
-    label: "Flow",
+    label: "Flow Map",
     description: "Shows the live step-by-step flow, where work is piling up, and which step is acting as the bottleneck right now."
   },
   {
     key: "diagnosis",
-    label: "Diagnosis",
+    label: "System Diagnosis",
     description: "Explains what is breaking, why it is happening, what it causes downstream, and the best move to stabilize the system."
   },
   {
     key: "kaizen",
-    label: "Kaizen",
-    description: "Highlights the strongest improvement opportunities, likely root causes, and where a Kaizen event can make the biggest difference."
+    label: "Improvement Priorities",
+    description: "Highlights the strongest improvement opportunities, likely root causes, and where the first focused improvement effort can make the biggest difference."
   },
   {
     key: "throughput",
-    label: "Throughput",
+    label: "Throughput & Economics",
     description: "Shows how the current bottleneck affects output, cost, and profit so you can see where added capacity creates the most value."
   },
   {
     key: "waste",
-    label: "Waste",
+    label: "Waste Analysis",
     description: "Compares lead time with touch time to show where delay and non-value-added time are building up across the flow."
   },
   {
     key: "assumptions",
-    label: "Assumptions",
+    label: "Model Assumptions",
     description: "Shows which inputs were estimated or defaulted so end users can quickly see how much to trust the current report."
   }
 ];
@@ -260,7 +260,7 @@ export function DashboardHeader({
         </section>
 
         <div className="header-control-card">
-          <p className="header-control-label">View</p>
+          <p className="header-control-label">Decision View</p>
           <div className="results-mode-group" aria-label="results panel mode">
             {RESULTS_MODES.map((mode) => (
               <div key={mode.key} className="results-mode-item">

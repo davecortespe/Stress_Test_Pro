@@ -32,8 +32,8 @@ export const heroMockData: {
   metrics: HeroMetric[];
 } = {
   metrics: [
-    { label: "Start Point", value: "Diagnosis-first entry", tone: "good" },
-    { label: "Shared Model", value: "Flow, diagnosis, throughput, waste, kaizen", tone: "neutral" },
+    { label: "Start Point", value: "Flow-map entry", tone: "good" },
+    { label: "Shared Model", value: "Flow map, system diagnosis, throughput & economics, waste analysis, improvement priorities", tone: "neutral" },
     { label: "Decision Aim", value: "See what to change first", tone: "alert" }
   ]
 };
@@ -56,7 +56,7 @@ export const reportShowcase: ReportShowcaseItem[] = [
   },
   {
     id: "diagnosis",
-    label: "DIAGNOSIS",
+    label: "SYSTEM DIAGNOSIS",
     eyebrow: "Operational story first",
     title: "Identify what is breaking and why",
     summary:
@@ -71,7 +71,7 @@ export const reportShowcase: ReportShowcaseItem[] = [
   },
   {
     id: "kaizen",
-    label: "KAIZEN",
+    label: "IMPROVEMENT PRIORITIES",
     eyebrow: "Improvement prioritization",
     title: "Prioritize the changes most likely to move output",
     summary:
@@ -79,14 +79,14 @@ export const reportShowcase: ReportShowcaseItem[] = [
     bullets: [
       "See which improvement events are most likely to move the system first",
       "Connect evidence to likely root causes across people, method, machine, material, and measurement",
-      "Reduce wasted effort on low-leverage kaizen activity"
+      "Reduce wasted effort on low-leverage improvement activity"
     ],
     proofLabel: "Best for",
     proofValue: "Choosing the next high-value intervention"
   },
   {
     id: "throughput",
-    label: "THROUGHPUT",
+    label: "THROUGHPUT & ECONOMICS",
     eyebrow: "Performance and economics",
     title: "Understand performance and economics together",
     summary:
@@ -116,7 +116,7 @@ export const reportShowcase: ReportShowcaseItem[] = [
   },
   {
     id: "assumptions",
-    label: "ASSUMPTIONS",
+    label: "MODEL ASSUMPTIONS",
     eyebrow: "Trust before action",
     title: "See what the model is assuming before acting on the result",
     summary:
@@ -148,19 +148,19 @@ export const marketingContent = {
     supportLine: "See what is breaking, why it is breaking, and what to change first.",
     brandLine: "Sell the decision, not just the dashboard.",
     description:
-      "LeanStorming converts mapped operations into simulation-backed decision views for diagnosis, throughput, kaizen prioritization, waste analysis, and scenario testing.",
+      "LeanStorming converts mapped operations into simulation-backed decision views for system diagnosis, throughput and economics, improvement prioritization, waste analysis, and scenario testing.",
     primaryCta: "Start the diagnosis",
     secondaryCta: "Explore analytics views",
     workspaceCta: "Go straight to simulation",
     supportText:
-      "Enter the same modeled operation through flow, diagnosis, throughput, waste, assumptions, or scenario controls."
+      "Enter the same modeled operation through Flow Map, System Diagnosis, Throughput & Economics, Waste Analysis, Model Assumptions, or scenario controls."
   },
 
   decisionViews: {
     eyebrow: "Decision Views",
     title: "One model. Five ways to decide what to do next.",
     body: [
-      "LeanStorming gives you multiple decision readouts from the same operational model, so you can move from bottleneck visibility to diagnosis, economics, waste, and intervention testing without changing tools or rebuilding the story."
+      "LeanStorming gives you multiple decision readouts from the same operational model, so you can move from Flow Map visibility to System Diagnosis, Throughput & Economics, Waste Analysis, and intervention testing without changing tools or rebuilding the story."
     ]
   },
 
@@ -168,21 +168,21 @@ export const marketingContent = {
     eyebrow: "Why Enter Now",
     title: "Why enter now",
     body: [
-      "The click opens a serious decision environment, not a generic dashboard. You enter the modeled operation with immediate paths into diagnosis, flow, throughput, waste, assumptions, and scenario testing.",
+      "The click opens a serious decision environment, not a generic dashboard. You enter the modeled operation with immediate paths into System Diagnosis, Flow Map, Throughput & Economics, Waste Analysis, Model Assumptions, and scenario testing.",
       "That means less time interpreting the tool and more time understanding what is breaking, what it costs, and what to change first."
     ],
     cards: [
       {
-        label: "Start with diagnosis",
+        label: "Start with System Diagnosis",
         title: "Begin with the operational story, not raw controls",
         body:
-          "Open directly into diagnosis-first mode so the first screen explains what is happening in the system before you dig into interventions."
+          "Use System Diagnosis first when you want the workspace to explain what is happening in the system before you dig into interventions."
       },
       {
         label: "Compare interventions",
         title: "Move from bottleneck visibility to scenario testing in one workspace",
         body:
-          "Shift from the behaving flow to economics, waste, kaizen, and scenario changes without losing the shared model underneath the decision."
+          "Shift from the Flow Map to economics, waste, improvement priorities, and scenario changes without losing the shared model underneath the decision."
       },
       {
         label: "Support the decision",
@@ -197,7 +197,7 @@ export const marketingContent = {
     eyebrow: "Enter The Modeled Operation",
     title: "Enter the modeled operation and begin with diagnosis.",
     body: [
-      "Move from map to diagnosis, throughput, waste, and scenario testing in one workspace built for operational decisions under stress."
+      "Move from Flow Map to System Diagnosis, Throughput & Economics, Waste Analysis, and scenario testing in one workspace built for operational decisions under stress."
     ],
     primaryCta: "Start the diagnosis",
     secondaryCta: "Go straight to simulation"
