@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm run:*)",
       "Bash(npx tsc:*)",
-      "Bash(python -m py_compile scripts/export_executive_report_pdf.py)"
+      "Bash(python -m py_compile scripts/export_executive_report_pdf.py)",
+      "Bash(node -e \":*)"
     ]
   }
 }

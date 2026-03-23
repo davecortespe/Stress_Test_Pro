@@ -320,3 +320,12 @@ export function createScenarioLibraryContext(
     modelName
   };
 }
+
+/** Serialize a single saved run as a 1-row CSV (header + data row). */
+export function serializeSingleScenario(
+  entry: ScenarioLibraryEntry,
+  context: ScenarioLibraryFileContext,
+  scenarioColumns: string[]
+): string {
+  return serializeScenarioLibrary([entry], context, scenarioColumns);
+}

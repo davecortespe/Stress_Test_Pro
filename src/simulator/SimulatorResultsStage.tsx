@@ -56,7 +56,7 @@ interface SimulatorResultsStageProps {
   onOpenStepInspector: (nodeId: string, anchor: { x: number; y: number }) => void;
   onOpenExecutivePdf: () => void;
   onOpenComparisonReport: () => void;
-  onOpenScenarioLibrary: () => void;
+  onOpenScenarioFiles: () => void;
   onSwapComparison: () => void;
   onClearComparison: () => void;
 }
@@ -85,7 +85,7 @@ export function SimulatorResultsStage({
   onOpenStepInspector,
   onOpenExecutivePdf,
   onOpenComparisonReport,
-  onOpenScenarioLibrary,
+  onOpenScenarioFiles,
   onSwapComparison,
   onClearComparison
 }: SimulatorResultsStageProps) {
@@ -254,8 +254,8 @@ export function SimulatorResultsStage({
                   </div>
                 </div>
                 <div className="compare-edit-actions">
-                  <button type="button" className="compare-edit-change" onClick={onOpenScenarioLibrary}>
-                    Change Scenarios
+                  <button type="button" className="compare-edit-change" onClick={onOpenScenarioFiles}>
+                    Open Saved Runs
                   </button>
                   <button type="button" className="compare-edit-change" onClick={onSwapComparison}>
                     Swap A / B
@@ -278,12 +278,12 @@ export function SimulatorResultsStage({
             </>
           ) : (
             <div className="compare-empty-state">
-              <p className="compare-empty-title">How to compare scenarios</p>
+              <p className="compare-empty-title">How to compare two runs</p>
               <ol className="compare-empty-steps">
                 <li className={scenarioCount >= 1 ? "step-done" : ""}>
                   <span className="step-num">1</span>
                   <span>
-                    Run a simulation, then click <strong>Save Scenario</strong> in the toolbar above.
+                    Run a simulation, then click <strong>Save Current Run</strong> in the toolbar above.
                     Give it a name like <em>"Baseline"</em>.
                     {scenarioCount >= 1 && <span className="step-check"> ✓ {scenarioCount} saved</span>}
                   </span>
@@ -298,8 +298,7 @@ export function SimulatorResultsStage({
                 <li>
                   <span className="step-num">3</span>
                   <span>
-                    Click <strong>+ SCENARIOS {scenarioCount}</strong> (top right) to open the library.
-                    Use <strong>Set A</strong> and <strong>Set B</strong> on the saved runs you want, then hit <strong>Compare A vs B</strong>.
+                    Click <strong>Compare Two Files</strong> in the toolbar, choose <strong>File A</strong> and <strong>File B</strong>, then hit <strong>Compare Selected Files</strong>.
                   </span>
                 </li>
               </ol>

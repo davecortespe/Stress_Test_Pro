@@ -1,25 +1,22 @@
-import { useMemo, useState } from "react";
-import type { ScenarioLibraryEntry, ScenarioLibraryIssue } from "../types/contracts";
+import type { RecentFileRecord, ScenarioLibraryEntry, ScenarioLibraryIssue } from "../types/contracts";
 
 type ComparisonSlot = "A" | "B";
 
 interface ScenarioLibraryPanelProps {
   isOpen: boolean;
-  libraryName: string | null;
-  lastLoadedAt: string | null;
-  entries: ScenarioLibraryEntry[];
+  activeRunName: string | null;
   issues: ScenarioLibraryIssue[];
-  currentScenarioId: string | null;
-  selectedScenarioId: string | null;
-  comparisonIds: [string | null, string | null];
-  onSelectScenario: (scenarioId: string | null) => void;
-  onOpenCsv: () => void;
-  onSaveCurrent: () => void;
-  onLoadScenario: (scenarioId: string) => void;
-  onDeleteScenario: (scenarioId: string) => void;
-  onAssignEntry: (slot: ComparisonSlot, id: string) => void;
+  slotA: ScenarioLibraryEntry | null;
+  slotB: ScenarioLibraryEntry | null;
+  recentFiles: RecentFileRecord[];
+  readyToCompare: boolean;
+  onSaveCurrentRun: () => void;
+  onOpenAndLoad: () => void;
+  onChooseFileForSlot: (slot: ComparisonSlot) => void;
+  onLoadRecentFile: (record: RecentFileRecord) => void;
+  onAssignRecentToSlot: (slot: ComparisonSlot, record: RecentFileRecord) => void;
   onClearSlot: (slot: ComparisonSlot) => void;
-  onSwapEntries: () => void;
+  onSwapSlots: () => void;
   onClearComparison: () => void;
   onCompare: () => void;
   onClose: () => void;
@@ -33,65 +30,77 @@ function formatSavedAt(value: string): string {
   return parsed.toLocaleString();
 }
 
-function formatMetricValue(value: number | string | undefined, suffix = ""): string {
-  if (value === undefined || value === null || value === "") return "—";
-  if (typeof value === "number") {
-    return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}${suffix}`;
-  }
-  return String(value);
+function isStale(savedAt: string): boolean {
+  const parsed = new Date(savedAt);
+  if (Number.isNaN(parsed.getTime())) return false;
+  const ageDays = (Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24);
+  return ageDays > 30;
+}
+
+function SlotCard({
+  slot,
+  entry,
+  onChooseFile,
+  onClear
+}: {
+  slot: ComparisonSlot;
+  entry: ScenarioLibraryEntry | null;
+  onChooseFile: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className={`library-slot-card ${entry ? "is-filled" : "is-empty"}`}>
+      <div className="library-slot-card-top">
+        <span className={`lib-slot ${entry ? "lib-slot-filled" : "lib-slot-empty"}`}>{slot}</span>
+        <span className="library-slot-title">
+          {entry ? entry.scenarioName : `Choose File ${slot}`}
+        </span>
+      </div>
+      {entry ? (
+        <>
+          <span className="library-slot-meta">{formatSavedAt(entry.savedAt)}</span>
+          <div className="library-slot-actions">
+            <button type="button" className="secondary library-slot-btn" onClick={onChooseFile}>
+              Change File
+            </button>
+            <button type="button" className="library-delete-btn" onClick={onClear} aria-label={`Clear slot ${slot}`}>
+              ×
+            </button>
+          </div>
+        </>
+      ) : (
+        <button type="button" className="secondary library-slot-choose-btn" onClick={onChooseFile}>
+          Choose File {slot}
+        </button>
+      )}
+    </div>
+  );
 }
 
 export function ScenarioLibraryPanel({
   isOpen,
-  libraryName,
-  lastLoadedAt,
-  entries,
+  activeRunName,
   issues,
-  currentScenarioId,
-  selectedScenarioId,
-  comparisonIds,
-  onSelectScenario,
-  onOpenCsv,
-  onSaveCurrent,
-  onLoadScenario,
-  onDeleteScenario,
-  onAssignEntry,
+  slotA,
+  slotB,
+  recentFiles,
+  readyToCompare,
+  onSaveCurrentRun,
+  onOpenAndLoad,
+  onChooseFileForSlot,
+  onLoadRecentFile,
+  onAssignRecentToSlot,
   onClearSlot,
-  onSwapEntries,
+  onSwapSlots,
   onClearComparison,
   onCompare,
   onClose
 }: ScenarioLibraryPanelProps) {
-  const [searchValue, setSearchValue] = useState("");
-
-  const filteredEntries = useMemo(() => {
-    const query = searchValue.trim().toLowerCase();
-    if (query.length === 0) {
-      return entries;
-    }
-    return entries.filter((entry) => {
-      return (
-        entry.scenarioName.toLowerCase().includes(query) ||
-        entry.savedAt.toLowerCase().includes(query) ||
-        entry.scenarioId.toLowerCase().includes(query)
-      );
-    });
-  }, [entries, searchValue]);
-
-  const selectedEntry = selectedScenarioId
-    ? entries.find((entry) => entry.scenarioId === selectedScenarioId) ?? null
-    : null;
-  const slotAEntry = comparisonIds[0]
-    ? entries.find((entry) => entry.scenarioId === comparisonIds[0]) ?? null
-    : null;
-  const slotBEntry = comparisonIds[1]
-    ? entries.find((entry) => entry.scenarioId === comparisonIds[1]) ?? null
-    : null;
-  const readyToCompare = !!slotAEntry && !!slotBEntry;
-
   if (!isOpen) {
     return null;
   }
+
+  const hasAnySlot = slotA !== null || slotB !== null;
 
   return (
     <div
@@ -103,14 +112,15 @@ export function ScenarioLibraryPanel({
       }}
     >
       <section className="library-panel">
+        {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="library-header">
           <div>
-            <p className="library-eyebrow">Scenario Library</p>
-            <h2>{libraryName ?? "In-session scenarios"}</h2>
+            <p className="library-eyebrow">Saved Runs</p>
+            <h2>Scenario Files</h2>
             <p className="library-meta">
-              {lastLoadedAt
-                ? `Loaded ${formatSavedAt(lastLoadedAt)}`
-                : "Save scenarios into a CSV library so you can reopen, compare, and replace them across sessions."}
+              {activeRunName
+                ? `Last saved: ${activeRunName}`
+                : "Save this run to a file so you can reopen or compare it later."}
             </p>
           </div>
           <button type="button" className="secondary" onClick={onClose}>
@@ -118,32 +128,19 @@ export function ScenarioLibraryPanel({
           </button>
         </div>
 
+        {/* ── Toolbar ─────────────────────────────────────────────────────── */}
         <div className="library-toolbar">
-          <button type="button" className="secondary" onClick={onOpenCsv}>
-            Open Library File
+          <button type="button" className="primary" onClick={onSaveCurrentRun}>
+            Save Current Run
           </button>
-          <button type="button" className="primary" onClick={onSaveCurrent}>
-            Save Current Scenario
+          <button type="button" className="secondary" onClick={onOpenAndLoad}>
+            Open Scenario File
           </button>
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => selectedScenarioId && onLoadScenario(selectedScenarioId)}
-            disabled={!selectedScenarioId}
-          >
-            Load Selected
-          </button>
-          <input
-            type="search"
-            value={searchValue}
-            placeholder="Search scenarios"
-            onChange={(event) => setSearchValue(event.target.value)}
-          />
         </div>
 
-        {issues.length > 0 ? (
+        {/* ── Issues banner ───────────────────────────────────────────────── */}
+        {issues.length > 0 && (
           <section className="library-issues">
-            <h3>Library Warnings</h3>
             <ul>
               {issues.map((issue, index) => (
                 <li key={`${issue.message}-${index}`} className={`validation-${issue.severity}`}>
@@ -152,188 +149,134 @@ export function ScenarioLibraryPanel({
               ))}
             </ul>
           </section>
-        ) : null}
-
-        {entries.length > 0 && (
-          <section className="library-compare-builder">
-            <div className="library-compare-builder-top">
-              <div>
-                <p className="library-compare-builder-label">Comparison Set</p>
-                <h3>Choose Scenario A and Scenario B explicitly</h3>
-                <p className="library-compare-builder-copy">
-                  Use the row buttons below to set or replace either slot. Once both are filled, open the side-by-side comparison.
-                </p>
-              </div>
-              <div className="library-compare-actions">
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={onSwapEntries}
-                  disabled={!readyToCompare}
-                >
-                  Swap A / B
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={onClearComparison}
-                  disabled={!slotAEntry && !slotBEntry}
-                >
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  className="primary library-compare-cta"
-                  onClick={() => {
-                    onCompare();
-                    onClose();
-                  }}
-                  disabled={!readyToCompare}
-                >
-                  Compare A vs B
-                </button>
-              </div>
-            </div>
-
-            <div className="library-compare-slots">
-              <div className={`library-slot-card ${slotAEntry ? "is-filled" : "is-empty"}`}>
-                <div className="library-slot-card-top">
-                  <span className="lib-slot lib-slot-filled">A</span>
-                  <span className="library-slot-title">Scenario A</span>
-                </div>
-                {slotAEntry ? (
-                  <>
-                    <strong className="library-slot-name">{slotAEntry.scenarioName}</strong>
-                    <span className="library-slot-meta">{formatSavedAt(slotAEntry.savedAt)}</span>
-                    <button type="button" className="library-slot-clear" onClick={() => onClearSlot("A")}>
-                      Remove A
-                    </button>
-                  </>
-                ) : (
-                  <span className="library-slot-empty-copy">Choose the baseline or current reference case.</span>
-                )}
-              </div>
-              <div className={`library-slot-card ${slotBEntry ? "is-filled" : "is-empty"}`}>
-                <div className="library-slot-card-top">
-                  <span className="lib-slot lib-slot-filled">B</span>
-                  <span className="library-slot-title">Scenario B</span>
-                </div>
-                {slotBEntry ? (
-                  <>
-                    <strong className="library-slot-name">{slotBEntry.scenarioName}</strong>
-                    <span className="library-slot-meta">{formatSavedAt(slotBEntry.savedAt)}</span>
-                    <button type="button" className="library-slot-clear" onClick={() => onClearSlot("B")}>
-                      Remove B
-                    </button>
-                  </>
-                ) : (
-                  <span className="library-slot-empty-copy">Choose the alternative you want to test against A.</span>
-                )}
-              </div>
-            </div>
-          </section>
         )}
 
-        <div className="library-table-shell">
-          <table className="throughput-table library-table">
-            <thead>
-              <tr>
-                <th className="lib-slot-col">Pick</th>
-                <th>Scenario name</th>
-                <th>Constraint</th>
-                <th>Output / hr</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEntries.length > 0 ? (
-                filteredEntries.map((entry) => {
-                  const slotLabel =
-                    comparisonIds[0] === entry.scenarioId
-                      ? "A"
-                      : comparisonIds[1] === entry.scenarioId
-                        ? "B"
-                        : "";
-                  const isLoaded = currentScenarioId === entry.scenarioId;
-                  const isSelected = selectedScenarioId === entry.scenarioId;
-                  const isPinned = !!slotLabel;
-                  return (
-                    <tr
-                      key={entry.scenarioId}
-                      className={`library-row ${isPinned ? "is-pinned" : ""} ${isSelected ? "is-selected" : ""}`}
-                      onClick={() => onSelectScenario(entry.scenarioId)}
-                    >
-                      <td className="lib-slot-col">
-                        <span className={`lib-slot ${isPinned ? "lib-slot-filled" : "lib-slot-empty"}`}>
-                          {slotLabel}
+        {/* ── Comparison section ──────────────────────────────────────────── */}
+        <section className="library-compare-builder">
+          <div className="library-compare-builder-top">
+            <div>
+              <p className="library-compare-builder-label">Comparison</p>
+              <h3>Compare any two saved runs</h3>
+              <p className="library-compare-builder-copy">
+                Choose any two saved runs to compare. You can also load a recent run into a slot below.
+              </p>
+            </div>
+            <div className="library-compare-actions">
+              <button
+                type="button"
+                className="secondary"
+                onClick={onSwapSlots}
+                disabled={!readyToCompare}
+                title="Swap A / B"
+              >
+                Swap A / B
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={onClearComparison}
+                disabled={!hasAnySlot}
+              >
+                Clear Comparison
+              </button>
+              <button
+                type="button"
+                className="primary library-compare-cta"
+                onClick={() => {
+                  onCompare();
+                  onClose();
+                }}
+                disabled={!readyToCompare}
+                title={readyToCompare ? undefined : "Choose File B to compare"}
+              >
+                Compare Selected Files
+              </button>
+            </div>
+          </div>
+
+          <div className="library-compare-slots">
+            <SlotCard
+              slot="A"
+              entry={slotA}
+              onChooseFile={() => onChooseFileForSlot("A")}
+              onClear={() => onClearSlot("A")}
+            />
+            <SlotCard
+              slot="B"
+              entry={slotB}
+              onChooseFile={() => onChooseFileForSlot("B")}
+              onClear={() => onClearSlot("B")}
+            />
+          </div>
+        </section>
+
+        {/* ── Recent Runs ─────────────────────────────────────────────────── */}
+        <section className="library-recent-section">
+          <div className="library-recent-header">
+            <h3>Recent Runs</h3>
+            <p className="library-recent-note">
+              These are shortcuts — open the file to reload from disk.
+            </p>
+          </div>
+
+          {recentFiles.length > 0 ? (
+            <ul className="library-recent-list">
+              {recentFiles.map((record) => {
+                const stale = isStale(record.savedAt);
+                const inSlotA = slotA?.scenarioId === record.scenarioId;
+                const inSlotB = slotB?.scenarioId === record.scenarioId;
+                return (
+                  <li key={record.scenarioId} className="library-recent-card">
+                    <div className="library-recent-card-info">
+                      <strong className="library-recent-name">{record.scenarioName}</strong>
+                      <span className={`library-recent-date ${stale ? "is-stale" : ""}`}>
+                        {formatSavedAt(record.savedAt)}
+                        {stale && <span className="library-stale-badge"> · may be stale</span>}
+                      </span>
+                      {record.fileName && (
+                        <span className="library-recent-filename">{record.fileName}</span>
+                      )}
+                      {(inSlotA || inSlotB) && (
+                        <span className="library-loaded-badge">
+                          In slot {inSlotA ? "A" : "B"}
                         </span>
-                      </td>
-                      <th>
-                        <span className="library-scenario-name">{entry.scenarioName}</span>
-                        {entry.note ? (
-                          <span className="library-scenario-note" title={entry.note}>
-                            {entry.note}
-                          </span>
-                        ) : null}
-                        <div className="library-row-badges">
-                          {isLoaded ? <span className="library-loaded-badge">Active</span> : null}
-                          {isSelected ? <span className="library-selected-badge">Selected</span> : null}
-                        </div>
-                      </th>
-                      <td className="library-metric-cell">
-                        {entry.savedMetrics ? entry.savedMetrics.activeConstraintName : "—"}
-                      </td>
-                      <td className="library-metric-cell">
-                        {entry.savedMetrics
-                          ? formatMetricValue(entry.savedMetrics.forecastThroughput, " /hr")
-                          : "—"}
-                      </td>
-                      <td className="library-row-actions" onClick={(event) => event.stopPropagation()}>
-                        <button type="button" className="secondary library-slot-btn" onClick={() => onAssignEntry("A", entry.scenarioId)}>
-                          Set A
-                        </button>
-                        <button type="button" className="secondary library-slot-btn" onClick={() => onAssignEntry("B", entry.scenarioId)}>
-                          Set B
-                        </button>
-                        <button type="button" className="secondary" onClick={() => onLoadScenario(entry.scenarioId)}>
-                          Load
-                        </button>
-                        <button
-                          type="button"
-                          className="library-delete-btn"
-                          aria-label={`Delete ${entry.scenarioName}`}
-                          onClick={() => {
-                            if (window.confirm(`Delete "${entry.scenarioName}"?`)) {
-                              onDeleteScenario(entry.scenarioId);
-                            }
-                          }}
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={5} className="library-empty-state">
-                    No scenarios saved yet. Click "Save Current Scenario" to capture this run.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {selectedEntry ? (
-          <p className="library-selection-note">
-            Selected: <strong>{selectedEntry.scenarioName}</strong>. Use <strong>Load Selected</strong> to reopen it, or <strong>Set A</strong> / <strong>Set B</strong> to compare it.
-          </p>
-        ) : (
-          <p className="library-selection-note">
-            Tip: click any row once to select it for loading, then use <strong>Set A</strong> or <strong>Set B</strong> when you want it in the comparison set.
-          </p>
-        )}
+                      )}
+                    </div>
+                    <div className="library-recent-card-actions">
+                      <button
+                        type="button"
+                        className="secondary library-slot-btn"
+                        onClick={() => onLoadRecentFile(record)}
+                      >
+                        Open Run
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary library-slot-btn"
+                        onClick={() => onAssignRecentToSlot("A", record)}
+                        disabled={inSlotA}
+                      >
+                        Use as A
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary library-slot-btn"
+                        onClick={() => onAssignRecentToSlot("B", record)}
+                        disabled={inSlotB}
+                      >
+                        Use as B
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="library-empty-state">
+              No recent runs yet. Save a run to see it here.
+            </p>
+          )}
+        </section>
       </section>
     </div>
   );

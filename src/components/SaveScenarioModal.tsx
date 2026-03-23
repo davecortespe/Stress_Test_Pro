@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 interface SaveScenarioModalProps {
   isOpen: boolean;
   defaultName: string;
-  libraryName?: string | null;
   onConfirm: (name: string) => void;
   onCancel: () => void;
 }
@@ -11,7 +10,6 @@ interface SaveScenarioModalProps {
 export function SaveScenarioModal({
   isOpen,
   defaultName,
-  libraryName,
   onConfirm,
   onCancel
 }: SaveScenarioModalProps) {
@@ -44,14 +42,9 @@ export function SaveScenarioModal({
       }}
     >
       <div className="save-scenario-content">
-        <h2 className="save-scenario-title">Save Scenario to Library</h2>
+        <h2 className="save-scenario-title">Save Current Run</h2>
         <p className="save-scenario-hint">
-          Save this run so you can reopen it, compare it side by side, and keep a clean record of what changed.
-        </p>
-        <p className="save-scenario-target">
-          {libraryName
-            ? `Saving into ${libraryName}.`
-            : "Your first save creates a scenario library CSV you can reopen later."}
+          Save this run to a file so you can reopen it, compare it side by side, and keep a clean record of what changed.
         </p>
 
         <div className="save-scenario-field">
@@ -76,7 +69,7 @@ export function SaveScenarioModal({
             Cancel
           </button>
           <button type="button" className="primary" onClick={handleConfirm} disabled={!name.trim()}>
-            Save to Library
+            Save Run
           </button>
         </div>
       </div>

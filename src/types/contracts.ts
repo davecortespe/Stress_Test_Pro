@@ -555,6 +555,17 @@ export interface ScenarioLibraryEntry {
   savedMetrics?: ScenarioSavedMetrics;
 }
 
+/**
+ * Stored in localStorage as a convenience shortcut (max 10 entries).
+ * Recent runs are shortcuts only — files on disk are the source of truth.
+ * The full entry is stored so runs can be reloaded without a file picker,
+ * but the data may be stale if the underlying file was modified externally.
+ */
+export type RecentFileRecord = ScenarioLibraryEntry & {
+  /** Original filename, e.g. "tarde_2_baseline.csv" */
+  fileName?: string;
+};
+
 export interface ScenarioLibraryFileContext {
   schemaVersion: string;
   appTitle: string;

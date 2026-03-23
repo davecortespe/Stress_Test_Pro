@@ -11,7 +11,7 @@ export interface ComparisonMetricConfig {
 }
 
 export interface ExportNotice {
-  tone: "success" | "error";
+  tone: "success" | "error" | "warning";
   text: string;
 }
 

@@ -72,6 +72,7 @@ interface DashboardHeaderProps {
   onStartPause: () => void;
   onReset: () => void;
   onSaveCurrentScenario: () => void;
+  onCompareTwoFiles: () => void;
   onOpenExecutivePdf: () => void;
   onOpenQuickStartGuide: () => void;
   onToggleScenarioLibrary: () => void;
@@ -110,6 +111,7 @@ export function DashboardHeader({
   onStartPause,
   onReset,
   onSaveCurrentScenario,
+  onCompareTwoFiles,
   onOpenExecutivePdf,
   onOpenQuickStartGuide,
   onToggleScenarioLibrary,
@@ -196,7 +198,10 @@ export function DashboardHeader({
               {resetPending ? "Confirm reset?" : "Reset Time"}
             </button>
             <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
-              Save Scenario
+              Save Current Run
+            </button>
+            <button type="button" className="secondary" onClick={onCompareTwoFiles}>
+              Compare Two Files
             </button>
             <button type="button" className="secondary export-report-btn" onClick={onOpenExecutivePdf}>
               Open Executive PDF
