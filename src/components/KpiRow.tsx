@@ -6,6 +6,8 @@ interface KpiRowProps {
   metrics: Record<string, number | string>;
   featuredKey?: string;
   variant?: "default" | "compact" | "overlay";
+  referenceMetrics?: Record<string, number>;
+  referenceLabel?: string;
 }
 
 const KPI_HELP_FALLBACK: Record<string, string> = {
@@ -135,12 +137,13 @@ function getSeverityMeta(key: string, rawValue: number | string): { tone: "neutr
   return null;
 }
 
-function buildSparklinePoints(values: number[], width = 72, height = 22): string {
+function buildSparklinePoints(values: number[], width = 72, height = 22, extendedValues?: number[]): string {
   if (values.length === 0) {
     return "";
   }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const allForRange = extendedValues ? [...values, ...extendedValues] : values;
+  const min = Math.min(...allForRange);
+  const max = Math.max(...allForRange);
   const span = Math.max(max - min, 1e-6);
   return values
     .map((value, index) => {
@@ -151,16 +154,27 @@ function buildSparklinePoints(values: number[], width = 72, height = 22): string
     .join(" ");
 }
 
+function buildReferenceLineY(values: number[], refVal: number, height = 22): number {
+  const allForRange = [...values, refVal];
+  const min = Math.min(...allForRange);
+  const max = Math.max(...allForRange);
+  const span = Math.max(max - min, 1e-6);
+  const y = height - ((refVal - min) / span) * height;
+  return Math.max(0, Math.min(height, y));
+}
+
 function KpiCard({
   kpi,
   rawValue,
   isFeatured,
-  variant
+  variant,
+  referenceValue
 }: {
   kpi: KpiConfig;
   rawValue: number | string;
   isFeatured: boolean;
   variant: "default" | "compact" | "overlay";
+  referenceValue?: number;
 }) {
   const prevRef = useRef<number | string>(rawValue);
   const [trend, setTrend] = useState<"flat" | "up" | "down">("flat");
@@ -205,12 +219,23 @@ function KpiCard({
   const tooltipId = `kpi-help-${kpi.key.replace(/[^a-z0-9_-]/gi, "-").toLowerCase()}`;
   const showHelp = variant !== "overlay";
   const isTotalCompletedLots = kpi.key === "totalCompletedOutputPieces";
+  const displayNumericValue =
+    typeof rawValue === "number" && isTotalCompletedLots ? Math.floor(animatedNumeric) : animatedNumeric;
+  const displayDecimals = isTotalCompletedLots ? 0 : kpi.decimals ?? 1;
   const deltaLabel =
     typeof rawValue === "number" && typeof prevRef.current === "number"
       ? buildDeltaLabel(kpi.key, rawValue, prevRef.current, kpi.format)
       : null;
   const severityMeta = getSeverityMeta(kpi.key, rawValue);
-  const sparklinePoints = useMemo(() => buildSparklinePoints(history), [history]);
+  const hasReference = typeof referenceValue === "number" && Number.isFinite(referenceValue);
+  const sparklinePoints = useMemo(
+    () => buildSparklinePoints(history, 72, 22, hasReference ? [referenceValue as number] : undefined),
+    [history, hasReference, referenceValue]
+  );
+  const referenceLineY = useMemo(
+    () => (hasReference && history.length > 0 ? buildReferenceLineY(history, referenceValue as number) : null),
+    [history, hasReference, referenceValue]
+  );
   const showContext = typeof rawValue === "number" && variant !== "compact";
 
   return (
@@ -221,7 +246,7 @@ function KpiCard({
     >
       <div className="kpi-label-row">
         <p>{kpi.label}</p>
-        {showHelp && helpText ? (
+      {showHelp && helpText ? (
           <span className="kpi-help-wrap">
             <button
               type="button"
@@ -237,7 +262,7 @@ function KpiCard({
           </span>
         ) : null}
       </div>
-      <h2>{displayValue}</h2>
+      <h2>{typeof rawValue === "number" ? formatValue(displayNumericValue, kpi.format, displayDecimals) : displayValue}</h2>
       {showContext ? (
         <div className="kpi-context-row">
           <div className="kpi-context-chips">
@@ -248,6 +273,15 @@ function KpiCard({
           </div>
           {sparklinePoints ? (
             <svg viewBox="0 0 72 22" className={`kpi-sparkline trend-${trend}`} aria-hidden="true">
+              {referenceLineY !== null ? (
+                <line
+                  x1="0"
+                  y1={referenceLineY.toFixed(1)}
+                  x2="72"
+                  y2={referenceLineY.toFixed(1)}
+                  className="sparkline-reference-line"
+                />
+              ) : null}
               <polyline points={sparklinePoints} />
             </svg>
           ) : null}
@@ -257,19 +291,27 @@ function KpiCard({
   );
 }
 
-export function KpiRow({ kpis, metrics, featuredKey, variant = "default" }: KpiRowProps) {
+export function KpiRow({ kpis, metrics, featuredKey, variant = "default", referenceMetrics, referenceLabel }: KpiRowProps) {
   const featuredMetricKey = featuredKey ?? kpis[0]?.key;
   return (
-    <section className={`kpi-row kpi-row-${variant}`}>
-      {kpis.map((kpi) => (
-        <KpiCard
-          key={kpi.key}
-          kpi={kpi}
-          rawValue={metrics[kpi.key] ?? 0}
-          isFeatured={kpi.key === featuredMetricKey}
-          variant={variant}
-        />
-      ))}
-    </section>
+    <div className={`kpi-row-wrap kpi-row-wrap-${variant}`}>
+      <section className={`kpi-row kpi-row-${variant}`}>
+        {kpis.map((kpi) => (
+          <KpiCard
+            key={kpi.key}
+            kpi={kpi}
+            rawValue={metrics[kpi.key] ?? 0}
+            isFeatured={kpi.key === featuredMetricKey}
+            variant={variant}
+            referenceValue={referenceMetrics ? (typeof referenceMetrics[kpi.key] === "number" ? referenceMetrics[kpi.key] : undefined) : undefined}
+          />
+        ))}
+      </section>
+      {referenceMetrics && referenceLabel ? (
+        <p className="kpi-reference-legend">
+          <span className="kpi-reference-dash" aria-hidden="true" /> Baseline: {referenceLabel}
+        </p>
+      ) : null}
+    </div>
   );
 }

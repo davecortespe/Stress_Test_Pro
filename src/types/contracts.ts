@@ -160,7 +160,7 @@ export interface DashboardConfig {
   };
 }
 
-export type SimulatorResultsMode = "flow" | "diagnosis" | "kaizen" | "throughput" | "waste" | "assumptions";
+export type SimulatorResultsMode = "flow" | "diagnosis" | "kaizen" | "throughput" | "waste" | "assumptions" | "compare";
 
 export interface ChecklistItem {
   severity: "warning" | "critical";
@@ -536,11 +536,23 @@ export interface AssumptionsReportResult {
   };
 }
 
+export interface ScenarioSavedMetrics {
+  forecastThroughput: number | string;
+  bottleneckIndex: number | string;
+  totalWipQty: number | string;
+  totalCompletedOutputPieces: number | string;
+  activeConstraintName: string;
+  weightedLeadTimeMinutes: number | string;
+  tocThroughputPerUnit: number | string;
+}
+
 export interface ScenarioLibraryEntry {
   scenarioId: string;
   scenarioName: string;
+  note?: string;
   savedAt: string;
   scenario: Record<string, number | string>;
+  savedMetrics?: ScenarioSavedMetrics;
 }
 
 export interface ScenarioLibraryFileContext {

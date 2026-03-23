@@ -8,7 +8,8 @@ import {
 import type {
   ScenarioLibraryEntry,
   ScenarioLibraryFileContext,
-  ScenarioLibraryIssue
+  ScenarioLibraryIssue,
+  ScenarioSavedMetrics
 } from "../types/contracts";
 import type { ScenarioState } from "./scenarioState";
 
@@ -73,8 +74,14 @@ interface UseScenarioLibraryResult {
   issues: ScenarioLibraryIssue[];
   openLibrary: () => Promise<OpenLibraryResult>;
   importLibraryFile: (file: File) => Promise<void>;
-  saveCurrentScenario: (scenario: ScenarioState, scenarioName: string) => Promise<SaveScenarioResult>;
+  saveCurrentScenario: (
+    scenario: ScenarioState,
+    scenarioName: string,
+    note?: string,
+    savedMetrics?: ScenarioSavedMetrics
+  ) => Promise<SaveScenarioResult>;
   loadScenarioEntry: (scenarioId: string) => ScenarioState | null;
+  deleteScenarioEntry: (scenarioId: string) => void;
   clearCurrentScenario: () => void;
   setSelectedScenarioId: (scenarioId: string | null) => void;
 }
@@ -186,25 +193,31 @@ export function useScenarioLibrary({
 
   const saveCurrentScenario = async (
     scenario: ScenarioState,
-    scenarioName: string
+    scenarioName: string,
+    note?: string,
+    savedMetrics?: ScenarioSavedMetrics
   ): Promise<SaveScenarioResult> => {
     const normalizedName = scenarioName.trim() || createTimestampName();
     const savedAt = new Date().toISOString();
     const entry: ScenarioLibraryEntry = {
-      scenarioId: currentScenarioId ?? createScenarioId(),
+      scenarioId: createScenarioId(),
       scenarioName: normalizedName,
+      note: note || undefined,
       savedAt,
-      scenario: { ...scenario }
+      scenario: { ...scenario },
+      savedMetrics
     };
     const nextEntries = upsertScenarioLibraryEntry(libraryEntries, entry);
     const csvText = serializeScenarioLibrary(nextEntries, context, scenarioColumns);
-    const defaultFileName = toCsvFileName(libraryName ?? appTitle);
+    const dateSuffix = new Date().toISOString().slice(0, 10);
+    const defaultFileName = toCsvFileName(libraryName ?? `${appTitle}_scenarios_${dateSuffix}`);
 
     setLibraryEntries(nextEntries);
     setIssues([]);
     setCurrentScenarioId(entry.scenarioId);
     setSelectedScenarioId(entry.scenarioId);
 
+    // Already have an open file — write silently, no dialog
     if (activeCsvHandle) {
       await writeHandleText(activeCsvHandle, csvText);
       setLibraryName(activeCsvHandle.name);
@@ -215,6 +228,7 @@ export function useScenarioLibrary({
       };
     }
 
+    // First save — ask the user where to create the CSV file
     if (typeof window !== "undefined" && typeof window.showSaveFilePicker === "function") {
       try {
         const handle = await window.showSaveFilePicker({
@@ -223,9 +237,7 @@ export function useScenarioLibrary({
           types: [
             {
               description: "Scenario Library CSV",
-              accept: {
-                "text/csv": [".csv"]
-              }
+              accept: { "text/csv": [".csv"] }
             }
           ]
         });
@@ -238,14 +250,14 @@ export function useScenarioLibrary({
           savedEntry: entry
         };
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return {
-            mode: "cancelled"
-          };
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          throw error;
         }
+        // User cancelled the picker — fall through to in-memory download
       }
     }
 
+    // Fallback: browser download (File System Access API unavailable or user cancelled picker)
     setLibraryName(defaultFileName);
     return {
       mode: "download",
@@ -266,6 +278,17 @@ export function useScenarioLibrary({
     return { ...entry.scenario };
   };
 
+  const deleteScenarioEntry = (scenarioId: string): void => {
+    const nextEntries = libraryEntries.filter((e) => e.scenarioId !== scenarioId);
+    setLibraryEntries(nextEntries);
+    if (currentScenarioId === scenarioId) setCurrentScenarioId(null);
+    if (selectedScenarioId === scenarioId) setSelectedScenarioId(null);
+    if (activeCsvHandle) {
+      const csvText = serializeScenarioLibrary(nextEntries, context, scenarioColumns);
+      writeHandleText(activeCsvHandle, csvText).catch(() => undefined);
+    }
+  };
+
   const clearCurrentScenario = () => {
     setCurrentScenarioId(null);
   };
@@ -282,6 +305,7 @@ export function useScenarioLibrary({
     importLibraryFile,
     saveCurrentScenario,
     loadScenarioEntry,
+    deleteScenarioEntry,
     clearCurrentScenario,
     setSelectedScenarioId
   };

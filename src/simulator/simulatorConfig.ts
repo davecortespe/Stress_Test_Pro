@@ -1,5 +1,15 @@
 import type { KpiConfig, SimulatorResultsMode } from "../types/contracts";
 
+export type MetricDeltaDirection = "higher_better" | "lower_better" | "neutral";
+
+export interface ComparisonMetricConfig {
+  key: string;
+  label: string;
+  format: KpiConfig["format"];
+  decimals: number;
+  direction: MetricDeltaDirection;
+}
+
 export interface ExportNotice {
   tone: "success" | "error";
   text: string;
@@ -11,10 +21,22 @@ export const RESULTS_MODE_LABELS: Record<SimulatorResultsMode, string> = {
   kaizen: "Improvement Priorities",
   throughput: "Throughput & Economics",
   waste: "Waste Analysis",
-  assumptions: "Model Assumptions"
+  assumptions: "Model Assumptions",
+  compare: "Scenario Compare"
 };
 
+export const COMPARISON_METRIC_CONFIGS: ComparisonMetricConfig[] = [
+  { key: "forecastThroughput",        label: "Forecast Output / hr",    format: "number",   decimals: 2, direction: "higher_better" },
+  { key: "bottleneckIndex",           label: "Constraint Pressure",      format: "percent",  decimals: 1, direction: "lower_better"  },
+  { key: "totalWipQty",               label: "WIP Load",                 format: "number",   decimals: 0, direction: "lower_better"  },
+  { key: "weightedLeadTimeMinutes",   label: "Weighted Lead Time",       format: "duration", decimals: 1, direction: "lower_better"  },
+  { key: "totalCompletedOutputPieces",label: "Total Completed Lots",     format: "number",   decimals: 1, direction: "higher_better" },
+  { key: "tocThroughputPerUnit",      label: "TOC Throughput / Unit",    format: "currency", decimals: 2, direction: "higher_better" },
+  { key: "activeConstraintName",      label: "Active Constraint",        format: "text",     decimals: 0, direction: "neutral"       }
+];
+
 export const EXECUTIVE_PDF_URL = "/generated/leanstorming-executive-report.pdf";
+export const COMPARISON_EXECUTIVE_PDF_URL = "/generated/leanstorming-comparison-executive-report.pdf";
 export const PARAMETER_RAIL_WIDTH_STORAGE_KEY = "stress-test-pro.parameter-rail-width-v1";
 export const PARAMETER_RAIL_MIN_WIDTH = 290;
 export const PARAMETER_RAIL_DEFAULT_WIDTH = 320;

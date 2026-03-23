@@ -41,6 +41,11 @@ const RESULTS_MODES: Array<{ key: SimulatorResultsMode; label: string; descripti
     key: "assumptions",
     label: "Model Assumptions",
     description: "Shows which inputs were estimated or defaulted so end users can quickly see how much to trust the current report."
+  },
+  {
+    key: "compare",
+    label: "Scenario Compare",
+    description: "Side-by-side delta table for two saved scenarios — shows which metrics improved, degraded, or stayed the same."
   }
 ];
 

@@ -34,6 +34,10 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTIVE = ROOT / "models" / "active"
 OUTPUT = ROOT / "output" / "pdf"
 PUBLIC = ROOT / "public" / "generated"
+MAIN_EXECUTIVE_PDF_NAME = "leanstorming-executive-report.pdf"
+MAIN_EXECUTIVE_SPEC_NAME = "leanstorming-executive-report.json"
+COMPARE_EXECUTIVE_PDF_NAME = "leanstorming-comparison-executive-report.pdf"
+COMPARE_EXECUTIVE_SPEC_NAME = "leanstorming-comparison-executive-report.json"
 
 PAGE_W, PAGE_H = LETTER
 MARGIN = 0.62 * inch
@@ -1245,6 +1249,678 @@ def make_page_decorator(operation_name: str):
     return page_decorator
 
 
+def _comparison_delta_text(val_a: Any, val_b: Any, fmt_fn, direction: str) -> tuple[str, str]:
+    """Return (formatted_delta, semantic) where semantic is 'positive'|'negative'|'neutral'."""
+    a = optional_num(val_a)
+    b = optional_num(val_b)
+    if a is None or b is None:
+        return "—", "neutral"
+    delta = b - a
+    if abs(delta) < 1e-9:
+        return "—", "neutral"
+    sign = "+" if delta > 0 else ""
+    text = f"{sign}{fmt_fn(delta)}" if fmt_fn else f"{sign}{delta:.2f}"
+    if direction == "higher_better":
+        semantic = "positive" if delta > 0 else "alert"
+    elif direction == "lower_better":
+        semantic = "positive" if delta < 0 else "alert"
+    else:
+        semantic = "neutral"
+    return text, semantic
+
+
+def _comparison_interpretation(snap_a: dict[str, Any], snap_b: dict[str, Any]) -> str:
+    m_a = snap_a.get("metrics") or {}
+    m_b = snap_b.get("metrics") or {}
+    parts: list[str] = []
+    ta, tb = optional_num(m_a.get("forecastThroughput")), optional_num(m_b.get("forecastThroughput"))
+    if ta and tb and ta > 0:
+        delta_pct = (tb - ta) / ta
+        if delta_pct > 0.20:
+            parts.append(f"Scenario B delivers a material throughput improvement of {fmt_pct(delta_pct, 0)}, which is a significant operating gain worth validating with a follow-up run.")
+        elif delta_pct > 0:
+            parts.append(f"Throughput increases by {fmt_pct(delta_pct, 0)} in Scenario B.")
+        elif delta_pct < -0.05:
+            parts.append(f"Throughput degrades by {fmt_pct(abs(delta_pct), 0)} in Scenario B — verify the parameter changes before actioning.")
+    wa, wb = optional_num(m_a.get("totalWipQty")), optional_num(m_b.get("totalWipQty"))
+    if wa and wb and wa > 0:
+        delta_pct = (wb - wa) / wa
+        if delta_pct < -0.30:
+            parts.append(f"WIP load drops by {fmt_pct(abs(delta_pct), 0)}, indicating significant queue relief as the bottleneck constraint loosens.")
+    ca = clean(str(m_a.get("activeConstraintName") or ""))
+    cb = clean(str(m_b.get("activeConstraintName") or ""))
+    if ca and cb and ca.lower() != cb.lower():
+        parts.append(f"The active bottleneck migrates from {ca} to {cb} — confirm this shift with a follow-up run before widening the improvement scope.")
+    if not parts:
+        return "The two scenarios show comparable operating performance across the tracked metrics. Review the parameter diff table to confirm which inputs changed."
+    return " ".join(parts)
+
+
+def build_scenario_comparison_page(snapshots: list[dict[str, Any]], styles: dict[str, ParagraphStyle]) -> list[Any]:
+    if len(snapshots) < 2:
+        return []
+    snap_a, snap_b = snapshots[0], snapshots[1]
+    name_a = clean(snap_a.get("scenarioName") or "Scenario A")
+    name_b = clean(snap_b.get("scenarioName") or "Scenario B")
+    m_a = snap_a.get("metrics") or {}
+    m_b = snap_b.get("metrics") or {}
+
+    metric_rows: list[tuple[str, Any, Any, str, str]] = [
+        ("Forecast Output / hr",   m_a.get("forecastThroughput"),        m_b.get("forecastThroughput"),        lambda v: fmt_num(v, 2),     "higher_better"),
+        ("Constraint Pressure",    m_a.get("bottleneckIndex"),            m_b.get("bottleneckIndex"),            fmt_pct,                     "lower_better"),
+        ("WIP Load",               m_a.get("totalWipQty"),                m_b.get("totalWipQty"),                lambda v: fmt_num(v, 0),     "lower_better"),
+        ("Weighted Lead Time",     m_a.get("weightedLeadTimeMinutes"),    m_b.get("weightedLeadTimeMinutes"),    fmt_minutes,                 "lower_better"),
+        ("Total Completed Lots",   m_a.get("totalCompletedOutputPieces"), m_b.get("totalCompletedOutputPieces"), lambda v: fmt_num(v, 1),    "higher_better"),
+        ("TOC Throughput / Unit",  m_a.get("tocThroughputPerUnit"),       m_b.get("tocThroughputPerUnit"),       fmt_currency,                "higher_better"),
+        ("Active Constraint",      m_a.get("activeConstraintName"),       m_b.get("activeConstraintName"),       None,                        "neutral"),
+    ]
+
+    _pos_fill = colors.HexColor("#EDF6F3")
+    _neg_fill = colors.HexColor("#F9EDEC")
+    _amber_fill = colors.HexColor("#FFF8EC")
+
+    col_w = [CONTENT_W * 0.28, CONTENT_W * 0.20, CONTENT_W * 0.20, CONTENT_W * 0.20]
+    header_row = [paragraph("Metric", styles["MetricLabel"]), paragraph(name_a, styles["MetricLabel"]), paragraph(name_b, styles["MetricLabel"]), paragraph("Delta (B \u2212 A)", styles["MetricLabel"])]
+    table_data = [header_row]
+    fill_cmds: list[Any] = []
+
+    for row_idx, (label, val_a, val_b, fmt_fn, direction) in enumerate(metric_rows, start=1):
+        if direction == "neutral":
+            str_a = clean(str(val_a)) if val_a is not None else "\u2014"
+            str_b = clean(str(val_b)) if val_b is not None else "\u2014"
+            delta_text = "\u2014" if str_a.lower() == str_b.lower() else "migrated"
+            delta_fill = _amber_fill if delta_text == "migrated" else None
+        else:
+            a_fmt = fmt_fn(val_a) if fmt_fn and optional_num(val_a) is not None else (clean(str(val_a)) if val_a is not None else "\u2014")
+            b_fmt = fmt_fn(val_b) if fmt_fn and optional_num(val_b) is not None else (clean(str(val_b)) if val_b is not None else "\u2014")
+            str_a, str_b = a_fmt, b_fmt
+            delta_text, semantic = _comparison_delta_text(val_a, val_b, fmt_fn, direction)
+            delta_fill = _pos_fill if semantic == "positive" else (_neg_fill if semantic == "alert" else None)
+
+        table_data.append([
+            paragraph(label, styles["Body"]),
+            paragraph(str_a, styles["BodyMuted"]),
+            paragraph(str_b, styles["BodyStrong"]),
+            paragraph(f"<b>{delta_text}</b>", styles["BodyStrong"]),
+        ])
+        if delta_fill:
+            fill_cmds.append(("BACKGROUND", (3, row_idx), (3, row_idx), delta_fill))
+
+    comp_table = Table(table_data, colWidths=col_w, repeatRows=1)
+    base_style = [
+        ("BOX", (0, 0), (-1, -1), 0.8, BORDER),
+        ("INNERGRID", (0, 0), (-1, -1), 0.5, BORDER),
+        ("BACKGROUND", (0, 0), (-1, 0), SURFACE_ALT),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [SURFACE, SURFACE_ALT]),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ] + fill_cmds
+    comp_table.setStyle(TableStyle(base_style))
+
+    interpretation = _comparison_interpretation(snap_a, snap_b)
+
+    return [
+        PageBreak(),
+        *section_header(
+            "SCENARIO COMPARISON",
+            f"Scenario Comparison \u2014 {name_a} vs. {name_b}",
+            interpretation,
+            styles,
+        ),
+        comp_table,
+    ]
+
+
+def build_param_diff_page(snapshots: list[dict[str, Any]], styles: dict[str, ParagraphStyle]) -> list[Any]:
+    if len(snapshots) < 2:
+        return []
+    snap_a, snap_b = snapshots[0], snapshots[1]
+    sc_a: dict[str, Any] = snap_a.get("scenario") or {}
+    sc_b: dict[str, Any] = snap_b.get("scenario") or {}
+    all_keys = sorted(set(sc_a) | set(sc_b))
+    diff_rows: list[list[str]] = []
+    for key in all_keys:
+        str_a = clean(str(sc_a.get(key, "\u2014")))
+        str_b = clean(str(sc_b.get(key, "\u2014")))
+        if str_a != str_b:
+            label = key.replace("_", " ").replace("-", " ").title()
+            diff_rows.append([label, str_a, str_b])
+    if not diff_rows:
+        return []
+    col_w = [CONTENT_W * 0.36, CONTENT_W * 0.28, CONTENT_W * 0.28]
+    return [
+        Spacer(1, 0.18 * inch),
+        paragraph("PARAMETER DIFF", styles["Eyebrow"]),
+        Spacer(1, 0.04 * inch),
+        Paragraph("Parameters that changed between scenarios — identical inputs are omitted.", styles["BodyMuted"]),
+        Spacer(1, 0.08 * inch),
+        evidence_table(["Parameter", snap_a.get("scenarioName") or "Scenario A", snap_b.get("scenarioName") or "Scenario B"], diff_rows, col_w, styles),
+    ]
+
+
+COMPARISON_METRIC_SPECS: list[dict[str, Any]] = [
+    {"key": "forecastThroughput", "label": "Forecast Output / hr", "direction": "higher_better", "epsilon": 0.05},
+    {"key": "totalWipQty", "label": "WIP Load", "direction": "lower_better", "epsilon": 1.0},
+    {"key": "weightedLeadTimeMinutes", "label": "Weighted Lead Time", "direction": "lower_better", "epsilon": 1.0},
+    {"key": "bottleneckIndex", "label": "Constraint Pressure", "direction": "lower_better", "epsilon": 0.005},
+    {"key": "activeConstraintName", "label": "Active Constraint", "direction": "neutral", "epsilon": 0.0},
+    {"key": "totalCompletedOutputPieces", "label": "Total Completed Lots", "direction": "higher_better", "epsilon": 1.0},
+]
+
+
+def fmt_lots_floor(value: Any) -> str:
+    parsed = optional_num(value)
+    if parsed is None:
+        return "--"
+    return f"{math.floor(parsed):,d}"
+
+
+def fmt_scenario_value(key: str, value: Any) -> str:
+    parsed = optional_num(value)
+    if key == "forecastThroughput":
+        return f"{fmt_num(parsed, 2)} /hr" if parsed is not None else "--"
+    if key == "totalWipQty":
+        return f"{fmt_num(parsed, 0)} pcs" if parsed is not None else "--"
+    if key == "weightedLeadTimeMinutes":
+        return fmt_minutes(parsed, 1) if parsed is not None else "--"
+    if key == "bottleneckIndex":
+        return fmt_pct(parsed, 0) if parsed is not None else "--"
+    if key == "totalCompletedOutputPieces":
+        return f"{fmt_lots_floor(value)} pcs"
+    return clean(value or "--")
+
+
+def comparison_direction_label(tone: str) -> str:
+    return {
+        "positive": "Better",
+        "alert": "Worse",
+        "caution": "Shifted",
+        "neutral": "No material change",
+    }.get(tone, "No material change")
+
+
+def comparison_fill_for_tone(tone: str) -> colors.Color:
+    if tone == "positive":
+        return _SEMANTIC_FILLS["positive"]
+    if tone == "alert":
+        return _SEMANTIC_FILLS["alert"]
+    if tone == "caution":
+        return _SEMANTIC_FILLS["caution"]
+    return SURFACE
+
+
+def _comparison_delta_core(key: str, val_a: Any, val_b: Any, direction: str, epsilon: float) -> tuple[str, str, bool]:
+    if key == "activeConstraintName":
+        left = clean(val_a or "--")
+        right = clean(val_b or "--")
+        if left.lower() == right.lower():
+            return "Same step", "neutral", False
+        return "Shifted", "caution", True
+
+    num_a = optional_num(val_a)
+    num_b = optional_num(val_b)
+    if num_a is None or num_b is None:
+        return "--", "neutral", False
+
+    if key == "totalCompletedOutputPieces":
+        floor_a = math.floor(num_a)
+        floor_b = math.floor(num_b)
+        delta_lots = floor_b - floor_a
+        if abs(delta_lots) < epsilon:
+            return "No material change", "neutral", False
+        sign = "+" if delta_lots > 0 else ""
+        tone = "positive" if direction == "higher_better" and delta_lots > 0 else "alert"
+        return f"{sign}{delta_lots:d} pcs", tone, True
+
+    delta = num_b - num_a
+    if abs(delta) < epsilon:
+        return "No material change", "neutral", False
+
+    if key == "forecastThroughput":
+        text = f"{'+' if delta > 0 else ''}{delta:.2f} /hr"
+    elif key == "totalWipQty":
+        text = f"{'+' if delta > 0 else ''}{delta:.0f} pcs"
+    elif key == "weightedLeadTimeMinutes":
+        text = f"{'+' if delta > 0 else ''}{delta:.1f} min"
+    elif key == "bottleneckIndex":
+        text = f"{'+' if delta > 0 else ''}{delta * 100:.0f} pts"
+    else:
+        text = f"{'+' if delta > 0 else ''}{delta:.2f}"
+
+    if direction == "higher_better":
+        tone = "positive" if delta > 0 else "alert"
+    elif direction == "lower_better":
+        tone = "positive" if delta < 0 else "alert"
+    else:
+        tone = "neutral"
+    return text, tone, True
+
+
+def build_comparison_metrics(snap_a: dict[str, Any], snap_b: dict[str, Any]) -> list[dict[str, Any]]:
+    metrics_a = snap_a.get("metrics") or {}
+    metrics_b = snap_b.get("metrics") or {}
+    rows: list[dict[str, Any]] = []
+    for spec in COMPARISON_METRIC_SPECS:
+        key = spec["key"]
+        delta_text, tone, materially_changed = _comparison_delta_core(
+            key,
+            metrics_a.get(key),
+            metrics_b.get(key),
+            spec["direction"],
+            spec["epsilon"],
+        )
+        rows.append(
+            {
+                "key": key,
+                "label": spec["label"],
+                "value_a": fmt_scenario_value(key, metrics_a.get(key)),
+                "value_b": fmt_scenario_value(key, metrics_b.get(key)),
+                "delta_text": delta_text,
+                "tone": tone,
+                "direction": comparison_direction_label(tone),
+                "materially_changed": materially_changed,
+            }
+        )
+    return rows
+
+
+def compute_comparison_verdict(snap_a: dict[str, Any], snap_b: dict[str, Any]) -> dict[str, Any]:
+    metrics_a = snap_a.get("metrics") or {}
+    metrics_b = snap_b.get("metrics") or {}
+    score = 0
+
+    throughput_a = optional_num(metrics_a.get("forecastThroughput"))
+    throughput_b = optional_num(metrics_b.get("forecastThroughput"))
+    if throughput_a is not None and throughput_b is not None:
+        if throughput_b > throughput_a + 0.05:
+            score += 2
+        elif throughput_b < throughput_a - 0.05:
+            score -= 2
+
+    wip_a = optional_num(metrics_a.get("totalWipQty"))
+    wip_b = optional_num(metrics_b.get("totalWipQty"))
+    if wip_a is not None and wip_b is not None:
+        if wip_b < wip_a - 1:
+            score += 1
+        elif wip_b > wip_a + 1:
+            score -= 1
+
+    lead_a = optional_num(metrics_a.get("weightedLeadTimeMinutes"))
+    lead_b = optional_num(metrics_b.get("weightedLeadTimeMinutes"))
+    if lead_a is not None and lead_b is not None:
+        if lead_b < lead_a - 1:
+            score += 1
+        elif lead_b > lead_a + 1:
+            score -= 1
+
+    if score >= 3:
+        return {"headline": "Recommend Scenario B", "recommended": "B", "confidence": "strong"}
+    if score >= 1:
+        return {"headline": "Scenario B has the advantage", "recommended": "B", "confidence": "moderate"}
+    if score <= -3:
+        return {"headline": "Recommend Scenario A", "recommended": "A", "confidence": "strong"}
+    if score <= -1:
+        return {"headline": "Scenario A has the advantage", "recommended": "A", "confidence": "moderate"}
+    return {"headline": "No clear advantage between Scenario A and Scenario B", "recommended": None, "confidence": "none"}
+
+
+def build_comparison_summary(snap_a: dict[str, Any], snap_b: dict[str, Any], metric_rows: list[dict[str, Any]], verdict: dict[str, Any]) -> str:
+    name_a = clean(snap_a.get("scenarioName") or "Scenario A")
+    name_b = clean(snap_b.get("scenarioName") or "Scenario B")
+    row_by_key = {row["key"]: row for row in metric_rows}
+    sentences: list[str] = []
+
+    if verdict["recommended"] == "B":
+        sentences.append(f"{name_b} is the stronger operating choice on the tracked flow metrics.")
+    elif verdict["recommended"] == "A":
+        sentences.append(f"{name_a} remains the stronger operating choice; the tested alternative does not improve the line.")
+    else:
+        sentences.append("The tested changes do not create a clear enough operating advantage to justify adoption yet.")
+
+    throughput_row = row_by_key["forecastThroughput"]
+    if throughput_row["tone"] == "positive":
+        sentences.append(f"Output improves in Scenario B by {throughput_row['delta_text']}.")
+    elif throughput_row["tone"] == "alert":
+        sentences.append(f"Output declines in Scenario B by {throughput_row['delta_text'].replace('-', '')}.")
+    else:
+        sentences.append("Output remains broadly flat between the two scenarios.")
+
+    wip_row = row_by_key["totalWipQty"]
+    lead_row = row_by_key["weightedLeadTimeMinutes"]
+    if wip_row["tone"] == "positive" and lead_row["tone"] == "positive":
+        sentences.append("The tested change reduces congestion and shortens response time, which supports a cleaner operating rhythm.")
+    elif wip_row["tone"] == "alert" or lead_row["tone"] == "alert":
+        sentences.append("The tested change adds operational friction through heavier congestion, longer delay, or both.")
+    else:
+        sentences.append("Congestion and lead-time behavior remain directionally similar.")
+
+    constraint_row = row_by_key["activeConstraintName"]
+    if constraint_row["tone"] == "caution":
+        sentences.append("The active constraint shifts, so leadership attention would need to move with the bottleneck.")
+
+    return " ".join(sentences[:4])
+
+
+def build_comparison_tradeoff(metric_rows: list[dict[str, Any]], verdict: dict[str, Any]) -> str:
+    if verdict["recommended"] is None:
+        return "The tradeoff is weak separation: the tested change does not move the decision enough to justify switching."
+    tone_target = "alert" if verdict["recommended"] == "B" else "positive"
+    tradeoffs = [row["label"] for row in metric_rows if row["tone"] == tone_target and row["key"] != "activeConstraintName"]
+    if not tradeoffs:
+        return "The tracked tradeoffs are limited; the recommendation is supported by a cleaner overall operating profile."
+    return f"The main tradeoff sits in {', '.join(tradeoffs[:2]).lower()}."
+
+
+def build_comparison_next_step(metric_rows: list[dict[str, Any]], verdict: dict[str, Any]) -> str:
+    constraint_row = next((row for row in metric_rows if row["key"] == "activeConstraintName"), None)
+    if verdict["recommended"] == "B":
+        if constraint_row and constraint_row["tone"] == "caution":
+            return "Adopt Scenario B for the next validation cycle, then re-check the new bottleneck before widening the change."
+        return "Adopt Scenario B as the next working baseline and validate the gain with one follow-up run."
+    if verdict["recommended"] == "A":
+        return "Keep Scenario A as the baseline and test a stronger improvement lever before changing the operation."
+    return "Keep the current baseline, then test a more material intervention before escalating the decision."
+
+
+def build_comparison_guidance(snap_a: dict[str, Any], snap_b: dict[str, Any], metric_rows: list[dict[str, Any]], verdict: dict[str, Any]) -> dict[str, str]:
+    recommended = verdict["recommended"]
+    if recommended == "B":
+        preferred_name = clean(snap_b.get("scenarioName") or "Scenario B")
+        why = "Preferred because it improves the tracked operating outcomes most clearly."
+    elif recommended == "A":
+        preferred_name = clean(snap_a.get("scenarioName") or "Scenario A")
+        why = "Preferred because the tested alternative fails to improve flow enough to justify adoption."
+    else:
+        preferred_name = "No change recommended"
+        why = "Neither scenario creates a material enough operating advantage to support a confident switch."
+
+    positive_rows = [row["label"] for row in metric_rows if row["tone"] == "positive"]
+    if recommended == "B" and positive_rows:
+        why = f"Preferred because it improves {', '.join(positive_rows[:3]).lower()}."
+
+    return {
+        "recommended": preferred_name,
+        "why": why,
+        "tradeoff": build_comparison_tradeoff(metric_rows, verdict),
+        "next_step": build_comparison_next_step(metric_rows, verdict),
+    }
+
+
+def build_comparison_interpretation(metric_rows: list[dict[str, Any]], verdict: dict[str, Any]) -> str:
+    row_by_key = {row["key"]: row for row in metric_rows}
+    sentences: list[str] = []
+    throughput = row_by_key["forecastThroughput"]
+    wip = row_by_key["totalWipQty"]
+    lead = row_by_key["weightedLeadTimeMinutes"]
+    constraint = row_by_key["activeConstraintName"]
+
+    if throughput["tone"] == "positive":
+        sentences.append("The tested change improves flow by lifting output.")
+    elif throughput["tone"] == "alert":
+        sentences.append("The tested change weakens flow because output falls.")
+    else:
+        sentences.append("The tested change does not materially alter flow rate.")
+
+    if wip["tone"] == "positive":
+        sentences.append("Congestion eases, which reduces accumulation inside the system.")
+    elif wip["tone"] == "alert":
+        sentences.append("Congestion increases, which raises the recovery burden on the line.")
+
+    if lead["tone"] == "positive":
+        sentences.append("Delay comes down, suggesting a cleaner path from release to completion.")
+    elif lead["tone"] == "alert":
+        sentences.append("Delay gets worse, which points to more friction in the operating path.")
+
+    if constraint["tone"] == "caution":
+        sentences.append("The bottleneck shifts, so the operating focus would need to move with it.")
+
+    if verdict["recommended"] is None:
+        sentences.append("From a leadership standpoint, the tested change is not yet worth adopting.")
+    elif verdict["recommended"] == "B":
+        sentences.append("From a leadership standpoint, the tested change is worth adopting as the next baseline.")
+    else:
+        sentences.append("From a leadership standpoint, the current baseline should be preserved while a stronger change is tested.")
+    return " ".join(sentences[:4])
+
+
+def build_parameter_diff_rows(compiled: dict[str, Any], snap_a: dict[str, Any], snap_b: dict[str, Any], max_rows: int = 8) -> tuple[list[list[str]], int]:
+    scenario_a: dict[str, Any] = snap_a.get("scenario") or {}
+    scenario_b: dict[str, Any] = snap_b.get("scenario") or {}
+    all_keys = set(scenario_a) | set(scenario_b)
+    top_level_order = [clean(item.get("key")) for item in compiled.get("inputs", []) if clean(item.get("key"))]
+    top_level_labels = {
+        clean(item.get("key")): clean(item.get("label") or item.get("key"))
+        for item in compiled.get("inputs", [])
+        if clean(item.get("key"))
+    }
+    step_models = compiled.get("stepModels", []) or []
+    step_order = [clean(step.get("stepId")) for step in step_models if clean(step.get("stepId"))]
+    step_labels = {clean(step.get("stepId")): clean(step.get("label") or step.get("stepId")) for step in step_models}
+    step_field_labels = {
+        "capacityUnits": "Capacity units",
+        "ctMultiplier": "Cycle time multiplier",
+        "downtimePct": "Downtime %",
+        "leadTimeMinutes": "Lead time (min)",
+        "materialCostPerUnit": "Material cost / unit",
+        "laborRatePerHour": "Labor rate / hr",
+        "equipmentRatePerHour": "Equipment rate / hr",
+    }
+
+    def display(value: Any) -> str:
+        if value is None or value == "":
+            return "--"
+        if isinstance(value, float):
+            if not math.isfinite(value):
+                return "--"
+            if abs(value - round(value)) < 1e-9:
+                return str(int(round(value)))
+            return f"{value:.2f}".rstrip("0").rstrip(".")
+        return clean(value)
+
+    rows: list[list[str]] = []
+    seen_keys: set[str] = set()
+    for key in top_level_order:
+        if key in all_keys and display(scenario_a.get(key)) != display(scenario_b.get(key)):
+            rows.append([top_level_labels.get(key, key), display(scenario_a.get(key)), display(scenario_b.get(key))])
+            seen_keys.add(key)
+
+    for key in sorted(k for k in all_keys if not k.startswith("step_") and k not in seen_keys):
+        if display(scenario_a.get(key)) != display(scenario_b.get(key)):
+            rows.append([clean(key).replace("_", " ").title(), display(scenario_a.get(key)), display(scenario_b.get(key))])
+
+    for step_id in step_order:
+        prefix = f"step_{step_id}_"
+        for key in sorted(k for k in all_keys if k.startswith(prefix)):
+            if display(scenario_a.get(key)) == display(scenario_b.get(key)):
+                continue
+            field_name = key[len(prefix):]
+            field_label = step_field_labels.get(field_name, clean(field_name).replace("_", " ").title())
+            rows.append([f"{step_labels.get(step_id, step_id)} - {field_label}", display(scenario_a.get(key)), display(scenario_b.get(key))])
+
+    total_rows = len(rows)
+    return rows[:max_rows], max(0, total_rows - max_rows)
+
+
+def comparison_metric_cards(metric_rows: list[dict[str, Any]], styles: dict[str, ParagraphStyle]) -> Table:
+    card_width = (CONTENT_W - 24) / 3
+    cells: list[Table] = []
+    for row in metric_rows:
+        content = [
+            paragraph(row["label"], styles["SmallCaps"]),
+            Spacer(1, 0.03 * inch),
+            Paragraph(f"<b>A</b>  {clean(row['value_a'])}", styles["Body"]),
+            Spacer(1, 0.015 * inch),
+            Paragraph(f"<b>B</b>  {clean(row['value_b'])}", styles["BodyStrong"]),
+            Spacer(1, 0.05 * inch),
+            Paragraph(f"<b>{clean(row['delta_text'])}</b>  {clean(row['direction'])}", styles["BodyMuted"]),
+        ]
+        cells.append(
+            tinted_box(
+                content,
+                fill=comparison_fill_for_tone(row["tone"]),
+                border=BORDER,
+                left_accent=SUCCESS if row["tone"] == "positive" else CAUTION if row["tone"] == "caution" else ALERT if row["tone"] == "alert" else ACCENT,
+                padding=10,
+                width=card_width,
+            )
+        )
+    table = Table([cells[:3], cells[3:6]], colWidths=[card_width, card_width, card_width])
+    table.setStyle(TableStyle([
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]))
+    return table
+
+
+def build_comparison_page_one(compiled: dict[str, Any], snapshots: list[dict[str, Any]], styles: dict[str, ParagraphStyle]) -> tuple[list[Any], dict[str, Any]]:
+    snap_a, snap_b = snapshots[0], snapshots[1]
+    metric_rows = build_comparison_metrics(snap_a, snap_b)
+    verdict = compute_comparison_verdict(snap_a, snap_b)
+    summary = build_comparison_summary(snap_a, snap_b, metric_rows, verdict)
+    guidance = build_comparison_guidance(snap_a, snap_b, metric_rows, verdict)
+    operation_name = clean(compiled.get("metadata", {}).get("name") or "Current Operation")
+    page = [
+        paragraph("SCENARIO COMPARISON", styles["Eyebrow"]),
+        Spacer(1, 0.05 * inch),
+        Paragraph(f"{verdict['headline']} for {operation_name}", styles["Title"]),
+        Spacer(1, 0.06 * inch),
+        Paragraph(
+            f"Scenario A: {clean(snap_a.get('scenarioName') or 'Scenario A')}  |  Scenario B: {clean(snap_b.get('scenarioName') or 'Scenario B')}",
+            styles["BodyMuted"],
+        ),
+        Spacer(1, 0.10 * inch),
+        tinted_box(
+            [
+                paragraph("Executive summary", styles["SmallCaps"]),
+                Spacer(1, 0.05 * inch),
+                Paragraph(summary, styles["Lead"]),
+            ],
+            fill=SURFACE_ALT,
+            border=BORDER,
+            left_accent=ACCENT,
+        ),
+        Spacer(1, 0.14 * inch),
+        comparison_metric_cards(metric_rows, styles),
+        Spacer(1, 0.06 * inch),
+        tinted_box(
+            [
+                paragraph("Decision guidance", styles["SmallCaps"]),
+                Spacer(1, 0.05 * inch),
+                Paragraph(f"<b>Recommended scenario</b>  {guidance['recommended']}", styles["Body"]),
+                Spacer(1, 0.03 * inch),
+                Paragraph(f"<b>Why it is preferred</b>  {guidance['why']}", styles["Body"]),
+                Spacer(1, 0.03 * inch),
+                Paragraph(f"<b>Tradeoff</b>  {guidance['tradeoff']}", styles["Body"]),
+                Spacer(1, 0.03 * inch),
+                Paragraph(f"<b>Suggested next step</b>  {guidance['next_step']}", styles["Body"]),
+            ],
+            fill=ACCENT_SOFT,
+            border=BORDER,
+            left_accent=ACCENT,
+        ),
+    ]
+    return page, {"metric_rows": metric_rows, "verdict": verdict, "summary": summary, "guidance": guidance}
+
+
+def build_comparison_page_two(compiled: dict[str, Any], snapshots: list[dict[str, Any]], styles: dict[str, ParagraphStyle], page_one_data: dict[str, Any]) -> list[Any]:
+    snap_a, snap_b = snapshots[0], snapshots[1]
+    metric_rows: list[dict[str, Any]] = page_one_data["metric_rows"]
+    verdict: dict[str, Any] = page_one_data["verdict"]
+    interpretation = build_comparison_interpretation(metric_rows, verdict)
+    evidence_rows = [[row["label"], row["value_a"], row["value_b"], row["delta_text"], row["direction"]] for row in metric_rows]
+    evidence = evidence_table(
+        [
+            "Metric",
+            clean(snap_a.get("scenarioName") or "Scenario A"),
+            clean(snap_b.get("scenarioName") or "Scenario B"),
+            "Delta",
+            "Direction",
+        ],
+        evidence_rows,
+        [CONTENT_W * 0.27, CONTENT_W * 0.18, CONTENT_W * 0.18, CONTENT_W * 0.18, CONTENT_W * 0.17],
+        styles,
+    )
+    param_rows, truncated_count = build_parameter_diff_rows(compiled, snap_a, snap_b)
+    if param_rows:
+        param_block: list[Any] = [
+            paragraph("Parameter differences", styles["SmallCaps"]),
+            Spacer(1, 0.04 * inch),
+            evidence_table(
+                ["Changed input", "Scenario A", "Scenario B"],
+                param_rows,
+                [CONTENT_W * 0.42, CONTENT_W * 0.24, CONTENT_W * 0.24],
+                styles,
+            ),
+        ]
+        if truncated_count > 0:
+            param_block.extend([Spacer(1, 0.04 * inch), Paragraph(f"+{truncated_count} more differences not shown.", styles["BodyMuted"])])
+    else:
+        param_block = [
+            paragraph("Parameter differences", styles["SmallCaps"]),
+            Spacer(1, 0.04 * inch),
+            Paragraph("The tracked inputs are identical between Scenario A and Scenario B. Any output difference is likely simulation variability rather than a modeled process change.", styles["Body"]),
+        ]
+
+    return [
+        PageBreak(),
+        paragraph("DECISION EVIDENCE", styles["Eyebrow"]),
+        Spacer(1, 0.05 * inch),
+        Paragraph("Comparison Evidence and Interpretation", styles["Section"]),
+        Spacer(1, 0.08 * inch),
+        evidence,
+        Spacer(1, 0.14 * inch),
+        tinted_box(param_block, fill=SURFACE_ALT, border=BORDER, left_accent=ACCENT),
+        Spacer(1, 0.14 * inch),
+        tinted_box(
+            [
+                paragraph("Executive interpretation", styles["SmallCaps"]),
+                Spacer(1, 0.05 * inch),
+                Paragraph(interpretation, styles["Lead"]),
+            ],
+            fill=SURFACE,
+            border=BORDER,
+            left_accent=ACCENT,
+        ),
+    ]
+
+
+def build_comparison_report_spec(compiled: dict[str, Any], snapshots: list[dict[str, Any]], page_one_data: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "title": "LeanStorming Comparison Executive Report",
+        "operation_name": clean(compiled.get("metadata", {}).get("name") or "Current Operation"),
+        "generated_at": datetime.now().isoformat(),
+        "subtitle": "Simulation-backed scenario comparison",
+        "scenario_a": clean(snapshots[0].get("scenarioName") or "Scenario A"),
+        "scenario_b": clean(snapshots[1].get("scenarioName") or "Scenario B"),
+        "headline": page_one_data["verdict"]["headline"],
+        "recommended": page_one_data["guidance"]["recommended"],
+        "summary": page_one_data["summary"],
+    }
+
+
+def build_comparison_story() -> tuple[list[Any], dict[str, Any]] | None:
+    comparisons_path = ACTIVE / "scenario_comparisons.json"
+    if not comparisons_path.exists():
+        return None
+    compiled = read_json(ACTIVE / "compiled_forecast_model.json")
+    comparisons = read_json(comparisons_path)
+    snapshots = comparisons.get("snapshots") or []
+    if len(snapshots) < 2:
+        return None
+    styles = make_styles()
+    page_one, page_one_data = build_comparison_page_one(compiled, snapshots, styles)
+    story = list(page_one)
+    story.extend(build_comparison_page_two(compiled, snapshots, styles, page_one_data))
+    spec = build_comparison_report_spec(compiled, snapshots, page_one_data)
+    return story, spec
+
+
 def build_cover_page(model: dict[str, Any], diagnosis: dict[str, Any], facts: list[StepFact], assumptions_summary: AssumptionsSummary, throughput: "ThroughputSummary", styles: dict[str, ParagraphStyle]) -> list[Any]:
     generated = datetime.now().strftime("%B %d, %Y")
     operation_name = clean(model.get("metadata", {}).get("name") or "Current Operation")
@@ -1523,12 +2199,18 @@ def build_story() -> tuple[list[Any], dict[str, Any]]:
     return story, spec
 
 
-def build_pdf(output_path: Path, spec_path: Path | None = None, preview_dir: Path | None = None) -> Path:
-    story, spec = build_story()
+def build_pdf_from_story(
+    story: list[Any],
+    spec: dict[str, Any],
+    output_path: Path,
+    title: str,
+    spec_path: Path | None = None,
+    preview_dir: Path | None = None,
+) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     operation_name = clean(spec.get("operation_name", "LeanStorming"))
     decorator = make_page_decorator(operation_name)
-    doc = SimpleDocTemplate(output_path.as_posix(), pagesize=LETTER, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=0.72 * inch, bottomMargin=0.62 * inch, title="LeanStorming Executive Report", author="LeanStorming")
+    doc = SimpleDocTemplate(output_path.as_posix(), pagesize=LETTER, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=0.72 * inch, bottomMargin=0.62 * inch, title=title, author="LeanStorming")
     doc.build(story, onFirstPage=decorator, onLaterPages=decorator)
     if spec_path is not None:
         spec_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1540,10 +2222,37 @@ def build_pdf(output_path: Path, spec_path: Path | None = None, preview_dir: Pat
     return output_path
 
 
+def build_pdf(output_path: Path, spec_path: Path | None = None, preview_dir: Path | None = None) -> Path:
+    story, spec = build_story()
+    return build_pdf_from_story(
+        story,
+        spec,
+        output_path,
+        title="LeanStorming Executive Report",
+        spec_path=spec_path,
+        preview_dir=preview_dir,
+    )
+
+
+def build_comparison_pdf(output_path: Path, spec_path: Path | None = None, preview_dir: Path | None = None) -> Path | None:
+    comparison_story = build_comparison_story()
+    if comparison_story is None:
+        return None
+    story, spec = comparison_story
+    return build_pdf_from_story(
+        story,
+        spec,
+        output_path,
+        title="LeanStorming Comparison Executive Report",
+        spec_path=spec_path,
+        preview_dir=preview_dir,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate the LeanStorming executive PDF report.")
-    parser.add_argument("--output", default=str(OUTPUT / "leanstorming-executive-report.pdf"))
-    parser.add_argument("--spec-output", default=str(OUTPUT / "leanstorming-executive-report.json"))
+    parser.add_argument("--output", default=str(OUTPUT / MAIN_EXECUTIVE_PDF_NAME))
+    parser.add_argument("--spec-output", default=str(OUTPUT / MAIN_EXECUTIVE_SPEC_NAME))
     parser.add_argument("--preview-dir", default=str(ROOT / "tmp" / "pdfs"))
     args = parser.parse_args()
     output_path = Path(args.output).resolve()
@@ -1551,6 +2260,17 @@ def main() -> int:
     preview_dir = Path(args.preview_dir).resolve() if args.preview_dir else None
     path = build_pdf(output_path, spec_path=spec_path, preview_dir=preview_dir)
     print(f"Executive PDF exported to {path}")
+    compare_output_path = OUTPUT / COMPARE_EXECUTIVE_PDF_NAME
+    compare_spec_path = OUTPUT / COMPARE_EXECUTIVE_SPEC_NAME
+    compare_preview_dir = (preview_dir.parent / f"{preview_dir.name}-comparison") if preview_dir is not None else None
+    compare_path = build_comparison_pdf(compare_output_path, spec_path=compare_spec_path, preview_dir=compare_preview_dir)
+    if compare_path is not None:
+        print(f"Comparison Executive PDF exported to {compare_path}")
+    else:
+        for stale_path in [compare_output_path, compare_spec_path, PUBLIC / COMPARE_EXECUTIVE_PDF_NAME]:
+            if stale_path.exists():
+                stale_path.unlink()
+        print("Comparison Executive PDF skipped - models/active/scenario_comparisons.json not found.")
     return 0
 
 

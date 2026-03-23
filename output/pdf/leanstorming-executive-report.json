@@ -1,7 +1,7 @@
 {
   "title": "LeanStorming Executive Report",
   "operation_name": "Assembly of SpeedBike 3000",
-  "generated_at": "2026-03-22T07:24:38.516566",
+  "generated_at": "2026-03-23T16:03:13.978752",
   "subtitle": "Simulation-backed operational diagnosis",
   "sections": [
     {
@@ -22,7 +22,7 @@
       ]
     },
     {
-      "title": "Kaizen Priorities",
+      "title": "Improvement Priorities",
       "focus_steps": [
         "Frame Kit Prep",
         "Drivetrain Assembly",
@@ -30,7 +30,7 @@
       ]
     },
     {
-      "title": "Throughput and Economics",
+      "title": "Throughput & Economics",
       "primary_bottleneck": "Drivetrain Assembly"
     },
     {
@@ -38,7 +38,7 @@
       "top_delay_step": "Frame Kit Prep"
     },
     {
-      "title": "Assumptions and Model Notes",
+      "title": "Model Assumptions",
       "trust_level": "low"
     },
     {
