@@ -127,7 +127,11 @@ export type OperationalSystemStatus = "stable" | "stressed" | "brittle" | "overl
 
 export interface OperationalDiagnosis {
   status: OperationalSystemStatus;
+  /** One short phrase for the insight strip, e.g. "Not clearing — WIP will grow" */
+  shortStatusSummary: string;
   statusSummary: string;
+  /** Step name only, e.g. "Brake & Gear Adjustment" — no trailing sentence */
+  constraintStepName: string;
   primaryConstraint: string;
   constraintMechanism: string;
   downstreamEffects: string;

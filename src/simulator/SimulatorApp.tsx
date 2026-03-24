@@ -515,40 +515,17 @@ export default function SimulatorApp() {
     );
   };
 
-  const exportComparisonJson = () => {
-    if (pinnedEntries.length < 2) return;
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      snapshots: pinnedEntries.map((entry) => ({
-        scenarioId: entry.scenarioId,
-        scenarioName: entry.scenarioName,
-        note: entry.note ?? null,
-        savedAt: entry.savedAt,
-        metrics: entry.savedMetrics ?? null,
-        scenario: entry.scenario
-      }))
-    };
-    downloadTextFile(
-      "scenario_comparisons.json",
-      JSON.stringify(payload, null, 2),
-      "application/json"
-    );
-    showNotice(
-      "success",
-      "Downloaded scenario_comparisons.json — move it to models/active/ then run export:pdf-report."
-    );
-  };
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className={`simulator-page ${isReportMode ? "reports-layout" : "flow-layout"}`}>
       <div className={`app-shell ${isReportMode ? "reports-layout" : "flow-layout"}`}>
         <DashboardHeader
-          brandLabel="LeanStorming Operational Stress Labs"
+          brandLabel="Leanstorming Operational Stress Labs"
           title={dashboardConfig.appTitle}
-          subtitle=""
-          primaryConstraint={operationalDiagnosis.primaryConstraint}
-          statusSummary={operationalDiagnosis.statusSummary}
+          subtitle={dashboardConfig.subtitle}
+          primaryConstraint={operationalDiagnosis.constraintStepName}
+          statusSummary={operationalDiagnosis.shortStatusSummary}
           recommendedAction={operationalDiagnosis.recommendedAction}
           diagnosisStatus={operationalDiagnosis.status}
           resultsMode={resultsMode}
@@ -566,6 +543,7 @@ export default function SimulatorApp() {
           onStartPause={startPauseWithInspectorReset}
           onReset={resetSimulationView}
           onSaveCurrentScenario={openSaveRunModal}
+          onOpenRun={handleOpenAndLoad}
           onCompareTwoFiles={handleOpenCompareTwoFiles}
           onOpenExecutivePdf={openExecutivePdf}
           onOpenQuickStartGuide={() => setIsQuickStartGuideOpen(true)}
@@ -573,12 +551,6 @@ export default function SimulatorApp() {
           onFocusConstraint={() => setResultsMode("diagnosis")}
           onSimHorizonChange={(value) => updateScenarioValue("simulationHorizonHours", value)}
         />
-
-        {isPaused && hasStagedChanges ? (
-          <div className={`pause-banner ${hasStagedChanges ? "has-changes" : "no-changes"}`}>
-            Paused - edits staged
-          </div>
-        ) : null}
 
         {appNotice ? (
           <div

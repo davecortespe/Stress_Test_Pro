@@ -7554,3 +7554,938 @@
     margin-left: 0;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   COMPACT COMMAND BAR — identity bar, 3-card grid, insight strip
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Row 1: Identity bar ───────────────────────────────────────────── */
+.cmd-identity-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cmd-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #e8f1fb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.cmd-utils {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Compact button override */
+.simulator-page .cmd-btn {
+  min-height: 28px;
+  padding: 3px 10px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* Quieter utility buttons (Report, Guide) */
+.simulator-page .cmd-util {
+  color: #6a7f98;
+  border-color: rgba(80, 110, 140, 0.24);
+}
+.simulator-page .cmd-util:hover { color: #b0c4da; }
+
+/* ── Row 2: Three-card grid ────────────────────────────────────────── */
+.cmd-cards {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 6px;
+  align-items: stretch;
+}
+
+/* Base card */
+.cmd-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(70, 96, 125, 0.32);
+  background: rgba(10, 18, 30, 0.55);
+  border-top-width: 2px;
+  min-width: 0;
+}
+
+.cmd-card-label {
+  margin: 0;
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #55708a;
+}
+
+.cmd-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Horizontal content row within a card */
+.cmd-card-body-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+/* Card 1 — Simulation: cyan top accent, slightly darker bg */
+.cmd-card-sim {
+  border-top-color: rgba(121, 207, 230, 0.45);
+  background: rgba(8, 16, 28, 0.65);
+}
+.cmd-card-sim .cmd-card-label { color: rgba(121, 207, 230, 0.6); }
+
+/* Card 2 — Runs: neutral, no accent */
+.cmd-card-runs {
+  border-top-color: rgba(80, 110, 145, 0.4);
+}
+
+/* Card 3 — Analysis: gold top accent, fills remaining width */
+.cmd-card-analysis {
+  border-top-color: rgba(227, 170, 48, 0.4);
+}
+.cmd-card-analysis .cmd-card-label { color: rgba(227, 170, 48, 0.65); }
+
+/* ── Status cluster (inside Simulation card) ───────────────────────── */
+.cmd-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+}
+
+.cmd-live-dot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* Fix #3: explicit size so .dot renders even without .live-pill parent */
+.cmd-live-dot .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #6e7b8c;
+}
+.cmd-live-dot.is-live   { color: #9ef8e9; }
+.cmd-live-dot.is-paused { color: #c8999e; }
+.cmd-live-dot.is-live .dot {
+  background: #6bc7ad;
+  box-shadow: 0 0 0 5px rgba(107, 199, 173, 0.12);
+  animation: pulse 1.2s ease infinite;
+}
+.cmd-live-dot.is-paused .dot { background: #b67a7f; }
+
+.cmd-time {
+  color: #c6d7ea;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cmd-time-sep { color: #4a6070; }
+
+.cmd-horizon select {
+  font-size: 0.78rem;
+  background: transparent;
+  border: 1px solid rgba(90, 120, 155, 0.35);
+  color: #9baac0;
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+  cursor: pointer;
+}
+.cmd-horizon select:disabled { opacity: 0.55; cursor: default; }
+
+/* Fix #4: track more visible, fill has a floor so 0% isn't invisible */
+.cmd-progress-track {
+  width: 56px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: rgba(90, 120, 155, 0.38);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.cmd-progress-fill {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  background: rgba(121, 207, 230, 0.6);
+  border-radius: var(--radius-pill);
+  transition: width 0.4s linear;
+}
+
+.cmd-pct {
+  color: #7a90a8;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+}
+
+/* ── Run controls row ──────────────────────────────────────────────── */
+.cmd-run {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Speed pill strip ──────────────────────────────────────────────── */
+.cmd-speed {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(63, 91, 124, 0.35);
+  background: rgba(10, 18, 30, 0.9);
+  flex-shrink: 0;
+}
+.cmd-speed .speed-pill {
+  min-height: 22px;
+  padding: 0 7px;
+  font-size: 0.74rem;
+  border-radius: var(--radius-sm);
+  border-color: transparent;
+}
+
+/* ── Saved count button (Runs card) ────────────────────────────────── */
+.simulator-page .cmd-saved-count {
+  color: #7a90a8;
+  border-color: rgba(70, 96, 125, 0.3);
+  font-variant-numeric: tabular-nums;
+}
+.simulator-page .cmd-saved-count:hover { color: #c6d7ea; }
+
+/* ── Insight strip — Fix #5: stronger bg + status tint, pops above cards ── */
+.insight-strip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(60, 90, 120, 0.32);
+  border-left: 3px solid rgba(90, 120, 155, 0.4);
+  background: rgba(7, 13, 22, 0.82);
+  font-size: 0.81rem;
+  min-height: 30px;
+  overflow: hidden;
+}
+.insight-strip.status-stable {
+  border-left-color: rgba(64, 242, 181, 0.55);
+  background: rgba(5, 15, 13, 0.82);
+}
+.insight-strip.status-stressed {
+  border-left-color: rgba(245, 200, 76, 0.55);
+  background: rgba(16, 13, 4, 0.84);
+}
+.insight-strip.status-brittle,
+.insight-strip.status-overloaded {
+  border-left-color: rgba(255, 95, 109, 0.58);
+  background: rgba(18, 6, 8, 0.84);
+}
+
+/* Pipe separator — structural spacing handled per element */
+.insight-pipe {
+  color: #253545;
+  flex-shrink: 0;
+  padding: 0 8px;
+  font-weight: 300;
+}
+
+.insight-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6a7f98;
+  flex-shrink: 0;
+}
+.insight-name {
+  color: #e2ecf8;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.insight-badge {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(90, 120, 155, 0.4);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9baac0;
+}
+.insight-badge.status-stable     { border-color: rgba(64, 242, 181, 0.4);  color: #9ef8e9; }
+.insight-badge.status-stressed   { border-color: rgba(245, 200, 76, 0.4);  color: #ffe799; }
+.insight-badge.status-brittle,
+.insight-badge.status-overloaded { border-color: rgba(255, 95, 109, 0.45); color: #ffc7d6; }
+
+.insight-summary {
+  color: #8090a8;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.insight-cta {
+  flex-shrink: 0;
+  margin-left: 8px;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(121, 207, 230, 0.3);
+  background: transparent;
+  color: #7ecde8;
+  font-size: 0.77rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.insight-cta:hover { background: rgba(121, 207, 230, 0.08); color: #aeeaf8; }
+
+.insight-staged {
+  flex-shrink: 0;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(245, 200, 76, 0.4);
+  color: #ffe799;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ── Analysis tab buttons (inside cmd-card-analysis) ───────────────── */
+.simulator-page .tab-btn {
+  flex-shrink: 0;
+  min-height: 28px;
+  padding: 3px 11px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(70, 96, 125, 0.38);
+  background: rgba(10, 18, 30, 0.7);
+  color: #8090a8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.simulator-page .tab-btn:hover {
+  color: #c6d7ea;
+  border-color: rgba(100, 140, 180, 0.5);
+}
+.simulator-page .tab-btn.is-active {
+  border-color: rgba(227, 170, 48, 0.9);
+  color: #10131a;
+  background: linear-gradient(180deg, #f2bc43 0%, #d89b24 100%);
+  box-shadow: 0 0 0 1px rgba(255, 232, 107, 0.18);
+}
+
+/* Refined command console header */
+.header-shell {
+  gap: 12px;
+  padding: 14px 16px 16px;
+  border-color: rgba(92, 121, 162, 0.5);
+  background:
+    linear-gradient(180deg, rgba(11, 18, 31, 0.96), rgba(7, 12, 22, 0.98)),
+    radial-gradient(circle at 50% -10%, rgba(121, 207, 230, 0.1), transparent 36%);
+  box-shadow:
+    0 24px 56px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.header-shell::after {
+  inset: 1px;
+  border-color: rgba(173, 214, 236, 0.08);
+}
+
+.cmd-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cmd-brand-block {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.header-shell .cmd-brand {
+  margin: 0;
+  color: #f2bc43;
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.header-shell .cmd-title {
+  margin: 0;
+  color: #edf4ff;
+  font-size: clamp(2.35rem, 4.15vw, 4.1rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  font-weight: 800;
+  text-wrap: balance;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.14);
+}
+
+.header-shell .cmd-subtitle {
+  margin: 0;
+  max-width: 52ch;
+  color: #93a6bf;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.cmd-utils {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-top: 8px;
+}
+
+.header-shell .cmd-btn {
+  border-radius: 999px;
+  min-height: 34px;
+  padding: 5px 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    transform 140ms ease,
+    border-color 180ms ease,
+    box-shadow 200ms ease,
+    background 200ms ease,
+    color 180ms ease;
+}
+
+.header-shell .cmd-btn:hover {
+  transform: translateY(-1px);
+}
+
+.header-shell .cmd-util {
+  color: #d6dfe9;
+  border: 1px solid rgba(102, 128, 166, 0.42);
+  background: linear-gradient(180deg, rgba(25, 36, 53, 0.95), rgba(16, 24, 36, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  padding-inline: 12px;
+}
+
+.header-shell .cmd-util:hover {
+  color: #f3f7ff;
+  border-color: rgba(124, 156, 196, 0.58);
+}
+
+.cmd-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(310px, 0.9fr) minmax(0, 1.08fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.cmd-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px 13px 13px;
+  border-radius: 16px;
+  border: 1px solid rgba(79, 106, 140, 0.5);
+  background:
+    linear-gradient(180deg, rgba(12, 21, 34, 0.96), rgba(8, 15, 26, 0.98)),
+    radial-gradient(circle at 100% 0, rgba(121, 207, 230, 0.08), transparent 28%);
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.cmd-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 -14px 20px rgba(0, 0, 0, 0.16);
+}
+
+.cmd-card-label {
+  margin: 0;
+  color: #7f95af;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cmd-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cmd-card-body-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.cmd-card-sim {
+  border-color: rgba(94, 127, 170, 0.58);
+}
+
+.cmd-card-sim .cmd-card-label {
+  color: rgba(126, 205, 232, 0.75);
+}
+
+.cmd-card-runs {
+  border-color: rgba(92, 118, 151, 0.5);
+}
+
+.cmd-card-analysis {
+  border-color: rgba(127, 105, 52, 0.6);
+}
+
+.cmd-card-analysis .cmd-card-label {
+  color: rgba(242, 188, 67, 0.74);
+}
+
+.cmd-sim-strip {
+  display: grid;
+  gap: 10px;
+}
+
+.cmd-status {
+  display: flex;
+  align-items: center;
+  gap: 10px 12px;
+  flex-wrap: wrap;
+  min-height: 30px;
+}
+
+.cmd-live-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(103, 129, 163, 0.46);
+  background: rgba(10, 18, 28, 0.9);
+  color: #d9e4f3;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.cmd-live-dot .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #6e7b8c;
+}
+
+.cmd-live-dot.is-live {
+  color: #9ef8e9;
+  border-color: rgba(97, 183, 158, 0.42);
+}
+
+.cmd-live-dot.is-live .dot {
+  background: #6bc7ad;
+  box-shadow: 0 0 0 5px rgba(107, 199, 173, 0.12);
+  animation: pulse 1.2s ease infinite;
+}
+
+.cmd-live-dot.is-paused {
+  color: #c99aa0;
+  border-color: rgba(182, 122, 127, 0.4);
+}
+
+.cmd-live-dot.is-paused .dot {
+  background: #b67a7f;
+}
+
+.cmd-time {
+  font-family: "IBM Plex Mono", monospace;
+  color: #d9e4f3;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cmd-time-sep {
+  color: #556a81;
+}
+
+.cmd-horizon select {
+  appearance: none;
+  color-scheme: dark;
+  min-height: 30px;
+  padding: 5px 26px 5px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(86, 118, 152, 0.52);
+  background:
+    linear-gradient(180deg, rgba(18, 29, 43, 0.98), rgba(10, 17, 28, 0.98)),
+    radial-gradient(circle at 100% 0, rgba(121, 207, 230, 0.08), transparent 34%);
+  color: #edf4ff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background-image:
+    linear-gradient(45deg, transparent 50%, #f2bc43 50%),
+    linear-gradient(135deg, #f2bc43 50%, transparent 50%),
+    linear-gradient(180deg, rgba(18, 29, 43, 0.98), rgba(10, 17, 28, 0.98));
+  background-position:
+    calc(100% - 14px) calc(50% - 1px),
+    calc(100% - 9px) calc(50% - 1px),
+    0 0;
+  background-size:
+    5px 5px,
+    5px 5px,
+    100% 100%;
+  background-repeat: no-repeat;
+}
+
+.cmd-horizon select:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.cmd-horizon select:focus-visible {
+  outline: none;
+  border-color: rgba(242, 188, 67, 0.7);
+  box-shadow:
+    0 0 0 1px rgba(242, 188, 67, 0.2),
+    0 0 14px rgba(242, 188, 67, 0.13);
+}
+
+.cmd-progress-shell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 160px;
+}
+
+.cmd-progress-track {
+  width: auto;
+  min-width: 72px;
+  height: 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(83, 109, 137, 0.5);
+  background: rgba(15, 24, 38, 0.82);
+  overflow: hidden;
+  flex: 1 1 auto;
+  flex-shrink: 1;
+}
+
+.cmd-progress-fill {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(121, 207, 230, 0.55), rgba(242, 188, 67, 0.92));
+  box-shadow: 0 0 12px rgba(121, 207, 230, 0.18);
+  transition: width 180ms linear;
+}
+
+.cmd-pct {
+  font-family: "IBM Plex Mono", monospace;
+  color: #9db0c7;
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+}
+
+.cmd-run {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.header-shell .cmd-start-btn {
+  min-width: 84px;
+}
+
+.header-shell .cmd-reset-btn.is-confirming {
+  border-color: rgba(242, 188, 67, 0.56);
+  color: #f2bc43;
+  background: rgba(242, 188, 67, 0.08);
+}
+
+.cmd-speed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(73, 98, 126, 0.42);
+  background: rgba(9, 16, 26, 0.88);
+  flex-shrink: 0;
+}
+
+.cmd-speed .speed-pill {
+  min-height: 24px;
+  padding: 0 8px;
+  font-size: 0.74rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.cmd-speed .speed-pill:hover {
+  transform: none;
+}
+
+.cmd-speed .speed-pill.is-active {
+  border-color: rgba(242, 188, 67, 0.88);
+  color: #10131a;
+  background: linear-gradient(180deg, #f2bc43 0%, #d89b24 100%);
+  box-shadow: 0 0 0 1px rgba(255, 232, 107, 0.16);
+}
+
+.cmd-pill-btn {
+  min-height: 34px;
+  padding-inline: 16px;
+  border: 1px solid rgba(101, 126, 158, 0.44);
+  background: linear-gradient(180deg, rgba(29, 41, 58, 0.94), rgba(18, 27, 39, 0.98));
+  color: #edf4ff;
+}
+
+.cmd-pill-btn:hover {
+  border-color: rgba(122, 152, 191, 0.62);
+  color: #ffffff;
+}
+
+.cmd-saved-count {
+  min-width: 38px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(101, 126, 158, 0.44);
+  background: rgba(12, 18, 28, 0.96);
+  color: #c7d5e8;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmd-saved-count:hover {
+  color: #ffffff;
+  border-color: rgba(242, 188, 67, 0.52);
+}
+
+.insight-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(214, 110, 110, 0.56);
+  background:
+    linear-gradient(180deg, rgba(129, 60, 61, 0.9), rgba(66, 25, 26, 0.95)),
+    radial-gradient(circle at 100% 0, rgba(255, 184, 184, 0.12), transparent 38%);
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  flex-wrap: wrap;
+}
+
+.insight-strip.status-stable {
+  border-color: rgba(77, 181, 146, 0.5);
+  background:
+    linear-gradient(180deg, rgba(17, 56, 46, 0.9), rgba(8, 28, 22, 0.95)),
+    radial-gradient(circle at 100% 0, rgba(121, 207, 230, 0.08), transparent 38%);
+}
+
+.insight-strip.status-stressed {
+  border-color: rgba(242, 188, 67, 0.5);
+  background:
+    linear-gradient(180deg, rgba(92, 67, 20, 0.92), rgba(44, 30, 8, 0.96)),
+    radial-gradient(circle at 100% 0, rgba(242, 188, 67, 0.1), transparent 38%);
+}
+
+.insight-strip.status-brittle,
+.insight-strip.status-overloaded {
+  border-color: rgba(240, 122, 120, 0.58);
+  background:
+    linear-gradient(180deg, rgba(125, 54, 55, 0.92), rgba(54, 21, 23, 0.96)),
+    radial-gradient(circle at 100% 0, rgba(255, 184, 184, 0.12), transparent 38%);
+}
+
+.insight-label {
+  flex-shrink: 0;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(97, 146, 210, 0.72);
+  background: linear-gradient(180deg, rgba(31, 77, 158, 0.98), rgba(22, 56, 122, 0.98));
+  color: #e7f1ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.insight-label-btn {
+  cursor: pointer;
+}
+
+.insight-label-btn:hover {
+  border-color: rgba(138, 183, 255, 0.92);
+  color: #ffffff;
+}
+
+.insight-label-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(121, 207, 230, 0.22);
+}
+
+.insight-pipe {
+  color: rgba(213, 224, 240, 0.48);
+  flex-shrink: 0;
+  padding: 0;
+  font-weight: 300;
+}
+
+.insight-name {
+  color: #f5fbff;
+  font-size: 0.98rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.insight-badge {
+  flex-shrink: 0;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(177, 135, 136, 0.46);
+  background: rgba(12, 19, 28, 0.92);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ffcdd1;
+}
+
+.insight-badge.status-stable {
+  border-color: rgba(77, 181, 146, 0.52);
+  color: #b6fff0;
+}
+
+.insight-badge.status-stressed {
+  border-color: rgba(242, 188, 67, 0.52);
+  color: #fff0ba;
+}
+
+.insight-badge.status-brittle,
+.insight-badge.status-overloaded {
+  border-color: rgba(240, 122, 120, 0.54);
+  color: #ffd0d6;
+}
+
+.insight-summary {
+  flex: 1 1 44ch;
+  min-width: 0;
+  color: rgba(232, 239, 248, 0.9);
+  font-size: 0.9rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insight-staged {
+  flex-shrink: 0;
+  margin-left: auto;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 188, 67, 0.42);
+  background: rgba(242, 188, 67, 0.08);
+  color: #ffe799;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 1220px) {
+  .cmd-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .cmd-status {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 900px) {
+  .cmd-topline {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cmd-utils {
+    padding-top: 0;
+  }
+
+  .cmd-card-body-row,
+  .cmd-run,
+  .cmd-status {
+    flex-wrap: wrap;
+  }
+
+  .insight-summary {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-shell .cmd-title {
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+
+  .cmd-card {
+    padding: 11px 11px 12px;
+  }
+
+  .cmd-pill-btn {
+    padding-inline: 12px;
+  }
+
+  .insight-strip {
+    min-height: 0;
+    padding: 12px 13px;
+  }
+}

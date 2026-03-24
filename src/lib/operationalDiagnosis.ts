@@ -179,6 +179,13 @@ export function buildOperationalDiagnosis(
     nearSatCount
   });
 
+  const shortStatusSummaryByType: Record<OperationalSystemStatus, string> = {
+    stable: "Meeting required rate",
+    stressed: "Queue risk rising",
+    brittle: "Unstable — pressure migrating",
+    overloaded: "Not clearing — WIP will grow"
+  };
+
   const statusSummaryByType: Record<OperationalSystemStatus, string> = {
     stable: `${bottleneckLabel} is carrying the line without visible queue runaway. Throughput is at or near required rate and the system still has usable operating margin.`,
     stressed: `${bottleneckLabel} is absorbing most of the load and the line is operating with limited margin. It is still moving work, but queue pressure and utilization are high enough that small disruptions will show up quickly.`,
@@ -266,7 +273,9 @@ export function buildOperationalDiagnosis(
 
   return {
     status,
+    shortStatusSummary: shortStatusSummaryByType[status],
     statusSummary: statusSummaryByType[status],
+    constraintStepName: bottleneckLabel,
     primaryConstraint,
     constraintMechanism,
     downstreamEffects,

@@ -11,48 +11,58 @@ const SPEED_OPTIONS: Array<{ value: SpeedMultiplier; label: string; hint?: strin
   { value: 1000, label: "x1000", hint: "Rapid replay for long horizons." }
 ];
 
-const RESULTS_MODES: Array<{ key: SimulatorResultsMode; label: string; description: string }> = [
+const RESULTS_MODES: Array<{
+  key: SimulatorResultsMode;
+  shortLabel: string;
+  description: string;
+}> = [
   {
     key: "flow",
-    label: "Flow Map",
-    description: "Shows the live step-by-step flow, where work is piling up, and which step is acting as the bottleneck right now."
+    shortLabel: "Flow",
+    description:
+      "Shows the live step-by-step flow, where work is piling up, and which step is acting as the bottleneck right now."
   },
   {
     key: "diagnosis",
-    label: "System Diagnosis",
-    description: "Explains what is breaking, why it is happening, what it causes downstream, and the best move to stabilize the system."
+    shortLabel: "Diagnosis",
+    description:
+      "Explains what is breaking, why it is happening, what it causes downstream, and the best move to stabilize the system."
   },
   {
     key: "kaizen",
-    label: "Improvement Priorities",
-    description: "Highlights the strongest improvement opportunities, likely root causes, and where the first focused improvement effort can make the biggest difference."
+    shortLabel: "Priorities",
+    description:
+      "Highlights the strongest improvement opportunities, likely root causes, and where the first focused improvement effort can make the biggest difference."
   },
   {
     key: "throughput",
-    label: "Throughput & Economics",
-    description: "Shows how the current bottleneck affects output, cost, and profit so you can see where added capacity creates the most value."
+    shortLabel: "Throughput",
+    description:
+      "Shows how the current bottleneck affects output, cost, and profit so you can see where added capacity creates the most value."
   },
   {
     key: "waste",
-    label: "Waste Analysis",
-    description: "Compares lead time with touch time to show where delay and non-value-added time are building up across the flow."
+    shortLabel: "Waste",
+    description:
+      "Compares lead time with touch time to show where delay and non-value-added time are building up across the flow."
   },
   {
     key: "assumptions",
-    label: "Model Assumptions",
-    description: "Shows which inputs were estimated or defaulted so end users can quickly see how much to trust the current report."
+    shortLabel: "Assumptions",
+    description:
+      "Shows which inputs were estimated or defaulted so end users can quickly see how much to trust the current report."
   },
   {
     key: "compare",
-    label: "Scenario Compare",
-    description: "Side-by-side delta table for two saved scenarios — shows which metrics improved, degraded, or stayed the same."
+    shortLabel: "Compare",
+    description: "Side-by-side delta table for two saved scenarios - shows which metrics improved, degraded, or stayed the same."
   }
 ];
 
 interface DashboardHeaderProps {
   brandLabel?: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   primaryConstraint: string;
   statusSummary: string;
   recommendedAction: string;
@@ -72,6 +82,7 @@ interface DashboardHeaderProps {
   onStartPause: () => void;
   onReset: () => void;
   onSaveCurrentScenario: () => void;
+  onOpenRun: () => void;
   onCompareTwoFiles: () => void;
   onOpenExecutivePdf: () => void;
   onOpenQuickStartGuide: () => void;
@@ -89,7 +100,7 @@ function getOptionLabel(option: string | SelectOption): string {
 }
 
 export function DashboardHeader({
-  brandLabel = "LeanStorming Operational Stress Labs",
+  brandLabel = "Leanstorming Operational Stress Labs",
   title,
   subtitle,
   primaryConstraint,
@@ -111,6 +122,7 @@ export function DashboardHeader({
   onStartPause,
   onReset,
   onSaveCurrentScenario,
+  onOpenRun,
   onCompareTwoFiles,
   onOpenExecutivePdf,
   onOpenQuickStartGuide,
@@ -118,99 +130,89 @@ export function DashboardHeader({
   onFocusConstraint,
   onSimHorizonChange
 }: DashboardHeaderProps) {
-  const [isRecommendedMoveOpen, setIsRecommendedMoveOpen] = useState(true);
   const [resetPending, setResetPending] = useState(false);
 
   return (
     <header className="header-shell">
-      <div className="header-top-row">
-        <div className="header-title-block">
-          <p className="brand-mark">{brandLabel}</p>
-          <h1>{title}</h1>
-          {subtitle.trim().length > 0 ? <p className="subtitle">{subtitle}</p> : null}
+      <div className="cmd-topline">
+        <div className="cmd-brand-block">
+          <p className="cmd-brand">{brandLabel}</p>
+          <h1 className="cmd-title">{title}</h1>
+          {subtitle ? <p className="cmd-subtitle">{subtitle}</p> : null}
         </div>
-        <div className="header-meta-row" aria-label="simulation status">
-          <div className="header-guide-slot">
-            <button type="button" className="secondary hero-guide-btn" onClick={onOpenQuickStartGuide}>
-              Quick Start Guide
-            </button>
-          </div>
-          <div className="status-chip timer-chip is-active">
-            <div className="timer-chip-main">
-              <span className="status-chip-label">Sim Time</span>
-              <span className="status-chip-value">
-                {simElapsedHours.toFixed(2)} / {simHorizonHours} h
-              </span>
-            </div>
-            <label className="timer-chip-horizon">
-              <span className="timer-chip-horizon-label">Horizon</span>
-              <select
-                value={String(simHorizonValue)}
-                onChange={(event) => onSimHorizonChange(event.target.value)}
-                disabled={!isPaused}
-                aria-label="Simulation horizon"
-              >
-                {simHorizonOptions.map((option) => (
-                  <option key={getOptionValue(option)} value={getOptionValue(option)}>
-                    {getOptionLabel(option)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="timer-chip-progress">
-              <div
-                className="sim-progress-track"
-                role="progressbar"
-                aria-label="Simulation progress"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={simProgressPct}
-              >
-                <span className="sim-progress-fill" style={{ width: `${simProgressPct}%` }} />
-              </div>
-              <span className="timer-chip-progress-pct">{simProgressPct.toFixed(1)}%</span>
-            </div>
-          </div>
-          <div className={`live-pill ${isPaused ? "is-paused" : "is-live"}`}>
-            <span className="dot" />
-            {isPaused ? "Paused" : "Live"}
-          </div>
-          <button type="button" className="status-chip scenario-chip-button" onClick={onToggleScenarioLibrary}>
-            <span className="scenario-chip-add" aria-hidden="true">+</span>
-            <span className="status-chip-label">Scenarios</span>
-            <span className="status-chip-value">{scenarioCount}</span>
+        <div className="cmd-utils">
+          <button type="button" className="secondary cmd-btn cmd-util" onClick={onOpenExecutivePdf}>
+            Executive Report
+          </button>
+          <button type="button" className="secondary cmd-btn cmd-util" onClick={onOpenQuickStartGuide}>
+            Instruction Guide
           </button>
         </div>
       </div>
 
-      <section className="header-control-card actions-card actions-card-promoted" aria-label="actions">
-        <p className="header-control-label">Simulation</p>
-        <div className="actions-toolbar-row">
-          <div className="header-controls actions-grid actions-grid-compact">
-            <button className="primary" onClick={onStartPause}>
-              {isPaused ? "Start" : "Pause"}
-            </button>
-            <button
-              className={`secondary${resetPending ? " is-confirming" : ""}`}
-              onClick={resetPending ? () => { onReset(); setResetPending(false); } : () => setResetPending(true)}
-              onBlur={() => setResetPending(false)}
-            >
-              {resetPending ? "Confirm reset?" : "Reset Time"}
-            </button>
-            <button type="button" className="secondary" onClick={onSaveCurrentScenario}>
-              Save Current Run
-            </button>
-            <button type="button" className="secondary" onClick={onCompareTwoFiles}>
-              Compare Two Files
-            </button>
-            <button type="button" className="secondary export-report-btn" onClick={onOpenExecutivePdf}>
-              Open Executive PDF
-            </button>
-          </div>
-          <div className="actions-inline-meta">
-            <div className="speed-inline-group" role="group" aria-label="simulation speed">
-              <span className="header-subsection-label">Playback</span>
-              <div className="speed-group speed-group-compact">
+      <div className="cmd-cards">
+        <section className="cmd-card cmd-card-sim">
+          <p className="cmd-card-label">Simulation</p>
+          <div className="cmd-sim-strip">
+            <div className="cmd-status" aria-label="Simulation status">
+              <div className={`cmd-live-dot ${isPaused ? "is-paused" : "is-live"}`}>
+                <span className="dot" />
+                <span>{isPaused ? "Paused" : "Live"}</span>
+              </div>
+              <span className="cmd-time">
+                {simElapsedHours.toFixed(2)}
+                <span className="cmd-time-sep"> / </span>
+                {simHorizonHours}h
+              </span>
+              <label className="cmd-horizon">
+                <select
+                  value={String(simHorizonValue)}
+                  onChange={(e) => onSimHorizonChange(e.target.value)}
+                  disabled={!isPaused}
+                  aria-label="Simulation horizon"
+                >
+                  {simHorizonOptions.map((opt) => (
+                    <option key={getOptionValue(opt)} value={getOptionValue(opt)}>
+                      {getOptionLabel(opt)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="cmd-progress-shell">
+                <div
+                  className="cmd-progress-track"
+                  role="progressbar"
+                  aria-label="Simulation progress"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={simProgressPct}
+                >
+                  <span className="cmd-progress-fill" style={{ width: `${simProgressPct}%` }} />
+                </div>
+                <span className="cmd-pct">{simProgressPct.toFixed(0)}%</span>
+              </div>
+            </div>
+
+            <div className="cmd-run">
+              <button type="button" className="primary cmd-btn cmd-start-btn" onClick={onStartPause}>
+                {isPaused ? "Start" : "Pause"}
+              </button>
+              <button
+                type="button"
+                className={`secondary cmd-btn cmd-reset-btn${resetPending ? " is-confirming" : ""}`}
+                onClick={
+                  resetPending
+                    ? () => {
+                        onReset();
+                        setResetPending(false);
+                      }
+                    : () => setResetPending(true)
+                }
+                onBlur={() => setResetPending(false)}
+              >
+                {resetPending ? "Confirm?" : "Reset"}
+              </button>
+              <div className="cmd-speed" role="group" aria-label="Playback speed">
                 {SPEED_OPTIONS.map((speed) => (
                   <button
                     key={speed.value}
@@ -225,68 +227,77 @@ export function DashboardHeader({
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <div className="header-bottom-row header-bottom-row-promoted">
-        <section className="decision-card decision-card-compact" aria-label="recommended action">
-          <div className="decision-card-top">
-            <div>
-              <p className="header-control-label">Recommended move</p>
-              <h2>{primaryConstraint}</h2>
-            </div>
-            <div className="decision-card-top-actions">
-              <div className={`decision-status status-${diagnosisStatus}`}>
-                {diagnosisStatus.charAt(0).toUpperCase() + diagnosisStatus.slice(1)}
-              </div>
-              <button
-                type="button"
-                className="decision-more-toggle"
-                onClick={() => setIsRecommendedMoveOpen((current) => !current)}
-                aria-expanded={isRecommendedMoveOpen}
-              >
-                {isRecommendedMoveOpen ? "▲ Hide" : "▼ Details"}
-              </button>
-            </div>
-          </div>
-          {isRecommendedMoveOpen ? (
-            <>
-              <p className="decision-summary">{statusSummary}</p>
-              <div className="decision-action-row">
-                <p className="decision-action-copy">{recommendedAction}</p>
-                <div className="decision-actions">
-                  <button type="button" className="primary" onClick={onFocusConstraint}>
-                    Focus constraint
-                  </button>
-                  {isPaused && hasStagedChanges ? (
-                    <div className={`staged-chip ${hasStagedChanges ? "has-changes" : "no-changes"}`}>
-                      Staged changes
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </>
-          ) : null}
         </section>
 
-        <div className="header-control-card">
-          <p className="header-control-label">Decision View</p>
-          <div className="results-mode-group" aria-label="results panel mode">
+        <section className="cmd-card cmd-card-analysis">
+          <p className="cmd-card-label">Analysis</p>
+          <div className="cmd-card-body cmd-card-body-row" role="tablist" aria-label="Analysis view">
             {RESULTS_MODES.map((mode) => (
-              <div key={mode.key} className="results-mode-item">
-                <button
-                  type="button"
-                  className={`secondary mode-toggle-btn ${resultsMode === mode.key ? "is-active" : ""}`}
-                  onClick={() => onResultsModeChange(mode.key)}
-                  aria-pressed={resultsMode === mode.key}
-                  title={mode.description}
-                >
-                  <span className="mode-toggle-label">{mode.label}</span>
-                </button>
-              </div>
+              <button
+                key={mode.key}
+                role="tab"
+                type="button"
+                className={`tab-btn ${resultsMode === mode.key ? "is-active" : ""}`}
+                onClick={() => onResultsModeChange(mode.key)}
+                aria-pressed={resultsMode === mode.key}
+                title={mode.description}
+              >
+                {mode.shortLabel}
+              </button>
             ))}
           </div>
-        </div>
+        </section>
+
+        <section className="cmd-card cmd-card-runs">
+          <p className="cmd-card-label">Runs</p>
+          <div className="cmd-card-body cmd-card-body-row">
+            <button type="button" className="secondary cmd-btn cmd-pill-btn" onClick={onSaveCurrentScenario}>
+              Save Run
+            </button>
+            <button type="button" className="secondary cmd-btn cmd-pill-btn" onClick={onOpenRun}>
+              Open Run
+            </button>
+            <button type="button" className="secondary cmd-btn cmd-pill-btn" onClick={onCompareTwoFiles}>
+              Compare
+            </button>
+            <button
+              type="button"
+              className="secondary cmd-btn cmd-saved-count"
+              onClick={onToggleScenarioLibrary}
+              title="View saved runs"
+              aria-label={`Saved runs: ${scenarioCount}`}
+            >
+              {scenarioCount}
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <div className={`insight-strip status-${diagnosisStatus}`}>
+        <button
+          type="button"
+          className="insight-label insight-label-btn"
+          onClick={onFocusConstraint}
+          title={recommendedAction}
+          aria-label={`Focus constraint: ${recommendedAction}`}
+        >
+          CONSTRAINT
+        </button>
+        <span className="insight-pipe" aria-hidden="true">
+          |
+        </span>
+        <strong className="insight-name">{primaryConstraint}</strong>
+        <span className="insight-pipe" aria-hidden="true">
+          |
+        </span>
+        <span className={`insight-badge status-${diagnosisStatus}`}>{diagnosisStatus.toUpperCase()}</span>
+        <span className="insight-pipe" aria-hidden="true">
+          |
+        </span>
+        <span className="insight-summary" title={recommendedAction}>
+          {statusSummary}
+        </span>
+        {isPaused && hasStagedChanges ? <span className="insight-staged">Staged changes</span> : null}
       </div>
     </header>
   );
