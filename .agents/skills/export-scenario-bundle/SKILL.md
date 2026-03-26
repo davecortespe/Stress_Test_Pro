@@ -44,7 +44,7 @@ Optional full app package (when `includeFullApp=true`):
 ## Runner requirements (`run_forecast.mjs`)
 Runner must:
 - Load bundle JSON files from disk.
-- Execute deterministic non-DES forecast calculations.
+- Execute deterministic forecast calculations using the shared source-side runner builder rather than a hand-maintained duplicate when possible.
 - Print global KPIs:
   - throughput/hr
   - total WIP
@@ -52,6 +52,8 @@ Runner must:
   - brittleness
   - worst-case touch time
 - Print top 3 constrained steps ranked by `bottleneckIndex`.
+- Surface `throughputState`, `warmupHours`, and any `warnings` when present.
+- Treat `processedQty` as pass-through step volume and `completedQty` as terminal completions only.
 
 Supported args:
 - `--path <bundleFolder>`

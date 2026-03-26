@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { loadForecastModules } from "./load-forecast-modules.mjs";
 import {
   buildConsultingReportExport,
   consultingReportExportToHtml,
@@ -557,6 +558,7 @@ The \`app/\` files come from the current \`dist/\` build at export time.
   return `# Export Scenario Bundle
 
 This bundle is a portable snapshot of a committed forecast scenario.
+The forecast engine is deterministic math with a transient runtime-flow overlay, not a full discrete-event simulation.
 
 ## Run
 
@@ -603,6 +605,14 @@ node exports/${folderName}/run_forecast.mjs --path exports/${folderName}
 - \`README.md\`
 ${fullAppFiles}
 ${metricsLine}
+
+## Metric semantics
+
+- \`forecastThroughput\` may be steady-state, transient, or fallback-analytical. Check \`globalMetrics.throughputState\`.
+- \`globalMetrics.warmupHours\` estimates when runtime throughput should be treated as warmed up.
+- \`warnings[]\` flags degraded-confidence conditions such as cyclic graphs or transient runtime output.
+- \`nodeMetrics.processedQty\` is pass-through volume at a step over elapsed time.
+- \`nodeMetrics.completedQty\` is terminal completions only.
 `;
 }
 
@@ -1574,22 +1584,23 @@ function buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scena
         const relief = baseline.bottleneckStepId && reliefUnits > 0 ? evaluateSystem(model, scenario, visit, baseline.bottleneckStepId, reliefUnits) : baseline;
         const runtime = simulateRuntimeFlow(model, baseline, elapsedHours, scenario);
         const topScore = runtime.bottleneckIndex;
-        const secondScore = baseline.sortedByBottleneck[1] ? baseline.sortedByBottleneck[1].score : 0;
-        const margin = Math.max(0, topScore - secondScore);
         const knownSteps = Object.keys(runtime.node)
           .map(function (stepId) { return runtime.node[stepId]; })
           .filter(function (step) { return step.utilization !== null; });
+        const secondScore =
+          knownSteps
+            .map(function (step) { return step.bottleneckIndex || 0; })
+            .sort(function (a, b) { return b - a; })[1] || 0;
+        const margin = Math.max(0, topScore - secondScore);
         const nearSat = knownSteps.filter(function (step) { return (step.utilization || 0) >= 0.9; }).length;
         const cascadePressure = knownSteps.length > 0 ? nearSat / knownSteps.length : 0;
         const wipPressure = clamp(runtime.totalWipQty / Math.max(1, baseline.horizonHours * Math.max(1, model.stepModels.length) * 10), 0, 1);
-        const migrationPenalty = runtime.bottleneckStepId && runtime.bottleneckStepId !== relief.bottleneckStepId ? 0.08 : 0;
         const avgRuntimeQueueRisk = knownSteps.length > 0 ? knownSteps.reduce(function (sum, step) { return sum + (step.queueRisk || 0); }, 0) / knownSteps.length : 0;
         const brittleness = clamp(
           0.48 * topScore +
             0.18 * avgRuntimeQueueRisk +
             0.16 * cascadePressure +
             0.18 * wipPressure +
-            migrationPenalty +
             (margin < 0.08 ? 0.06 : 0) -
             margin * 0.3,
           0,
@@ -1933,117 +1944,118 @@ function deriveDefaultScenario(compiledModel, dashboardConfig) {
   return scenario;
 }
 
-const args = parseArgs(process.argv.slice(2));
-const now = new Date();
-const name = args.name ? String(args.name) : "scenario";
-const includeMetrics = asBoolean(args.includeMetrics, true);
-const includeFullApp = asBoolean(args.includeFullApp, true);
-const skipBuild = asBoolean(args.skipBuild, true);
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const now = new Date();
+  const name = args.name ? String(args.name) : "scenario";
+  const includeMetrics = asBoolean(args.includeMetrics, true);
+  const includeFullApp = asBoolean(args.includeFullApp, true);
+  const skipBuild = asBoolean(args.skipBuild, true);
 
-const repoRoot = process.cwd();
-const exportsRoot = path.join(repoRoot, "exports");
-fs.mkdirSync(exportsRoot, { recursive: true });
+  const repoRoot = process.cwd();
+  const exportsRoot = path.join(repoRoot, "exports");
+  fs.mkdirSync(exportsRoot, { recursive: true });
 
-const folderBase = `${formatTimestamp(now)}_${sanitizeName(name)}`;
-const { folderName, folderPath } = ensureUniqueDirectory(exportsRoot, folderBase);
+  const folderBase = `${formatTimestamp(now)}_${sanitizeName(name)}`;
+  const { folderName, folderPath } = ensureUniqueDirectory(exportsRoot, folderBase);
 
-const dashboardConfigPath = path.join(repoRoot, "models", "dashboard_config.json");
-const vsmGraphPath = path.join(repoRoot, "models", "active", "vsm_graph.json");
-const masterDataPath = path.join(repoRoot, "models", "active", "master_data.json");
-const compiledPath = path.join(repoRoot, "models", "active", "compiled_forecast_model.json");
-const activeScenarioPath = path.join(repoRoot, "models", "active", "scenario_committed.json");
-const activeMetricsPath = path.join(repoRoot, "models", "active", "result_metrics.json");
-const activeDiagnosisJsonPath = path.join(repoRoot, "models", "active", "operational_diagnosis.json");
-const activeDiagnosisMdPath = path.join(repoRoot, "models", "active", "operational_diagnosis.md");
+  const dashboardConfigPath = path.join(repoRoot, "models", "dashboard_config.json");
+  const vsmGraphPath = path.join(repoRoot, "models", "active", "vsm_graph.json");
+  const masterDataPath = path.join(repoRoot, "models", "active", "master_data.json");
+  const compiledPath = path.join(repoRoot, "models", "active", "compiled_forecast_model.json");
+  const activeScenarioPath = path.join(repoRoot, "models", "active", "scenario_committed.json");
+  const activeMetricsPath = path.join(repoRoot, "models", "active", "result_metrics.json");
+  const activeDiagnosisJsonPath = path.join(repoRoot, "models", "active", "operational_diagnosis.json");
+  const activeDiagnosisMdPath = path.join(repoRoot, "models", "active", "operational_diagnosis.md");
 
-const dashboardConfig = readJson(dashboardConfigPath);
-const vsmGraph = readJson(vsmGraphPath);
-const masterData = readJson(masterDataPath);
-const compiledForecast = readJson(compiledPath);
+  const dashboardConfig = readJson(dashboardConfigPath);
+  const vsmGraph = readJson(vsmGraphPath);
+  const masterData = readJson(masterDataPath);
+  const compiledForecast = readJson(compiledPath);
 
-const scenarioPath = args.scenario ? path.resolve(String(args.scenario)) : null;
-const metricsPath = args.metrics ? path.resolve(String(args.metrics)) : null;
+  const scenarioPath = args.scenario ? path.resolve(String(args.scenario)) : null;
+  const metricsPath = args.metrics ? path.resolve(String(args.metrics)) : null;
 
-const scenarioCommitted =
-  (scenarioPath ? readJson(scenarioPath) : null) ??
-  readJsonIfExists(activeScenarioPath) ??
-  deriveDefaultScenario(compiledForecast, dashboardConfig);
-const resultMetrics =
-  (metricsPath ? readJson(metricsPath) : null) ??
-  readJsonIfExists(activeMetricsPath) ?? {
-    globalMetrics: compiledForecast.baseline?.globalMetrics ?? {},
-    nodeMetrics: compiledForecast.baseline?.nodeMetrics ?? {}
-  };
-const metricsExportPath = path.join(folderPath, "result_metrics.json");
-const diagnosisJsonPath = path.join(folderPath, "operational_diagnosis.json");
-const diagnosisMdPath = path.join(folderPath, "operational_diagnosis.md");
-const consultingReportJsonPath = path.join(folderPath, "consulting_report_export.json");
-const consultingReportMdPath = path.join(folderPath, "consulting_report_export.md");
-const consultingReportHtmlPath = path.join(folderPath, "consulting_report_export.html");
+  const scenarioCommitted =
+    (scenarioPath ? readJson(scenarioPath) : null) ??
+    readJsonIfExists(activeScenarioPath) ??
+    deriveDefaultScenario(compiledForecast, dashboardConfig);
+  const resultMetrics =
+    (metricsPath ? readJson(metricsPath) : null) ??
+    readJsonIfExists(activeMetricsPath) ?? {
+      globalMetrics: compiledForecast.baseline?.globalMetrics ?? {},
+      nodeMetrics: compiledForecast.baseline?.nodeMetrics ?? {}
+    };
+  const metricsExportPath = path.join(folderPath, "result_metrics.json");
+  const diagnosisJsonPath = path.join(folderPath, "operational_diagnosis.json");
+  const diagnosisMdPath = path.join(folderPath, "operational_diagnosis.md");
+  const consultingReportJsonPath = path.join(folderPath, "consulting_report_export.json");
+  const consultingReportMdPath = path.join(folderPath, "consulting_report_export.md");
+  const consultingReportHtmlPath = path.join(folderPath, "consulting_report_export.html");
+  const { buildPortableRunnerSource: buildSourcePortableRunner } = await loadForecastModules();
 
-writeJson(path.join(folderPath, "dashboard_config.json"), dashboardConfig);
-writeJson(path.join(folderPath, "vsm_graph.json"), vsmGraph);
-writeJson(path.join(folderPath, "master_data.json"), masterData);
-writeJson(path.join(folderPath, "compiled_forecast_model.json"), compiledForecast);
-writeJson(path.join(folderPath, "scenario_committed.json"), scenarioCommitted);
-if (includeMetrics) {
+  writeJson(path.join(folderPath, "dashboard_config.json"), dashboardConfig);
+  writeJson(path.join(folderPath, "vsm_graph.json"), vsmGraph);
+  writeJson(path.join(folderPath, "master_data.json"), masterData);
+  writeJson(path.join(folderPath, "compiled_forecast_model.json"), compiledForecast);
+  writeJson(path.join(folderPath, "scenario_committed.json"), scenarioCommitted);
   writeJson(metricsExportPath, resultMetrics);
-} else {
-  writeJson(metricsExportPath, resultMetrics);
-}
-const operationalDiagnosis =
-  readJsonIfExists(activeDiagnosisJsonPath) ??
-  buildOperationalDiagnosis(compiledForecast, resultMetrics, scenarioCommitted);
-const operationalDiagnosisMarkdown = fs.existsSync(activeDiagnosisMdPath)
-  ? fs.readFileSync(activeDiagnosisMdPath, "utf8").trim()
-  : toOperationalDiagnosisMarkdown(operationalDiagnosis);
-writeJson(diagnosisJsonPath, operationalDiagnosis);
-fs.writeFileSync(diagnosisMdPath, `${operationalDiagnosisMarkdown}\n`, "utf8");
-const consultingReportExport = buildConsultingReportExport({
-  dashboardConfig,
-  compiledForecast,
-  scenarioCommitted,
-  resultMetrics: includeMetrics ? resultMetrics : null,
-  operationalDiagnosis,
-  sourceArtifacts: {
-    dashboardConfigPath: "dashboard_config.json",
-    compiledForecastPath: "compiled_forecast_model.json",
-    scenarioCommittedPath: "scenario_committed.json",
-    resultMetricsPath: "result_metrics.json",
-    operationalDiagnosisPath: "operational_diagnosis.json",
-    operationalDiagnosisMarkdownPath: "operational_diagnosis.md",
-    operationalDiagnosisMarkdown
-  }
-});
-writeJson(consultingReportJsonPath, consultingReportExport);
-fs.writeFileSync(consultingReportMdPath, consultingReportExportToMarkdown(consultingReportExport), "utf8");
-fs.writeFileSync(consultingReportHtmlPath, consultingReportExportToHtml(consultingReportExport), "utf8");
-if (!includeMetrics) {
-  fs.rmSync(metricsExportPath);
-}
-fs.writeFileSync(path.join(folderPath, "run_forecast.mjs"), buildPortableRunnerSource(), "utf8");
-fs.writeFileSync(
-  path.join(folderPath, "browser_forecast.html"),
-  buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scenarioCommitted, operationalDiagnosis),
-  "utf8"
-);
-if (includeFullApp) {
-  createFullAppPackage(repoRoot, folderPath, {
+  const operationalDiagnosis =
+    readJsonIfExists(activeDiagnosisJsonPath) ??
+    buildOperationalDiagnosis(compiledForecast, resultMetrics, scenarioCommitted);
+  const operationalDiagnosisMarkdown = fs.existsSync(activeDiagnosisMdPath)
+    ? fs.readFileSync(activeDiagnosisMdPath, "utf8").trim()
+    : toOperationalDiagnosisMarkdown(operationalDiagnosis);
+  writeJson(diagnosisJsonPath, operationalDiagnosis);
+  fs.writeFileSync(diagnosisMdPath, `${operationalDiagnosisMarkdown}\n`, "utf8");
+  const consultingReportExport = buildConsultingReportExport({
     dashboardConfig,
-    vsmGraph,
-    masterData,
     compiledForecast,
-    operationalDiagnosis,
     scenarioCommitted,
-    skipBuild
+    resultMetrics: includeMetrics ? resultMetrics : null,
+    operationalDiagnosis,
+    sourceArtifacts: {
+      dashboardConfigPath: "dashboard_config.json",
+      compiledForecastPath: "compiled_forecast_model.json",
+      scenarioCommittedPath: "scenario_committed.json",
+      resultMetricsPath: "result_metrics.json",
+      operationalDiagnosisPath: "operational_diagnosis.json",
+      operationalDiagnosisMarkdownPath: "operational_diagnosis.md",
+      operationalDiagnosisMarkdown
+    }
   });
-}
-fs.writeFileSync(
-  path.join(folderPath, "README.md"),
-  buildReadme(folderName, includeMetrics, includeFullApp),
-  "utf8"
-);
+  writeJson(consultingReportJsonPath, consultingReportExport);
+  fs.writeFileSync(consultingReportMdPath, consultingReportExportToMarkdown(consultingReportExport), "utf8");
+  fs.writeFileSync(consultingReportHtmlPath, consultingReportExportToHtml(consultingReportExport), "utf8");
+  if (!includeMetrics) {
+    fs.rmSync(metricsExportPath);
+  }
+  fs.writeFileSync(path.join(folderPath, "run_forecast.mjs"), buildSourcePortableRunner(), "utf8");
+  fs.writeFileSync(
+    path.join(folderPath, "browser_forecast.html"),
+    buildBrowserForecastHtmlSource(dashboardConfig, compiledForecast, scenarioCommitted, operationalDiagnosis),
+    "utf8"
+  );
+  if (includeFullApp) {
+    createFullAppPackage(repoRoot, folderPath, {
+      dashboardConfig,
+      vsmGraph,
+      masterData,
+      compiledForecast,
+      operationalDiagnosis,
+      scenarioCommitted,
+      skipBuild
+    });
+  }
+  fs.writeFileSync(
+    path.join(folderPath, "README.md"),
+    buildReadme(folderName, includeMetrics, includeFullApp),
+    "utf8"
+  );
 
-const relative = path.relative(repoRoot, folderPath);
-console.log(`Export complete: ${relative}`);
-console.log(`Bundle path: ${folderPath}`);
+  const relative = path.relative(repoRoot, folderPath);
+  console.log(`Export complete: ${relative}`);
+  console.log(`Bundle path: ${folderPath}`);
+}
+
+await main();

@@ -9,6 +9,7 @@
     "build:master": "node scripts/build-master-data.mjs",
     "compile:spec": "node scripts/compile-sim-spec.mjs",
     "compile:forecast": "node scripts/compile-forecast-model.mjs",
+    "refresh:forecast:active": "node scripts/refresh-forecast-active.mjs",
     "workflow:vsm:image": "powershell -ExecutionPolicy Bypass -File scripts/run-vsm-image-workflow.ps1",
     "analyze:lead-time": "node scripts/analyze-lead-time-impact.mjs",
     "export:consulting-report": "node scripts/export-consulting-report.mjs",

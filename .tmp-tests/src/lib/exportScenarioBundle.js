@@ -501,6 +501,7 @@ function buildReadme(folderName, includeMetrics) {
     return `# Export Scenario Bundle
 
 This bundle is a portable snapshot of a committed forecast scenario.
+The forecast engine is deterministic math with a transient runtime-flow overlay, not a full discrete-event simulation.
 
 ## Run
 
@@ -541,6 +542,14 @@ node exports/${folderName}/run_forecast.mjs --path exports/${folderName}
 - \`operational_diagnosis.md\`
 - \`README.md\`
 ${metricsLine}
+
+## Metric semantics
+
+- \`forecastThroughput\` may be steady-state, transient, or fallback-analytical. Check \`globalMetrics.throughputState\`.
+- \`globalMetrics.warmupHours\` estimates when runtime throughput should be treated as warmed up.
+- \`warnings[]\` flags degraded-confidence conditions such as cyclic graphs or transient runtime output.
+- \`nodeMetrics.processedQty\` is pass-through volume at a step over elapsed time.
+- \`nodeMetrics.completedQty\` is terminal completions only.
 `;
 }
 function safeJsonForScript(value) {

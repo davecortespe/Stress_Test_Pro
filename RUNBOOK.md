@@ -72,6 +72,11 @@ Use these definitions consistently when validating simulator behavior:
 - `CT/effective CT`: service-time basis for capacity and completion.
 - `LT`: delay KPI (process + queue + explicit delay), not a completion trigger.
 - `completed output`: capacity-constrained flow completion over elapsed simulation time.
+- `processedQty`: pass-through volume at a specific step over elapsed runtime.
+- `completedQty`: terminal completions only; non-terminal steps should use `processedQty` for pass-through volume.
+- `throughputState`: labels runtime throughput as `steady-state`, `transient`, or `fallback-analytical`.
+- `warmupHours`: estimated elapsed hours before runtime throughput should be treated as warmed up.
+- `warnings[]`: degraded-confidence flags for transient runtime output, rework loops, and other caution states.
 
 Incoming demand behavior:
 
@@ -92,7 +97,12 @@ Use this when you have ingested/transcribed a VSM image into `models/active/vsm_
 
 What it enforces:
 - writes `models/active/ingestion_manifest.json`
-- compiles `models/active/compiled_forecast_model.json`
+- refreshes accepted active artifacts in canonical order:
+  - `compiled_forecast_model.json`
+  - `result_metrics.json`
+  - `operational_diagnosis.json`
+  - `operational_diagnosis.md`
+  - `consulting_report_export.{json,md,html}`
 - builds app assets
 - exports bundle with full app + browser forecast
 - writes `exports/LATEST_EXPORT.txt`
@@ -110,10 +120,21 @@ When the active non-DES forecast model has been accepted, the canonical active f
 
 Recommended deterministic refresh order:
 
+Preferred one-command refresh:
+
+1. `npm run refresh:forecast:active`
+
+Equivalent explicit order:
+
 1. `node scripts/compile-forecast-model.mjs models/active`
 2. `node scripts/generate-result-metrics.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --out models/active/result_metrics.json`
 3. `node scripts/generate-operational-diagnosis.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --metrics models/active/result_metrics.json --outJson models/active/operational_diagnosis.json --outMd models/active/operational_diagnosis.md`
 4. `node scripts/export-consulting-report.mjs --outJson models/active/consulting_report_export.json --outMd models/active/consulting_report_export.md --outHtml models/active/consulting_report_export.html`
+
+Workflow rule:
+
+- `scripts/generate-result-metrics.mjs` is a thin wrapper over `src/lib/bottleneckForecast.ts`; do not maintain separate forecast math in that script.
+- Preserve `globalMetrics.globalThroughput` as a compatibility alias for `forecastThroughput` in exported result metrics until all downstream consumers are updated.
 
 ## Simulator header contract
 

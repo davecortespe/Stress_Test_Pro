@@ -1019,14 +1019,11 @@ export function createBottleneckForecastOutput(
     0,
     1
   );
-  const migrationPenalty =
-    runtime.bottleneckStepId && runtime.bottleneckStepId !== relief.bottleneckStepId ? 0.08 : 0;
   const brittleness = clamp(
     0.48 * topScore +
       0.18 * (knownNodes.reduce((sum, row) => sum + (row.queueRisk ?? 0), 0) / Math.max(1, knownNodes.length)) +
       0.16 * cascadePressure +
       0.18 * wipPressure +
-      migrationPenalty +
       (margin < 0.08 ? 0.06 : 0) -
       margin * 0.3,
     0,

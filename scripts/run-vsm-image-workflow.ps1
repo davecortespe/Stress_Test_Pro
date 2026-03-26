@@ -94,9 +94,9 @@ $ingestionManifest = @{
 Write-Json -Path $ingestionManifestPath -Value $ingestionManifest
 Write-Host "Ingestion manifest written: $ingestionManifestPath"
 
-& node scripts/compile-forecast-model.mjs $activeDirPath
+& node scripts/refresh-forecast-active.mjs --activeDir $activeDirPath
 if ($LASTEXITCODE -ne 0) {
-  throw "compile-forecast-model failed."
+  throw "refresh-forecast-active failed."
 }
 
 if ($buildApp) {

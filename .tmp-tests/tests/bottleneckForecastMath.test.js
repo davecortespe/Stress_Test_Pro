@@ -347,3 +347,29 @@ await run("zero demand produces zero throughput and zero queue", () => {
         assertClose(metrics.queueDepth ?? null, 0, 1e-9);
     }
 });
+await run("brittleness stays runtime-only when relief bottleneck differs analytically", () => {
+    const model = createSerialModel(["A", "B", "C"], [12, 7.5, 6], 7);
+    const scenario = { ...model.inputDefaults, bottleneckReliefUnits: 1 };
+    const forecast = createConstraintForecast(model, scenario);
+    const output = createBottleneckForecastOutput(model, scenario, 1);
+    const runtimeBottleneckId = Object.entries(output.nodeMetrics).find(([, metrics]) => metrics.bottleneckFlag)?.[0] ?? null;
+    assert.equal(runtimeBottleneckId, "A");
+    assert.equal(forecast.relief.bottleneckStepId, "B");
+    const knownNodes = Object.values(output.nodeMetrics).filter((step) => step.utilization !== null);
+    const topScore = Number(output.globalMetrics.bottleneckIndex);
+    const secondScore = [...knownNodes]
+        .map((step) => step.bottleneckIndex ?? 0)
+        .sort((a, b) => b - a)[1] ?? 0;
+    const margin = Math.max(0, topScore - secondScore);
+    const nearSatCount = knownNodes.filter((step) => (step.utilization ?? 0) >= 0.9).length;
+    const cascadePressure = knownNodes.length > 0 ? nearSatCount / knownNodes.length : 0;
+    const avgQueueRisk = knownNodes.reduce((sum, step) => sum + (step.queueRisk ?? 0), 0) / Math.max(1, knownNodes.length);
+    const wipPressure = Math.max(0, Math.min(1, Number(output.globalMetrics.totalWipQty) / Math.max(1, 24 * model.stepModels.length * 10)));
+    const expectedBrittleness = Math.max(0, Math.min(1, 0.48 * topScore +
+        0.18 * avgQueueRisk +
+        0.16 * cascadePressure +
+        0.18 * wipPressure +
+        (margin < 0.08 ? 0.06 : 0) -
+        margin * 0.3));
+    assertClose(Number(output.globalMetrics.brittleness), expectedBrittleness, 1e-9);
+});
