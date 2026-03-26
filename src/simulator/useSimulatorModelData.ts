@@ -21,7 +21,7 @@ interface UseSimulatorModelDataResult {
   flowViewportStorageKey: string;
 }
 
-const DEFAULT_SIMULATION_HORIZON_HOURS = "24";
+const DEFAULT_SIMULATION_HORIZON_HOURS = "168";
 
 export function useSimulatorModelData(): UseSimulatorModelDataResult {
   const exportBundleData = useMemo(() => getExportBundleData(), []);

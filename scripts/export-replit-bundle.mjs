@@ -68,7 +68,7 @@ function deriveDefaultScenario(compiledModel, dashboardConfig) {
       const fields = Array.isArray(group.fields) ? group.fields : [];
       for (const field of fields) {
         if (field?.key === "simulationHorizonHours") {
-          scenario.simulationHorizonHours = field.defaultValue ?? "8";
+          scenario.simulationHorizonHours = field.defaultValue ?? "168";
         }
       }
     }
@@ -183,6 +183,7 @@ function buildReplitReadme({ publishName, targetRelative }) {
 
 This folder is a stable deployment target for Replit, published on demand from the current accepted simulator state.
 The packaged forecast is deterministic math with a transient runtime-flow overlay, not a full discrete-event simulation.
+The default simulation horizon is 1 week (168 hours) unless the accepted scenario overrides it.
 
 ## Publish target
 
@@ -215,8 +216,9 @@ The packaged forecast is deterministic math with a transient runtime-flow overla
 
 - This target is intentionally stable and overwriteable. Re-publishing replaces the prior Replit deploy snapshot.
 - Run \`npm run export:replit\` whenever you want to refresh the Replit deployment with a newly accepted scenario.
-- `result_metrics.json` may include \`throughputState\`, \`warmupHours\`, and \`warnings\` when runtime output is transient or confidence is degraded.
-- `nodeMetrics.processedQty` is pass-through volume per step, while `nodeMetrics.completedQty` is terminal completions only.
+- \`result_metrics.json\` may include \`throughputState\`, \`warmupHours\`, and \`warnings\` when runtime output is transient or confidence is degraded.
+- \`nodeMetrics.processedQty\` is pass-through volume per step, while \`nodeMetrics.completedQty\` is terminal completions only.
+- Edge badges in the browser cockpit represent \`processedQty\` pass-through lots between steps.
 `;
 }
 

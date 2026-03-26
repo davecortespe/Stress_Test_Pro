@@ -72,6 +72,7 @@ interface DashboardHeaderProps {
   hasStagedChanges: boolean;
   simElapsedHours: number;
   simHorizonHours: number;
+  isRunComplete: boolean;
   simHorizonValue: number | string;
   simHorizonOptions: Array<string | SelectOption>;
   simProgressPct: number;
@@ -112,6 +113,7 @@ export function DashboardHeader({
   hasStagedChanges,
   simElapsedHours,
   simHorizonHours,
+  isRunComplete,
   simHorizonValue,
   simHorizonOptions,
   simProgressPct,
@@ -159,6 +161,11 @@ export function DashboardHeader({
                 <span className="dot" />
                 <span>{isPaused ? "Paused" : "Live"}</span>
               </div>
+              {isRunComplete ? (
+                <span className="cmd-run-badge" aria-label="Run complete">
+                  Run Complete
+                </span>
+              ) : null}
               <span className="cmd-time">
                 {simElapsedHours.toFixed(2)}
                 <span className="cmd-time-sep"> / </span>

@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
@@ -33,6 +34,20 @@ function runNodeScript(repoRoot, scriptPath, args) {
   }
 }
 
+function runCommand(repoRoot, command, args, label) {
+  const result = spawnSync(command, args, {
+    cwd: repoRoot,
+    stdio: "inherit",
+    shell: process.platform === "win32"
+  });
+  if (result.error) {
+    throw result.error;
+  }
+  if (typeof result.status === "number" && result.status !== 0) {
+    throw new Error(`${label} failed with exit code ${result.status}`);
+  }
+}
+
 const args = parseArgs(process.argv.slice(2));
 const repoRoot = process.cwd();
 const activeDir = path.resolve(repoRoot, String(args.activeDir ?? path.join("models", "active")));
@@ -44,6 +59,8 @@ const diagnosisMdPath = path.join(activeDir, "operational_diagnosis.md");
 const consultingReportJsonPath = path.join(activeDir, "consulting_report_export.json");
 const consultingReportMdPath = path.join(activeDir, "consulting_report_export.md");
 const consultingReportHtmlPath = path.join(activeDir, "consulting_report_export.html");
+const executivePdfPath = path.join(repoRoot, "public", "generated", "leanstorming-executive-report.pdf");
+const comparisonExecutivePdfPath = path.join(repoRoot, "public", "generated", "leanstorming-comparison-executive-report.pdf");
 
 console.log(`Refreshing accepted forecast artifacts in: ${activeDir}`);
 
@@ -86,5 +103,20 @@ runNodeScript(repoRoot, path.join("scripts", "export-consulting-report.mjs"), [
   "--outHtml",
   consultingReportHtmlPath
 ]);
+runCommand(
+  repoRoot,
+  "python",
+  [path.join("scripts", "export_executive_report_pdf.py")],
+  "export_executive_report_pdf.py"
+);
+
+if (fs.existsSync(executivePdfPath)) {
+  console.log(`Executive PDF available: ${executivePdfPath}`);
+}
+if (fs.existsSync(comparisonExecutivePdfPath)) {
+  console.log(`Comparison Executive PDF available: ${comparisonExecutivePdfPath}`);
+} else {
+  console.log("Comparison Executive PDF not generated because models/active/scenario_comparisons.json is missing.");
+}
 
 console.log("Accepted forecast artifacts refreshed.");

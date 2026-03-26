@@ -8,7 +8,7 @@
   "ctMultiplier": 1,
   "setupPenaltyMultiplier": 1,
   "variabilityMultiplier": 1,
-  "simulationHorizonHours": "168",
+  "simulationHorizonHours": "24",
   "activeShiftCount": "1",
   "bottleneckReliefUnits": 1,
   "sellingPricePerUnit": 0

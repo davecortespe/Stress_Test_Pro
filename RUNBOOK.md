@@ -74,6 +74,7 @@ Use these definitions consistently when validating simulator behavior:
 - `completed output`: capacity-constrained flow completion over elapsed simulation time.
 - `processedQty`: pass-through volume at a specific step over elapsed runtime.
 - `completedQty`: terminal completions only; non-terminal steps should use `processedQty` for pass-through volume.
+- Edge badges in the flow canvas should display pass-through lots from `processedQty`, not terminal-only `completedQty`.
 - `throughputState`: labels runtime throughput as `steady-state`, `transient`, or `fallback-analytical`.
 - `warmupHours`: estimated elapsed hours before runtime throughput should be treated as warmed up.
 - `warnings[]`: degraded-confidence flags for transient runtime output, rework loops, and other caution states.
@@ -103,6 +104,8 @@ What it enforces:
   - `operational_diagnosis.json`
   - `operational_diagnosis.md`
   - `consulting_report_export.{json,md,html}`
+  - `public/generated/leanstorming-executive-report.pdf`
+  - `public/generated/leanstorming-comparison-executive-report.pdf` when `models/active/scenario_comparisons.json` exists
 - builds app assets
 - exports bundle with full app + browser forecast
 - writes `exports/LATEST_EXPORT.txt`
@@ -117,6 +120,8 @@ When the active non-DES forecast model has been accepted, the canonical active f
 - `models/active/result_metrics.json`
 - `models/active/operational_diagnosis.json`
 - `models/active/operational_diagnosis.md`
+- `public/generated/leanstorming-executive-report.pdf`
+- `public/generated/leanstorming-comparison-executive-report.pdf` when comparison snapshots exist
 
 Recommended deterministic refresh order:
 
@@ -130,6 +135,9 @@ Equivalent explicit order:
 2. `node scripts/generate-result-metrics.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --out models/active/result_metrics.json`
 3. `node scripts/generate-operational-diagnosis.mjs --model models/active/compiled_forecast_model.json --scenario models/active/scenario_committed.json --metrics models/active/result_metrics.json --outJson models/active/operational_diagnosis.json --outMd models/active/operational_diagnosis.md`
 4. `node scripts/export-consulting-report.mjs --outJson models/active/consulting_report_export.json --outMd models/active/consulting_report_export.md --outHtml models/active/consulting_report_export.html`
+5. `python scripts/export_executive_report_pdf.py`
+
+Comparison reports are emitted by the same PDF exporter when `models/active/scenario_comparisons.json` is present, so both executive PDFs stay in sync with the active forecast refresh.
 
 Workflow rule:
 
@@ -145,6 +153,7 @@ Current template behavior for the top control ribbon:
 - Playback controls are placed below actions in the same card
 - `Reset Time` resets elapsed simulation time and view state only; it does not reset edited parameters
 - Sim timer chip contains the `Simulation Horizon` control with presets: `8 hrs`, `16 hrs`, `24 hrs`, `1 week`, `1 month`
+- Default simulation horizon is `1 week` (`168` hours)
 - Horizon control is visible in the clock chip and should be disabled while the simulation is actively running
 - Right status strip contains sim timer/progress, live state, and scenario library chip
 - View buttons stretch across the available card width and use larger click targets
@@ -153,6 +162,9 @@ Current template behavior for the top control ribbon:
   keep the title visible and expose supporting text behind a `more` toggle
 - In `Flow`, KPI cards should not consume a full top row:
   use a compact in-canvas ribbon instead
+- When a run reaches the horizon, the header should show `Run Complete` and keep the final state visible until the user resets.
+- The top-ribbon `Start` button should not silently rewind a finished run.
+- The step inspector `Apply & Start` action may restart from zero after a finished run so parameter edits can be tested again immediately.
 
 ## Flow workspace contract
 
@@ -163,6 +175,7 @@ Current template behavior for the top control ribbon:
 - `Total Completed Lots` sits last in the ribbon and uses a distinct magenta outline
 - `Reset` returns the canvas to the accepted top-left start-lane framing
 - Toggling the `What-if Controls` rail must not push the flow steps down or lose the saved viewport framing
+- The flow edge badges should represent completed pass-through lots between steps via `processedQty`, not terminal completions.
 
 ## What-if rail contract
 

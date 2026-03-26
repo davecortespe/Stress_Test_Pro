@@ -473,7 +473,10 @@ export function GraphCanvas({
             }
 
             const sourceMetrics = output.nodeMetrics[edge.from];
-            const completedLotValue = metricValue(sourceMetrics?.completedQty, "completedQty");
+            const completedLotValue = metricValue(
+              sourceMetrics?.processedQty ?? sourceMetrics?.completedQty,
+              "processedQty"
+            );
             const showCompletedLot = completedLotValue !== "--";
             const startX = source.x + nodeCardWidth;
             const startY = source.y + 44;
@@ -537,9 +540,7 @@ export function GraphCanvas({
             const utilizationValue = metricValue(metrics?.utilization, "utilization");
             const titleLines = clampTitleLines(node.label, 13);
             const titleLineCount = titleLines.length;
-            const displayFields = nodeCardFields
-              .filter((field) => field !== "completedQty" && field !== "utilization")
-              .slice(0, 3);
+            const displayFields = nodeCardFields.filter((field) => field !== "utilization").slice(0, 3);
             const titleBaseY = 26;
             const titleLineHeight = 13;
             const titleBottomY = titleBaseY + (titleLineCount - 1) * titleLineHeight;

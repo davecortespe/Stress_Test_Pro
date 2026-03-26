@@ -31,6 +31,7 @@ interface UseScenarioSessionResult {
   discardStepOverrides: (stepId: string) => void;
   loadScenario: (scenario: ScenarioState) => void;
   toggleStartPause: () => void;
+  applyChangesAndStart: () => void;
   resetSimulation: () => void;
 }
 
@@ -144,16 +145,25 @@ export function useScenarioSession({
 
   const toggleStartPause = () => {
     if (isPaused) {
-      setCommittedScenario(cloneScenario(stagedScenario));
       if (simElapsedHours >= simHorizonHours - 1e-6) {
-        setSimElapsedHours(0);
+        return;
       }
+      setCommittedScenario(cloneScenario(stagedScenario));
       setIsPaused(false);
       return;
     }
 
     setIsPaused(true);
     setStagedScenario(cloneScenario(committedScenario));
+  };
+
+  const applyChangesAndStart = () => {
+    setCommittedScenario(cloneScenario(stagedScenario));
+    if (simElapsedHours >= simHorizonHours - 1e-6) {
+      setSimElapsedHours(0);
+      setResetViewSignal((current) => current + 1);
+    }
+    setIsPaused(false);
   };
 
   const resetSimulation = () => {
@@ -178,6 +188,7 @@ export function useScenarioSession({
     discardStepOverrides,
     loadScenario,
     toggleStartPause,
+    applyChangesAndStart,
     resetSimulation
   };
 }

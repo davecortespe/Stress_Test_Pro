@@ -10,7 +10,7 @@ Final Drill Assembly is the current constraint, and downstream congestion at Fun
 Final Drill Assembly is not failing in isolation. Functional Test is also congested, so downstream WIP is not clearing fast enough and the blockage propagates back upstream.
 
 **4. Downstream Effects**
-Throughput is running about 93% below required rate, WIP has built to roughly 3509 units, total lead time is now about 25784.4 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.
+Throughput is running about 93% below required rate, WIP has built to roughly 501 units, total lead time is now about 4128.6 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.
 
 **5. Economic Interpretation**
 This is creating hidden capacity loss of roughly 93% versus required output. The likely business impact is overtime pressure, slower inventory availability, and missed throughput that has to be recovered later.

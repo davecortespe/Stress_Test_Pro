@@ -674,7 +674,7 @@ export function compileForecastModel(activeDir = path.join("models", "active")) 
       key: "simulationHorizonHours",
       label: "Simulation Horizon",
       type: "select",
-      defaultValue: "24",
+      defaultValue: "168",
       options: [
         { label: "8 hrs", value: "8" },
         { label: "16 hrs", value: "16" },
@@ -741,7 +741,7 @@ export function compileForecastModel(activeDir = path.join("models", "active")) 
     ctMultiplier: 1,
     setupPenaltyMultiplier: 1,
     variabilityMultiplier: 1,
-    simulationHorizonHours: "24",
+    simulationHorizonHours: "168",
     activeShiftCount: defaultActiveShiftCount,
     shiftDurationHours: Number(defaultActiveShiftCount) * 8,
     shiftStartHour: 0,

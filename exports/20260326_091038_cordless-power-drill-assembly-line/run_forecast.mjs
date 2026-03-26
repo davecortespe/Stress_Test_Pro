@@ -1,52 +1,4 @@
-function formatTimestamp(date) {
-    const yyyy = String(date.getFullYear());
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    const hh = String(date.getHours()).padStart(2, "0");
-    const mi = String(date.getMinutes()).padStart(2, "0");
-    const ss = String(date.getSeconds()).padStart(2, "0");
-    return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
-}
-function sanitizeName(input) {
-    const compact = input
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
-    return compact.length > 0 ? compact.slice(0, 48) : "scenario";
-}
-async function directoryExists(parent, name) {
-    try {
-        await parent.getDirectoryHandle(name);
-        return true;
-    }
-    catch {
-        return false;
-    }
-}
-async function createUniqueDirectory(parent, baseName) {
-    for (let i = 0; i < 5000; i += 1) {
-        const candidate = i === 0 ? baseName : `${baseName}_${i + 1}`;
-        const exists = await directoryExists(parent, candidate);
-        if (exists) {
-            continue;
-        }
-        const handle = await parent.getDirectoryHandle(candidate, { create: true });
-        return { name: candidate, handle };
-    }
-    throw new Error("Unable to allocate unique export directory.");
-}
-async function writeTextFile(directoryHandle, fileName, contents) {
-    const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
-    const writable = await fileHandle.createWritable();
-    await writable.write(contents);
-    await writable.close();
-}
-async function writeJsonFile(directoryHandle, fileName, value) {
-    await writeTextFile(directoryHandle, fileName, `${JSON.stringify(value, null, 2)}\n`);
-}
-export function buildPortableRunnerSource() {
-    return `#!/usr/bin/env node
+#!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
 
@@ -245,7 +197,7 @@ function stepStatus(utilization, bottleneckIndex) {
 }
 
 function readStepOverride(scenario, stepId, field) {
-  const value = num(scenario[\`step_\${stepId}_\${field}\`], Number.NaN);
+  const value = num(scenario[`step_${stepId}_${field}`], Number.NaN);
   return Number.isFinite(value) ? value : null;
 }
 
@@ -480,20 +432,20 @@ const scenario = readJson(path.join(bundlePath, "scenario_committed.json"));
 const result = runForecast(model, scenario);
 
 if (args.json) {
-  process.stdout.write(JSON.stringify(result, null, 2) + "\\n");
+  process.stdout.write(JSON.stringify(result, null, 2) + "\n");
 } else {
-  process.stdout.write("Forecast KPIs\\n");
-  process.stdout.write("-------------\\n");
-  process.stdout.write("Throughput/hr: " + result.globalKpis.throughputPerHour.toFixed(3) + "\\n");
-  process.stdout.write("Total WIP: " + result.globalKpis.totalWipQty.toFixed(2) + "\\n");
-  process.stdout.write("Bottleneck: " + result.globalKpis.bottleneck + "\\n");
-  process.stdout.write("Brittleness: " + (result.globalKpis.brittleness * 100).toFixed(1) + "%\\n");
+  process.stdout.write("Forecast KPIs\n");
+  process.stdout.write("-------------\n");
+  process.stdout.write("Throughput/hr: " + result.globalKpis.throughputPerHour.toFixed(3) + "\n");
+  process.stdout.write("Total WIP: " + result.globalKpis.totalWipQty.toFixed(2) + "\n");
+  process.stdout.write("Bottleneck: " + result.globalKpis.bottleneck + "\n");
+  process.stdout.write("Brittleness: " + (result.globalKpis.brittleness * 100).toFixed(1) + "%\n");
   process.stdout.write(
-    "Worst-case touch time: " + result.globalKpis.worstCaseTouchTimeMinutes.toFixed(2) + " min\\n"
+    "Worst-case touch time: " + result.globalKpis.worstCaseTouchTimeMinutes.toFixed(2) + " min\n"
   );
-  process.stdout.write("Bottleneck migration: " + result.globalKpis.bottleneckMigration + "\\n\\n");
-  process.stdout.write("Top 3 constrained steps\\n");
-  process.stdout.write("-----------------------\\n");
+  process.stdout.write("Bottleneck migration: " + result.globalKpis.bottleneckMigration + "\n\n");
+  process.stdout.write("Top 3 constrained steps\n");
+  process.stdout.write("-----------------------\n");
   result.topConstrainedSteps.forEach((step, index) => {
     const util = typeof step.utilization === "number" ? (step.utilization * 100).toFixed(1) + "%" : "--";
     const headroom = typeof step.headroom === "number" ? (step.headroom * 100).toFixed(1) + "%" : "--";
@@ -511,231 +463,7 @@ if (args.json) {
         headroom +
         " | queue risk " +
         qRisk +
-        "\\n"
+        "\n"
     );
   });
-}
-`;
-}
-function buildReadme(folderName, includeMetrics) {
-    const metricsLine = includeMetrics
-        ? "- `result_metrics.json` contains latest exported metrics from the source run."
-        : "- `result_metrics.json` not included for this export.";
-    return `# Export Scenario Bundle
-
-This bundle is a portable snapshot of a committed forecast scenario.
-The forecast engine is deterministic math with a transient runtime-flow overlay, not a full discrete-event simulation.
-
-## Run
-
-### Browser cockpit (recommended)
-
-Open \`browser_forecast.html\` in your browser.
-
-### Node CLI
-
-From this bundle folder:
-
-\`\`\`bash
-node run_forecast.mjs --path .
-\`\`\`
-
-Machine-readable output:
-
-\`\`\`bash
-node run_forecast.mjs --path . --json
-\`\`\`
-
-From the repo root:
-
-\`\`\`bash
-node exports/${folderName}/run_forecast.mjs --path exports/${folderName}
-\`\`\`
-
-## Included files
-
-- \`dashboard_config.json\`
-- \`vsm_graph.json\`
-- \`master_data.json\`
-- \`compiled_forecast_model.json\`
-- \`scenario_committed.json\`
-- \`run_forecast.mjs\`
-- \`browser_forecast.html\`
-- \`operational_diagnosis.json\`
-- \`operational_diagnosis.md\`
-- \`README.md\`
-${metricsLine}
-
-## Metric semantics
-
-- \`forecastThroughput\` may be steady-state, transient, or fallback-analytical. Check \`globalMetrics.throughputState\`.
-- \`globalMetrics.warmupHours\` estimates when runtime throughput should be treated as warmed up and may be \`"unbounded"\` for non-absorbing cycles.
-- \`warnings[]\` flags degraded-confidence conditions such as cyclic graphs or transient runtime output.
-- \`queueRisk\` is an equivalent single-server wait-probability approximation: \`P(wait) ~= rho\`. It is theory-based, but not a full network waiting model across arbitrary routing or blocking.
-- \`nodeMetrics.processedQty\` is pass-through volume at a step over elapsed time.
-- \`nodeMetrics.completedQty\` is terminal completions only.
-`;
-}
-function safeJsonForScript(value) {
-    return JSON.stringify(value).replace(/</g, "\\u003c");
-}
-export function buildBrowserSnapshotHtmlSource(dashboardConfig, compiledForecastModel, scenarioCommitted, resultMetrics, operationalDiagnosis) {
-    const dashboardJson = safeJsonForScript(dashboardConfig);
-    const modelJson = safeJsonForScript(compiledForecastModel);
-    const scenarioJson = safeJsonForScript(scenarioCommitted);
-    const metricsJson = safeJsonForScript(resultMetrics ?? null);
-    const diagnosisJson = safeJsonForScript(operationalDiagnosis ?? null);
-    return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Forecast Browser Snapshot</title>
-  <style>
-    body { margin: 0; background: #061326; color: #dff7ff; font-family: Arial, sans-serif; padding: 16px; }
-    .card { background: #0b2436; border: 1px solid #1f4e68; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
-    h1 { margin: 0; font-size: 24px; }
-    h2 { margin: 0 0 8px; font-size: 16px; color: #9fd4e6; }
-    .muted { color: #8eb7c8; }
-    .kpi-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-    .kpi { background: #081b2c; border: 1px solid #214f67; border-radius: 8px; padding: 8px; }
-    .kpi .label { color: #8eb7c8; font-size: 12px; }
-    .kpi .value { margin-top: 6px; font-size: 20px; font-family: monospace; }
-    .nodes { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-    .node { background: #082133; border: 2px solid #1cc2af; border-radius: 10px; padding: 8px; }
-    .node.critical { border-color: #ff4f72; }
-    .node.risk { border-color: #f2b766; }
-    .node h3 { margin: 0 0 8px; font-size: 15px; }
-    .node p { margin: 3px 0; font-family: monospace; font-size: 13px; }
-    .diagnosis-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-    .diagnosis-grid article { background: #081b2c; border: 1px solid #214f67; border-radius: 8px; padding: 10px; }
-    .diagnosis-grid h3 { margin: 0 0 6px; color: #9fd4e6; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .diagnosis-grid p, .diagnosis ul { margin: 0; color: #dff7ff; line-height: 1.45; }
-    .diagnosis ul { padding-left: 18px; }
-    pre { white-space: pre-wrap; margin: 0; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1 id="title"></h1>
-    <p id="subtitle" class="muted"></p>
-  </div>
-
-  <div class="card">
-    <h2>Global KPIs</h2>
-    <div id="kpis" class="kpi-grid"></div>
-  </div>
-
-  <div class="card">
-    <h2>Node Metrics</h2>
-    <div id="nodes" class="nodes"></div>
-  </div>
-
-  <div class="card diagnosis">
-    <h2>Operational Diagnosis</h2>
-    <div id="diagnosis"></div>
-  </div>
-
-  <div class="card">
-    <h2>Committed Scenario</h2>
-    <pre id="scenario"></pre>
-  </div>
-
-  <script>
-    const dashboardConfig = ${dashboardJson};
-    const compiledForecastModel = ${modelJson};
-    const committedScenario = ${scenarioJson};
-    const resultMetrics = ${metricsJson} || {
-      globalMetrics: (compiledForecastModel && compiledForecastModel.baseline && compiledForecastModel.baseline.globalMetrics) || {},
-      nodeMetrics: (compiledForecastModel && compiledForecastModel.baseline && compiledForecastModel.baseline.nodeMetrics) || {}
-    };
-    const operationalDiagnosis = ${diagnosisJson};
-
-    document.getElementById("title").textContent = dashboardConfig.appTitle || "Forecast Browser Snapshot";
-    document.getElementById("subtitle").textContent = dashboardConfig.subtitle || "Portable export";
-    document.getElementById("scenario").textContent = JSON.stringify(committedScenario, null, 2);
-
-    const kpis = Array.isArray(dashboardConfig.kpis) ? dashboardConfig.kpis : [];
-    const kpiContainer = document.getElementById("kpis");
-    kpiContainer.innerHTML = kpis.map((kpi) => {
-      const value = resultMetrics.globalMetrics && resultMetrics.globalMetrics[kpi.key] != null ? resultMetrics.globalMetrics[kpi.key] : "--";
-      return "<div class=\\"kpi\\"><div class=\\"label\\">" + kpi.label + "</div><div class=\\"value\\">" + String(value) + "</div></div>";
-    }).join("");
-
-    const nodes = Array.isArray(compiledForecastModel.graph && compiledForecastModel.graph.nodes)
-      ? compiledForecastModel.graph.nodes
-      : [];
-    const nodeMetrics = resultMetrics.nodeMetrics || {};
-    document.getElementById("nodes").innerHTML = nodes.map((node) => {
-      const m = nodeMetrics[node.id] || {};
-      const status = String(m.status || "unknown");
-      const klass = status === "critical" ? "critical" : (status === "risk" ? "risk" : "");
-      const util = typeof m.utilization === "number" ? (m.utilization * 100).toFixed(1) + "%" : "--";
-      const wip = typeof m.wipQty === "number" ? Math.round(m.wipQty) + " pcs" : "--";
-      const processed = typeof m.processedQty === "number" ? Math.round(m.processedQty) + " pcs" : "--";
-      const completed = typeof m.completedQty === "number" ? Math.round(m.completedQty) + " pcs" : "--";
-      return "<article class=\\"node " + klass + "\\"><h3>" + node.label + "</h3><p>util: " + util + "</p><p>lot/wip: " + wip + "</p><p>processed: " + processed + "</p><p>completed: " + completed + "</p><p>status: " + status + "</p></article>";
-    }).join("");
-
-    const diagnosisEl = document.getElementById("diagnosis");
-    if (operationalDiagnosis) {
-      diagnosisEl.innerHTML =
-        "<div class=\\"diagnosis-grid\\">" +
-        "<article><h3>System Status</h3><p>" + operationalDiagnosis.statusSummary + "</p></article>" +
-        "<article><h3>Primary Constraint</h3><p>" + operationalDiagnosis.primaryConstraint + "</p></article>" +
-        "<article><h3>Constraint Mechanism</h3><p>" + operationalDiagnosis.constraintMechanism + "</p></article>" +
-        "<article><h3>Downstream Effects</h3><p>" + operationalDiagnosis.downstreamEffects + "</p></article>" +
-        "<article><h3>Economic Interpretation</h3><p>" + operationalDiagnosis.economicInterpretation + "</p></article>" +
-        "<article><h3>Recommended Action</h3><p>" + operationalDiagnosis.recommendedAction + "</p></article>" +
-        "</div>" +
-        "<div class=\\"diagnosis-grid\\" style=\\"margin-top:10px\\">" +
-        "<article><h3>Scenario Guidance</h3><p>" + operationalDiagnosis.scenarioGuidance + "</p></article>" +
-        "<article><h3>Confidence</h3><p>" + operationalDiagnosis.confidence + " - " + operationalDiagnosis.confidenceNote + "</p></article>" +
-        "</div>" +
-        "<div style=\\"margin-top:10px\\"><h3 style=\\"margin:0 0 6px;color:#9fd4e6;font-size:13px;text-transform:uppercase;letter-spacing:0.04em;\\">AI Opportunity Lens</h3><ul>" +
-        "<li><strong>Data already exists but is underused:</strong> " + operationalDiagnosis.aiOpportunityLens.dataAlreadyExists + "</li>" +
-        "<li><strong>Manual but pattern-based decisions:</strong> " + operationalDiagnosis.aiOpportunityLens.manualPatternDecisions + "</li>" +
-        "<li><strong>Backward-looking vs predictive gap:</strong> " + operationalDiagnosis.aiOpportunityLens.predictiveGap + "</li>" +
-        "<li><strong>Tribal knowledge / email as database:</strong> " + operationalDiagnosis.aiOpportunityLens.tribalKnowledge + "</li>" +
-        "<li><strong>Visibility gaps causing profit leakage:</strong> " + operationalDiagnosis.aiOpportunityLens.visibilityGap + "</li>" +
-        "</ul></div>";
-    } else {
-      diagnosisEl.textContent = "Operational diagnosis not included in this export.";
-    }
-  </script>
-</body>
-</html>
-`;
-}
-export async function exportScenarioBundleToLocalFolder(input) {
-    const w = window;
-    if (typeof w.showDirectoryPicker !== "function") {
-        throw new Error("File System Access API is not available in this browser.");
-    }
-    const rootHandle = await w.showDirectoryPicker({ mode: "readwrite" });
-    const exportsHandle = await rootHandle.getDirectoryHandle("exports", { create: true });
-    const timestamp = formatTimestamp(new Date());
-    const safeName = sanitizeName(input.name ?? "scenario");
-    const { name: folderName, handle: bundleHandle } = await createUniqueDirectory(exportsHandle, `${timestamp}_${safeName}`);
-    await writeJsonFile(bundleHandle, "dashboard_config.json", input.dashboardConfig);
-    await writeJsonFile(bundleHandle, "vsm_graph.json", input.vsmGraph);
-    await writeJsonFile(bundleHandle, "master_data.json", input.masterData);
-    await writeJsonFile(bundleHandle, "compiled_forecast_model.json", input.compiledForecastModel);
-    await writeJsonFile(bundleHandle, "scenario_committed.json", input.scenarioCommitted);
-    if (input.includeMetrics) {
-        await writeJsonFile(bundleHandle, "result_metrics.json", input.resultMetrics ?? null);
-    }
-    if (input.operationalDiagnosis) {
-        await writeJsonFile(bundleHandle, "operational_diagnosis.json", input.operationalDiagnosis);
-    }
-    if (input.operationalDiagnosisMarkdown) {
-        await writeTextFile(bundleHandle, "operational_diagnosis.md", `${input.operationalDiagnosisMarkdown}\n`);
-    }
-    await writeTextFile(bundleHandle, "run_forecast.mjs", buildPortableRunnerSource());
-    await writeTextFile(bundleHandle, "browser_forecast.html", buildBrowserSnapshotHtmlSource(input.dashboardConfig, input.compiledForecastModel, input.scenarioCommitted, input.resultMetrics, input.operationalDiagnosis));
-    await writeTextFile(bundleHandle, "README.md", buildReadme(folderName, input.includeMetrics));
-    return {
-        folderName,
-        exportPath: `${rootHandle.name}/exports/${folderName}`
-    };
 }

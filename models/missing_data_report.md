@@ -1,22 +1,18 @@
 # Missing Data Report
 
-Source: user-provided VSM image transcribed on 2026-03-19.
+## Cordless Power Drill Assembly Line
 
-## Global gaps
+Strict transcription was completed from the image, but the following model-level inputs are not visible and therefore remain unresolved.
 
-- The VSM title is not visible, so the model title was inferred from the bicycle assembly line context.
-- Demand rate is not visible.
-- Product mix is not visible.
-- Hours per shift are not visible.
+### Unresolved Inputs
+- Demand rate per hour: not shown in the VSM image.
+- Product mix: not shown in the VSM image.
+- Shift hours per shift: not shown in the VSM image.
+- Rework routing probabilities from Cosmetic Inspection and Rework back to Final Drill Assembly versus Functional Test: the note is visible, but the split is not numeric.
 
-## Step-level unresolved fields
+### Step-Level Notes
+- `G / Cosmetic Inspection and Rework`: the note says rework returns mainly to E, sometimes F, but no percentages are visible.
 
-None. All visible process-box values used for strict transcription were readable.
-
-## Notes on strict transcription
-
-- Step labels and left-to-right sequence are preserved exactly as shown in the image.
-- `CT`, `C/O`, lead/wait time, `# of Equipment`, `People Needed`, `# of Shifts`, `Lot Size`, `Rework %`, `Equipment Reliability`, and notes were transcribed from the visible table values.
-- `People Needed` was mapped to `workers`.
-- `# of Equipment` was mapped to `parallelProcedures`.
-- The forecast compiler will infer baseline demand from the start-step release capacity because no explicit demand rate is shown in the image.
+### Transcription Check
+- No process names were renamed, merged, or reordered.
+- All visible CT, C/O, lead time, workers, equipment counts, shift counts, lot sizes, rework percentages, reliability values, and notes were captured as shown.

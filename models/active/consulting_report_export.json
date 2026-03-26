@@ -1,5 +1,5 @@
 {
-  "export_title": "Assembly of SpeedBike 3000 - Executive Report Export",
+  "export_title": "Cordless Power Drill Assembly Line - Executive Report Export",
   "export_mode": "consulting_grade_organization",
   "source_artifacts": [
     {
@@ -90,7 +90,7 @@
   "pages": [
     {
       "page_number": 1,
-      "page_title": "Assembly of SpeedBike 3000",
+      "page_title": "Cordless Power Drill Assembly Line",
       "section": "Cover",
       "layout_type": "cover_title_status",
       "content_groups": [
@@ -104,12 +104,12 @@
             {
               "label": "appTitle",
               "content_ref": "models/dashboard_config.json#/appTitle",
-              "source_value": "Assembly of SpeedBike 3000"
+              "source_value": "Cordless Power Drill Assembly Line"
             },
             {
               "label": "subtitle",
               "content_ref": "models/dashboard_config.json#/subtitle",
-              "source_value": "Non-DES bottleneck forecast cockpit"
+              "source_value": "FlowStress Dynamics™ | Non-DES Rapid Flow Simulation"
             }
           ]
         },
@@ -156,7 +156,7 @@
             {
               "label": "statusSummary",
               "content_ref": "models/active/operational_diagnosis.json#/statusSummary",
-              "source_value": "Drivetrain Assembly is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added."
+              "source_value": "Final Drill Assembly is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added."
             }
           ]
         },
@@ -169,7 +169,7 @@
             {
               "label": "primaryConstraint",
               "content_ref": "models/active/operational_diagnosis.json#/primaryConstraint",
-              "source_value": "Drivetrain Assembly is saturated; effective service capacity is capped near 3.2 units/hr."
+              "source_value": "Final Drill Assembly is the current constraint, and downstream congestion at Functional Test is preventing that queue from clearing cleanly."
             }
           ]
         },
@@ -182,7 +182,7 @@
             {
               "label": "recommendedAction",
               "content_ref": "models/active/operational_diagnosis.json#/recommendedAction",
-              "source_value": "Reduce effective cycle time at Drivetrain Assembly with standard work, faster changeovers, or error removal before spending on larger structural changes."
+              "source_value": "Stabilize the handoff between Final Drill Assembly and Functional Test first. Clear downstream WIP before releasing more work, and rebalance labor by queue pressure instead of fixed headcount."
             }
           ]
         }
@@ -212,7 +212,7 @@
             {
               "label": "name",
               "content_ref": "models/active/compiled_forecast_model.json#/metadata/name",
-              "source_value": "Assembly of SpeedBike 3000"
+              "source_value": "Cordless Power Drill Assembly Line"
             },
             {
               "label": "mode",
@@ -242,42 +242,42 @@
             {
               "label": "simElapsedHours",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/simElapsedHours",
-              "source_value": 24
+              "source_value": 168
             },
             {
               "label": "globalThroughput",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/globalThroughput",
-              "source_value": 2.3218542136676477
+              "source_value": 1.6129032258064773
             },
             {
               "label": "totalCompletedOutputPieces",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces",
-              "source_value": 55.72450112802355
+              "source_value": 270.96774193548816
             },
             {
               "label": "totalWipQty",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/totalWipQty",
-              "source_value": 268.2754988719821
+              "source_value": 3509.0322580644006
             },
             {
               "label": "totalLeadTimeMinutes",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes",
-              "source_value": 3884.540237801189
+              "source_value": 25784.43320945361
             },
             {
               "label": "bottleneckMigration",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/bottleneckMigration",
-              "source_value": "Brake and Gear Adjustment -> Drivetrain Assembly (low confidence)"
+              "source_value": "Final Drill Assembly -> Functional Test (low confidence)"
             },
             {
               "label": "bottleneckIndex",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/bottleneckIndex",
-              "source_value": 0.9964800773430307
+              "source_value": 1
             },
             {
               "label": "brittleness",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/brittleness",
-              "source_value": 0.7184004900066172
+              "source_value": 0.6296653320731842
             }
           ]
         }
@@ -306,12 +306,12 @@
             {
               "label": "primaryConstraint",
               "content_ref": "models/active/operational_diagnosis.json#/primaryConstraint",
-              "source_value": "Drivetrain Assembly is saturated; effective service capacity is capped near 3.2 units/hr."
+              "source_value": "Final Drill Assembly is the current constraint, and downstream congestion at Functional Test is preventing that queue from clearing cleanly."
             },
             {
               "label": "constraintMechanism",
               "content_ref": "models/active/operational_diagnosis.json#/constraintMechanism",
-              "source_value": "Drivetrain Assembly is taking demand at about 13.5 units/hr but only clearing about 3.2 units/hr, so arrivals are outrunning service and the queue cannot normalize."
+              "source_value": "Final Drill Assembly is not failing in isolation. Functional Test is also congested, so downstream WIP is not clearing fast enough and the blockage propagates back upstream."
             }
           ]
         },
@@ -324,7 +324,7 @@
             {
               "label": "downstreamEffects",
               "content_ref": "models/active/operational_diagnosis.json#/downstreamEffects",
-              "source_value": "Throughput is running about 83% below required rate, WIP has built to roughly 268 units, total lead time is now about 3884.5 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists."
+              "source_value": "Throughput is running about 93% below required rate, WIP has built to roughly 3509 units, total lead time is now about 25784.4 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists."
             }
           ]
         }
@@ -352,7 +352,7 @@
             {
               "label": "economicInterpretation",
               "content_ref": "models/active/operational_diagnosis.json#/economicInterpretation",
-              "source_value": "This is creating hidden capacity loss of roughly 83% versus required output. The likely business impact is overtime pressure, slower inventory availability, and missed throughput that has to be recovered later."
+              "source_value": "This is creating hidden capacity loss of roughly 93% versus required output. The likely business impact is overtime pressure, slower inventory availability, and missed throughput that has to be recovered later."
             }
           ]
         },
@@ -417,7 +417,7 @@
             {
               "label": "recommendedAction",
               "content_ref": "models/active/operational_diagnosis.json#/recommendedAction",
-              "source_value": "Reduce effective cycle time at Drivetrain Assembly with standard work, faster changeovers, or error removal before spending on larger structural changes."
+              "source_value": "Stabilize the handoff between Final Drill Assembly and Functional Test first. Clear downstream WIP before releasing more work, and rebalance labor by queue pressure instead of fixed headcount."
             }
           ]
         },
@@ -430,7 +430,7 @@
             {
               "label": "scenarioGuidance",
               "content_ref": "models/active/operational_diagnosis.json#/scenarioGuidance",
-              "source_value": "The current relief scenario is directionally right. It improves throughput by about 0.873 units/hr, and it also changes bottleneck behavior to Brake and Gear Adjustment -> Drivetrain Assembly (low confidence)."
+              "source_value": "The current relief scenario is directionally right. It improves throughput by about 0.660 units/hr, and it also changes bottleneck behavior to Final Drill Assembly -> Functional Test (low confidence)."
             }
           ]
         },
@@ -472,8 +472,10 @@
           "group_label": "Global Metrics",
           "content_refs": [
             "models/active/result_metrics.json#/globalMetrics/simElapsedHours",
-            "models/active/result_metrics.json#/globalMetrics/globalThroughput",
             "models/active/result_metrics.json#/globalMetrics/forecastThroughput",
+            "models/active/result_metrics.json#/globalMetrics/steadyStateThroughput",
+            "models/active/result_metrics.json#/globalMetrics/throughputState",
+            "models/active/result_metrics.json#/globalMetrics/warmupHours",
             "models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces",
             "models/active/result_metrics.json#/globalMetrics/totalWipQty",
             "models/active/result_metrics.json#/globalMetrics/worstCaseTouchTime",
@@ -484,78 +486,100 @@
             "models/active/result_metrics.json#/globalMetrics/throughputDelta",
             "models/active/result_metrics.json#/globalMetrics/bottleneckMigration",
             "models/active/result_metrics.json#/globalMetrics/bottleneckIndex",
-            "models/active/result_metrics.json#/globalMetrics/brittleness"
+            "models/active/result_metrics.json#/globalMetrics/brittleness",
+            "models/active/result_metrics.json#/globalMetrics/littleLawResidualPct",
+            "models/active/result_metrics.json#/globalMetrics/globalThroughput"
           ],
           "content_items": [
             {
               "label": "simElapsedHours",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/simElapsedHours",
-              "source_value": 24
-            },
-            {
-              "label": "globalThroughput",
-              "content_ref": "models/active/result_metrics.json#/globalMetrics/globalThroughput",
-              "source_value": 2.3218542136676477
+              "source_value": 168
             },
             {
               "label": "forecastThroughput",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/forecastThroughput",
-              "source_value": 2.3218542136676477
+              "source_value": 1.6129032258064773
+            },
+            {
+              "label": "steadyStateThroughput",
+              "content_ref": "models/active/result_metrics.json#/globalMetrics/steadyStateThroughput",
+              "source_value": 1.6129032258064515
+            },
+            {
+              "label": "throughputState",
+              "content_ref": "models/active/result_metrics.json#/globalMetrics/throughputState",
+              "source_value": "steady-state"
+            },
+            {
+              "label": "warmupHours",
+              "content_ref": "models/active/result_metrics.json#/globalMetrics/warmupHours",
+              "source_value": 0.7433333333333333
             },
             {
               "label": "totalCompletedOutputPieces",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces",
-              "source_value": 55.72450112802355
+              "source_value": 270.96774193548816
             },
             {
               "label": "totalWipQty",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/totalWipQty",
-              "source_value": 268.2754988719821
+              "source_value": 3509.0322580644006
             },
             {
               "label": "worstCaseTouchTime",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/worstCaseTouchTime",
-              "source_value": 45.5
+              "source_value": 41
             },
             {
               "label": "totalLeadTimeMinutes",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes",
-              "source_value": 3884.540237801189
+              "source_value": 25784.43320945361
             },
             {
               "label": "leadTimeDeltaMinutes",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/leadTimeDeltaMinutes",
-              "source_value": 2911.645537801189
+              "source_value": 14221.396909453611
             },
             {
               "label": "waitSharePct",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/waitSharePct",
-              "source_value": 0.08881359926272364
+              "source_value": 0.012255456516458995
             },
             {
               "label": "leadTimeTopContributor",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/leadTimeTopContributor",
-              "source_value": "Frame Kit Prep"
+              "source_value": "Housing Kit Prep"
             },
             {
               "label": "throughputDelta",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/throughputDelta",
-              "source_value": 0.8728652751423152
+              "source_value": 0.659824046920821
             },
             {
               "label": "bottleneckMigration",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/bottleneckMigration",
-              "source_value": "Brake and Gear Adjustment -> Drivetrain Assembly (low confidence)"
+              "source_value": "Final Drill Assembly -> Functional Test (low confidence)"
             },
             {
               "label": "bottleneckIndex",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/bottleneckIndex",
-              "source_value": 0.9964800773430307
+              "source_value": 1
             },
             {
               "label": "brittleness",
               "content_ref": "models/active/result_metrics.json#/globalMetrics/brittleness",
-              "source_value": 0.7184004900066172
+              "source_value": 0.6296653320731842
+            },
+            {
+              "label": "littleLawResidualPct",
+              "content_ref": "models/active/result_metrics.json#/globalMetrics/littleLawResidualPct",
+              "source_value": 4.062589467824092
+            },
+            {
+              "label": "globalThroughput",
+              "content_ref": "models/active/result_metrics.json#/globalMetrics/globalThroughput",
+              "source_value": 1.6129032258064773
             }
           ]
         }
@@ -575,341 +599,341 @@
       "layout_type": "appendix_step_metric_grid",
       "content_groups": [
         {
-          "group_label": "Frame Kit Prep",
+          "group_label": "Housing Kit Prep",
           "content_refs": [
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/utilization",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/headroom",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueRisk",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueDepth",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/wipQty",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/completedQty",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitHours",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitPct",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/leadTimeMinutes",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/capacityPerHour",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckIndex",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckFlag",
-            "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/status"
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/utilization",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/headroom",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/queueRisk",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/queueDepth",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/wipQty",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/completedQty",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/idleWaitHours",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/idleWaitPct",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/leadTimeMinutes",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/capacityPerHour",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/bottleneckIndex",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/bottleneckFlag",
+            "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/status"
           ],
           "content_items": [
             {
               "label": "utilization",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/utilization",
-              "source_value": 0.8775655114878906
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/utilization",
+              "source_value": 0.2122605302960596
             },
             {
               "label": "headroom",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/headroom",
-              "source_value": 0.12243448851210936
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/headroom",
+              "source_value": 0.7877394697039404
             },
             {
               "label": "queueRisk",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueRisk",
-              "source_value": 1
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/queueRisk",
+              "source_value": 0.2122605302960596
             },
             {
               "label": "queueDepth",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueDepth",
-              "source_value": 218.692138621459
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/queueDepth",
+              "source_value": 3482.8352575854024
             },
             {
               "label": "wipQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/wipQty",
-              "source_value": 218.692138621459
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/wipQty",
+              "source_value": 3482.8352575854024
             },
             {
               "label": "completedQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/completedQty",
-              "source_value": 105.30786137854687
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/completedQty",
+              "source_value": 0
             },
             {
               "label": "idleWaitHours",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitHours",
-              "source_value": 0.4608544062911965
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/idleWaitHours",
+              "source_value": 44.085850800085964
             },
             {
               "label": "idleWaitPct",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitPct",
-              "source_value": 0.05760680078639956
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/idleWaitPct",
+              "source_value": 0.7872473357158208
             },
             {
               "label": "leadTimeMinutes",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/leadTimeMinutes",
-              "source_value": 2648.305663457508
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/leadTimeMinutes",
+              "source_value": 25093.813854614902
             },
             {
               "label": "capacityPerHour",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/capacityPerHour",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/capacityPerHour",
+              "source_value": 8.333333333333332
+            },
+            {
+              "label": "bottleneckIndex",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/bottleneckIndex",
+              "source_value": 0.2122605302960596
+            },
+            {
+              "label": "bottleneckFlag",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/bottleneckFlag",
+              "source_value": false
+            },
+            {
+              "label": "status",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/status",
+              "source_value": "healthy"
+            }
+          ]
+        },
+        {
+          "group_label": "Motor Assembly",
+          "content_refs": [
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/utilization",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/headroom",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/queueRisk",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/queueDepth",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/wipQty",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/completedQty",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/idleWaitHours",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/idleWaitPct",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/leadTimeMinutes",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/capacityPerHour",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/bottleneckIndex",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/bottleneckFlag",
+            "models/active/result_metrics.json#/nodeMetrics/motor_assembly/status"
+          ],
+          "content_items": [
+            {
+              "label": "utilization",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/utilization",
+              "source_value": 0.38838787986578854
+            },
+            {
+              "label": "headroom",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/headroom",
+              "source_value": 0.6116121201342115
+            },
+            {
+              "label": "queueRisk",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/queueRisk",
+              "source_value": 0.38838787986578854
+            },
+            {
+              "label": "queueDepth",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/queueDepth",
+              "source_value": 7.168458781362005
+            },
+            {
+              "label": "wipQty",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/wipQty",
+              "source_value": 7.168458781362005
+            },
+            {
+              "label": "completedQty",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/completedQty",
+              "source_value": 0
+            },
+            {
+              "label": "idleWaitHours",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/idleWaitHours",
+              "source_value": 34.25027872751602
+            },
+            {
+              "label": "idleWaitPct",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/idleWaitPct",
+              "source_value": 0.6116121201342146
+            },
+            {
+              "label": "leadTimeMinutes",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/leadTimeMinutes",
+              "source_value": 129.27419354838707
+            },
+            {
+              "label": "capacityPerHour",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/capacityPerHour",
+              "source_value": 4.444444444444445
+            },
+            {
+              "label": "bottleneckIndex",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/bottleneckIndex",
+              "source_value": 0.38838787986578854
+            },
+            {
+              "label": "bottleneckFlag",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/bottleneckFlag",
+              "source_value": false
+            },
+            {
+              "label": "status",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/motor_assembly/status",
+              "source_value": "healthy"
+            }
+          ]
+        },
+        {
+          "group_label": "Gearbox Assembly",
+          "content_refs": [
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/utilization",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/headroom",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/queueRisk",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/queueDepth",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/wipQty",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/completedQty",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/idleWaitHours",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/idleWaitPct",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/leadTimeMinutes",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/capacityPerHour",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/bottleneckIndex",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/bottleneckFlag",
+            "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/status"
+          ],
+          "content_items": [
+            {
+              "label": "utilization",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/utilization",
+              "source_value": 0.23407908428720414
+            },
+            {
+              "label": "headroom",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/headroom",
+              "source_value": 0.7659209157127959
+            },
+            {
+              "label": "queueRisk",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/queueRisk",
+              "source_value": 0.23407908428720414
+            },
+            {
+              "label": "queueDepth",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/queueDepth",
+              "source_value": 9.101382488479262
+            },
+            {
+              "label": "wipQty",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/wipQty",
+              "source_value": 9.101382488479262
+            },
+            {
+              "label": "completedQty",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/completedQty",
+              "source_value": 0
+            },
+            {
+              "label": "idleWaitHours",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/idleWaitHours",
+              "source_value": 42.53386793232027
+            },
+            {
+              "label": "idleWaitPct",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/idleWaitPct",
+              "source_value": 0.7595333559342905
+            },
+            {
+              "label": "leadTimeMinutes",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/leadTimeMinutes",
+              "source_value": 117.05161290322579
+            },
+            {
+              "label": "capacityPerHour",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/capacityPerHour",
+              "source_value": 7.142857142857143
+            },
+            {
+              "label": "bottleneckIndex",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/bottleneckIndex",
+              "source_value": 0.23407908428720414
+            },
+            {
+              "label": "bottleneckFlag",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/bottleneckFlag",
+              "source_value": false
+            },
+            {
+              "label": "status",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/status",
+              "source_value": "healthy"
+            }
+          ]
+        },
+        {
+          "group_label": "Battery Pack Prep",
+          "content_refs": [
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/utilization",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/headroom",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/queueRisk",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/queueDepth",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/wipQty",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/completedQty",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/idleWaitHours",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/idleWaitPct",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/leadTimeMinutes",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/capacityPerHour",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/bottleneckIndex",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/bottleneckFlag",
+            "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/status"
+          ],
+          "content_items": [
+            {
+              "label": "utilization",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/utilization",
+              "source_value": 0.32518210197711217
+            },
+            {
+              "label": "headroom",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/headroom",
+              "source_value": 0.6748178980228878
+            },
+            {
+              "label": "queueRisk",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/queueRisk",
+              "source_value": 0.32518210197711217
+            },
+            {
+              "label": "queueDepth",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/queueDepth",
+              "source_value": 7.741935483870968
+            },
+            {
+              "label": "wipQty",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/wipQty",
+              "source_value": 7.741935483870968
+            },
+            {
+              "label": "completedQty",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/completedQty",
+              "source_value": 0
+            },
+            {
+              "label": "idleWaitHours",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/idleWaitHours",
+              "source_value": 37.770632659652314
+            },
+            {
+              "label": "idleWaitPct",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/idleWaitPct",
+              "source_value": 0.674475583208077
+            },
+            {
+              "label": "leadTimeMinutes",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/leadTimeMinutes",
+              "source_value": 121.90322580645162
+            },
+            {
+              "label": "capacityPerHour",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/capacityPerHour",
               "source_value": 5
             },
             {
               "label": "bottleneckIndex",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckIndex",
-              "source_value": 0.9204175824671289
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/bottleneckIndex",
+              "source_value": 0.32518210197711217
             },
             {
               "label": "bottleneckFlag",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckFlag",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/bottleneckFlag",
               "source_value": false
             },
             {
               "label": "status",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/status",
-              "source_value": "critical"
-            }
-          ]
-        },
-        {
-          "group_label": "Wheel Assembly",
-          "content_refs": [
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/utilization",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/headroom",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueRisk",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueDepth",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/wipQty",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/completedQty",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitHours",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitPct",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/leadTimeMinutes",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/capacityPerHour",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckIndex",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckFlag",
-            "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/status"
-          ],
-          "content_items": [
-            {
-              "label": "utilization",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/utilization",
-              "source_value": 0.716429365009163
-            },
-            {
-              "label": "headroom",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/headroom",
-              "source_value": 0.283570634990837
-            },
-            {
-              "label": "queueRisk",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueRisk",
-              "source_value": 1
-            },
-            {
-              "label": "queueDepth",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueDepth",
-              "source_value": 13.604902657373868
-            },
-            {
-              "label": "wipQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/wipQty",
-              "source_value": 13.604902657373868
-            },
-            {
-              "label": "completedQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/completedQty",
-              "source_value": 91.70295872117286
-            },
-            {
-              "label": "idleWaitHours",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitHours",
-              "source_value": 1.9918397658952376
-            },
-            {
-              "label": "idleWaitPct",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitPct",
-              "source_value": 0.2489799707369047
-            },
-            {
-              "label": "leadTimeMinutes",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/leadTimeMinutes",
-              "source_value": 205.55515489545604
-            },
-            {
-              "label": "capacityPerHour",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/capacityPerHour",
-              "source_value": 5.333333333333333
-            },
-            {
-              "label": "bottleneckIndex",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckIndex",
-              "source_value": 0.815679087255956
-            },
-            {
-              "label": "bottleneckFlag",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckFlag",
-              "source_value": false
-            },
-            {
-              "label": "status",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/wheel_assembly/status",
-              "source_value": "risk"
-            }
-          ]
-        },
-        {
-          "group_label": "Drivetrain Assembly",
-          "content_refs": [
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/utilization",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/headroom",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueRisk",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueDepth",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/wipQty",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/completedQty",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitHours",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitPct",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/leadTimeMinutes",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/capacityPerHour",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckIndex",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckFlag",
-            "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/status"
-          ],
-          "content_items": [
-            {
-              "label": "utilization",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/utilization",
-              "source_value": 0.9945847343738934
-            },
-            {
-              "label": "headroom",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/headroom",
-              "source_value": 0.0054152656261066134
-            },
-            {
-              "label": "queueRisk",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueRisk",
-              "source_value": 1
-            },
-            {
-              "label": "queueDepth",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueDepth",
-              "source_value": 14.70285025351651
-            },
-            {
-              "label": "wipQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/wipQty",
-              "source_value": 14.70285025351651
-            },
-            {
-              "label": "completedQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/completedQty",
-              "source_value": 77.00010846765626
-            },
-            {
-              "label": "idleWaitHours",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitHours",
-              "source_value": 0.016655458342250302
-            },
-            {
-              "label": "idleWaitPct",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitPct",
-              "source_value": 0.002081932292781288
-            },
-            {
-              "label": "leadTimeMinutes",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/leadTimeMinutes",
-              "source_value": 314.6730147154071
-            },
-            {
-              "label": "capacityPerHour",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/capacityPerHour",
-              "source_value": 3.225806451612903
-            },
-            {
-              "label": "bottleneckIndex",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckIndex",
-              "source_value": 0.9964800773430307
-            },
-            {
-              "label": "bottleneckFlag",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckFlag",
-              "source_value": true
-            },
-            {
-              "label": "status",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/status",
-              "source_value": "critical"
-            }
-          ]
-        },
-        {
-          "group_label": "Frame Sub-Assembly",
-          "content_refs": [
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/utilization",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/headroom",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueRisk",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueDepth",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/wipQty",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/completedQty",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitHours",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitPct",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/leadTimeMinutes",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/capacityPerHour",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckIndex",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckFlag",
-            "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/status"
-          ],
-          "content_items": [
-            {
-              "label": "utilization",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/utilization",
-              "source_value": 0.6245796878343927
-            },
-            {
-              "label": "headroom",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/headroom",
-              "source_value": 0.37542031216560734
-            },
-            {
-              "label": "queueRisk",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueRisk",
-              "source_value": 0.04184773861258469
-            },
-            {
-              "label": "queueDepth",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueDepth",
-              "source_value": 0.12876227265410672
-            },
-            {
-              "label": "wipQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/wipQty",
-              "source_value": 0.12876227265410672
-            },
-            {
-              "label": "completedQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/completedQty",
-              "source_value": 76.87134619500216
-            },
-            {
-              "label": "idleWaitHours",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitHours",
-              "source_value": 0
-            },
-            {
-              "label": "idleWaitPct",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitPct",
-              "source_value": 0
-            },
-            {
-              "label": "leadTimeMinutes",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/leadTimeMinutes",
-              "source_value": 59.306518590053045
-            },
-            {
-              "label": "capacityPerHour",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/capacityPerHour",
-              "source_value": 5.128205128205128
-            },
-            {
-              "label": "bottleneckIndex",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckIndex",
-              "source_value": 0.4206235056067599
-            },
-            {
-              "label": "bottleneckFlag",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckFlag",
-              "source_value": false
-            },
-            {
-              "label": "status",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/status",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/status",
               "source_value": "healthy"
             }
           ]
@@ -930,341 +954,341 @@
       "layout_type": "appendix_step_metric_grid",
       "content_groups": [
         {
-          "group_label": "Final Mechanical Assembly",
+          "group_label": "Final Drill Assembly",
           "content_refs": [
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/utilization",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/headroom",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueRisk",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueDepth",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/wipQty",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/completedQty",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitHours",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitPct",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/leadTimeMinutes",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/capacityPerHour",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckIndex",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckFlag",
-            "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/status"
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/utilization",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/headroom",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/queueRisk",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/queueDepth",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/wipQty",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/completedQty",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/idleWaitHours",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/idleWaitPct",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/leadTimeMinutes",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/capacityPerHour",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/bottleneckIndex",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/bottleneckFlag",
+            "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/status"
           ],
           "content_items": [
             {
               "label": "utilization",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/utilization",
-              "source_value": 0.7494942861899685
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/utilization",
+              "source_value": 1.000000000000016
             },
             {
               "label": "headroom",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/headroom",
-              "source_value": 0.2505057138100315
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/headroom",
+              "source_value": 0
             },
             {
               "label": "queueRisk",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueRisk",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/queueRisk",
               "source_value": 1
             },
             {
               "label": "queueDepth",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueDepth",
-              "source_value": 11.460935763877742
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/queueDepth",
+              "source_value": 2.1852237252861597
             },
             {
               "label": "wipQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/wipQty",
-              "source_value": 11.460935763877742
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/wipQty",
+              "source_value": 2.1852237252861597
             },
             {
               "label": "completedQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/completedQty",
-              "source_value": 65.41041043112452
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/completedQty",
+              "source_value": 0
             },
             {
               "label": "idleWaitHours",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitHours",
-              "source_value": 1.797260351777721
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/idleWaitHours",
+              "source_value": 0
             },
             {
               "label": "idleWaitPct",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitPct",
-              "source_value": 0.22465754397221513
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/idleWaitPct",
+              "source_value": 0
             },
             {
               "label": "leadTimeMinutes",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/leadTimeMinutes",
-              "source_value": 280.1054401039828
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/leadTimeMinutes",
+              "source_value": 188.69032258064516
             },
             {
               "label": "capacityPerHour",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/capacityPerHour",
-              "source_value": 3.636363636363636
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/capacityPerHour",
+              "source_value": 1.6129032258064515
             },
             {
               "label": "bottleneckIndex",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckIndex",
-              "source_value": 0.8371712860234795
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/bottleneckIndex",
+              "source_value": 1
             },
             {
               "label": "bottleneckFlag",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckFlag",
-              "source_value": false
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/bottleneckFlag",
+              "source_value": true
             },
             {
               "label": "status",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/status",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/status",
               "source_value": "critical"
             }
           ]
         },
         {
-          "group_label": "Brake and Gear Adjustment",
+          "group_label": "Functional Test",
           "content_refs": [
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/utilization",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/headroom",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueRisk",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueDepth",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/wipQty",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/completedQty",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitHours",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitPct",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/leadTimeMinutes",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/capacityPerHour",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckIndex",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckFlag",
-            "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/status"
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/utilization",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/headroom",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/queueRisk",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/queueDepth",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/wipQty",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/completedQty",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/idleWaitHours",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/idleWaitPct",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/leadTimeMinutes",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/capacityPerHour",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/bottleneckIndex",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/bottleneckFlag",
+            "models/active/result_metrics.json#/nodeMetrics/functional_test/status"
           ],
           "content_items": [
             {
               "label": "utilization",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/utilization",
-              "source_value": 0.9901161535730416
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/utilization",
+              "source_value": 0.7096774193548501
             },
             {
               "label": "headroom",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/headroom",
-              "source_value": 0.009883846426958387
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/headroom",
+              "source_value": 0.29032258064514993
             },
             {
               "label": "queueRisk",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueRisk",
-              "source_value": 1
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/queueRisk",
+              "source_value": 0.7096774193548501
             },
             {
               "label": "queueDepth",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueDepth",
-              "source_value": 9.497968817587909
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/queueDepth",
+              "source_value": 0
             },
             {
               "label": "wipQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/wipQty",
-              "source_value": 9.497968817587909
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/wipQty",
+              "source_value": 0
             },
             {
               "label": "completedQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/completedQty",
-              "source_value": 55.912441613536465
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/completedQty",
+              "source_value": 0
             },
             {
               "label": "idleWaitHours",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitHours",
-              "source_value": 0.01240410474906212
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/idleWaitHours",
+              "source_value": 0
             },
             {
               "label": "idleWaitPct",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitPct",
-              "source_value": 0.001550513093632765
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/idleWaitPct",
+              "source_value": 0
             },
             {
               "label": "leadTimeMinutes",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/leadTimeMinutes",
-              "source_value": 310.69820484849174
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/leadTimeMinutes",
+              "source_value": 78.8
             },
             {
               "label": "capacityPerHour",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/capacityPerHour",
-              "source_value": 2.352941176470588
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/capacityPerHour",
+              "source_value": 2.2727272727272725
             },
             {
               "label": "bottleneckIndex",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckIndex",
-              "source_value": 0.9935754998224771
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/bottleneckIndex",
+              "source_value": 0.7096774193548501
             },
             {
               "label": "bottleneckFlag",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckFlag",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/bottleneckFlag",
               "source_value": false
             },
             {
               "label": "status",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/status",
-              "source_value": "critical"
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/functional_test/status",
+              "source_value": "risk"
             }
           ]
         },
         {
-          "group_label": "Inspection and Touch-Up",
+          "group_label": "Cosmetic Inspection and Rework",
           "content_refs": [
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/utilization",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/headroom",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueRisk",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueDepth",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/wipQty",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/completedQty",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitHours",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitPct",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/leadTimeMinutes",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/capacityPerHour",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckIndex",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckFlag",
-            "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/status"
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/utilization",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/headroom",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/queueRisk",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/queueDepth",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/wipQty",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/completedQty",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/idleWaitHours",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/idleWaitPct",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/leadTimeMinutes",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/capacityPerHour",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/bottleneckIndex",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/bottleneckFlag",
+            "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/status"
           ],
           "content_items": [
             {
               "label": "utilization",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/utilization",
-              "source_value": 0.46515392808983347
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/utilization",
+              "source_value": 0.3225806451612955
             },
             {
               "label": "headroom",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/headroom",
-              "source_value": 0.5348460719101665
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/headroom",
+              "source_value": 0.6774193548387045
             },
             {
               "label": "queueRisk",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueRisk",
-              "source_value": 0.03132341425215212
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/queueRisk",
+              "source_value": 0.3225806451612955
             },
             {
               "label": "queueDepth",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueDepth",
-              "source_value": 0.09397024275645637
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/queueDepth",
+              "source_value": 0
             },
             {
               "label": "wipQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/wipQty",
-              "source_value": 0.09397024275645637
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/wipQty",
+              "source_value": 0
             },
             {
               "label": "completedQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/completedQty",
-              "source_value": 55.81847137078001
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/completedQty",
+              "source_value": 0
             },
             {
               "label": "idleWaitHours",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitHours",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/idleWaitHours",
               "source_value": 0
             },
             {
               "label": "idleWaitPct",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitPct",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/idleWaitPct",
               "source_value": 0
             },
             {
               "label": "leadTimeMinutes",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/leadTimeMinutes",
-              "source_value": 35.12764291307748
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/leadTimeMinutes",
+              "source_value": 34
             },
             {
               "label": "capacityPerHour",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/capacityPerHour",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/capacityPerHour",
               "source_value": 5
             },
             {
               "label": "bottleneckIndex",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckIndex",
-              "source_value": 0.313313248246645
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/bottleneckIndex",
+              "source_value": 0.3225806451612955
             },
             {
               "label": "bottleneckFlag",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckFlag",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/bottleneckFlag",
               "source_value": false
             },
             {
               "label": "status",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/status",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/status",
               "source_value": "healthy"
             }
           ]
         },
         {
-          "group_label": "Packaging and Staging",
+          "group_label": "Packaging and Palletizing",
           "content_refs": [
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/utilization",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/headroom",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueRisk",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueDepth",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/wipQty",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/completedQty",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitHours",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitPct",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/leadTimeMinutes",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/capacityPerHour",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckIndex",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckFlag",
-            "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/status"
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/utilization",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/headroom",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/queueRisk",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/queueDepth",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/wipQty",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/completedQty",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/idleWaitHours",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/idleWaitPct",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/leadTimeMinutes",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/capacityPerHour",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/bottleneckIndex",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/bottleneckFlag",
+            "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/status"
           ],
           "content_items": [
             {
               "label": "utilization",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/utilization",
-              "source_value": 0.5224171980752207
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/utilization",
+              "source_value": 0.23387096774193922
             },
             {
               "label": "headroom",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/headroom",
-              "source_value": 0.4775828019247793
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/headroom",
+              "source_value": 0.7661290322580607
             },
             {
               "label": "queueRisk",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueRisk",
-              "source_value": 0.03523884103367349
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/queueRisk",
+              "source_value": 0.23387096774193922
             },
             {
               "label": "queueDepth",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueDepth",
-              "source_value": 0.09397024275646262
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/queueDepth",
+              "source_value": 0
             },
             {
               "label": "wipQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/wipQty",
-              "source_value": 0.09397024275646262
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/wipQty",
+              "source_value": 0
             },
             {
               "label": "completedQty",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/completedQty",
-              "source_value": 55.72450112802355
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/completedQty",
+              "source_value": 270.96774193548816
             },
             {
               "label": "idleWaitHours",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitHours",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/idleWaitHours",
               "source_value": 0
             },
             {
               "label": "idleWaitPct",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitPct",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/idleWaitPct",
               "source_value": 0
             },
             {
               "label": "leadTimeMinutes",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/leadTimeMinutes",
-              "source_value": 30.768598277212245
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/leadTimeMinutes",
+              "source_value": 20.9
             },
             {
               "label": "capacityPerHour",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/capacityPerHour",
-              "source_value": 4.444444444444445
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/capacityPerHour",
+              "source_value": 6.896551724137931
             },
             {
               "label": "bottleneckIndex",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckIndex",
-              "source_value": 0.3519047731106792
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/bottleneckIndex",
+              "source_value": 0.23387096774193922
             },
             {
               "label": "bottleneckFlag",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckFlag",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/bottleneckFlag",
               "source_value": false
             },
             {
               "label": "status",
-              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/status",
+              "content_ref": "models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/status",
               "source_value": "healthy"
             }
           ]
@@ -1314,7 +1338,8 @@
             "models/active/compiled_forecast_model.json#/assumptions/5",
             "models/active/compiled_forecast_model.json#/assumptions/6",
             "models/active/compiled_forecast_model.json#/assumptions/7",
-            "models/active/compiled_forecast_model.json#/assumptions/8"
+            "models/active/compiled_forecast_model.json#/assumptions/8",
+            "models/active/compiled_forecast_model.json#/assumptions/9"
           ],
           "content_items": [
             {
@@ -1322,8 +1347,8 @@
               "content_ref": "models/active/compiled_forecast_model.json#/assumptions/0",
               "source_value": {
                 "id": "strict-001",
-                "severity": "warning",
-                "text": "The VSM title is not visible in the image; model metadata was inferred as Assembly of SpeedBike 3000."
+                "severity": "info",
+                "text": "The visible VSM title was copied exactly as Cordless Power Drill Assembly Line."
               }
             },
             {
@@ -1363,8 +1388,17 @@
               }
             },
             {
-              "label": "compile-001",
+              "label": "strict-006",
               "content_ref": "models/active/compiled_forecast_model.json#/assumptions/5",
+              "source_value": {
+                "id": "strict-006",
+                "severity": "warning",
+                "text": "The rework note at Cosmetic Inspection and Rework is visible, but the routing split back to Final Drill Assembly versus Functional Test is not numeric, so the forecast model keeps the main left-to-right chain only."
+              }
+            },
+            {
+              "label": "compile-001",
+              "content_ref": "models/active/compiled_forecast_model.json#/assumptions/6",
               "source_value": {
                 "id": "compile-001",
                 "severity": "warning",
@@ -1373,7 +1407,7 @@
             },
             {
               "label": "compile-002",
-              "content_ref": "models/active/compiled_forecast_model.json#/assumptions/6",
+              "content_ref": "models/active/compiled_forecast_model.json#/assumptions/7",
               "source_value": {
                 "id": "compile-002",
                 "severity": "warning",
@@ -1382,7 +1416,7 @@
             },
             {
               "label": "compile-003",
-              "content_ref": "models/active/compiled_forecast_model.json#/assumptions/7",
+              "content_ref": "models/active/compiled_forecast_model.json#/assumptions/8",
               "source_value": {
                 "id": "compile-003",
                 "severity": "warning",
@@ -1391,11 +1425,11 @@
             },
             {
               "label": "compile-004",
-              "content_ref": "models/active/compiled_forecast_model.json#/assumptions/8",
+              "content_ref": "models/active/compiled_forecast_model.json#/assumptions/9",
               "source_value": {
                 "id": "compile-004",
                 "severity": "info",
-                "text": "Queue risk, bottleneck index, brittleness, and migration outputs are deterministic non-DES forecast heuristics for rapid recompute."
+                "text": "Queue risk is an equivalent single-server wait-probability approximation (P(wait) ~= rho), while bottleneck index, brittleness, and migration remain deterministic non-DES forecast heuristics for rapid recompute."
               }
             }
           ]
@@ -1434,7 +1468,7 @@
     "ctMultiplier": 1,
     "setupPenaltyMultiplier": 1,
     "variabilityMultiplier": 1,
-    "simulationHorizonHours": "24",
+    "simulationHorizonHours": "168",
     "activeShiftCount": "1",
     "bottleneckReliefUnits": 1,
     "sellingPricePerUnit": 0

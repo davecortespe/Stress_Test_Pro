@@ -129,6 +129,7 @@ The \`app/\` files come from the current \`dist/\` build at export time.
 
 This bundle is a portable snapshot of a committed forecast scenario.
 The forecast engine is deterministic math with a transient runtime-flow overlay, not a full discrete-event simulation.
+The default simulation horizon is 1 week (168 hours) unless the committed scenario overrides it.
 
 ## Run
 
@@ -184,6 +185,7 @@ ${metricsLine}
 - \`queueRisk\` is an equivalent single-server wait-probability approximation: \`P(wait) ~= rho\`. It is theory-based, but not a full network waiting model across arbitrary routing or blocking.
 - \`nodeMetrics.processedQty\` is pass-through volume at a step over elapsed time.
 - \`nodeMetrics.completedQty\` is terminal completions only.
+- Edge badges in the browser cockpit represent \`processedQty\` pass-through lots between steps.
 `;
 }
 
@@ -362,7 +364,7 @@ function deriveDefaultScenario(compiledModel, dashboardConfig) {
       const fields = Array.isArray(group.fields) ? group.fields : [];
       for (const field of fields) {
         if (field?.key === "simulationHorizonHours") {
-          scenario.simulationHorizonHours = field.defaultValue ?? "8";
+          scenario.simulationHorizonHours = field.defaultValue ?? "168";
         }
       }
     }

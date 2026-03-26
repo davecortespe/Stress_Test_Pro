@@ -142,6 +142,8 @@ $workflowReport = @{
   activeDir = $activeDirPath
   compiledForecastPath = Join-Path $activeDirPath "compiled_forecast_model.json"
   operationalDiagnosisPath = Join-Path $bundlePath "operational_diagnosis.json"
+  executivePdfPath = Join-Path $repoRoot "public/generated/leanstorming-executive-report.pdf"
+  comparisonExecutivePdfPath = Join-Path $repoRoot "public/generated/leanstorming-comparison-executive-report.pdf"
   exportedBundlePath = $bundlePath
   includeMetrics = $includeMetricsBool
   includeFullApp = $includeFullAppBool
@@ -186,5 +188,7 @@ call "%BUNDLE_PATH%\start_full_app.bat"
 Set-Content -Path (Join-Path $repoRoot "start_latest_export.bat") -Value $startLatestBat -Encoding ASCII
 
 Write-Host "Workflow complete: $bundlePath"
+Write-Host "Executive PDF: $(Join-Path $repoRoot 'public/generated/leanstorming-executive-report.pdf')"
+Write-Host "Comparison Executive PDF: $(Join-Path $repoRoot 'public/generated/leanstorming-comparison-executive-report.pdf')"
 Write-Host "Latest pointer: $(Join-Path $exportsDir 'LATEST_EXPORT.txt')"
 Write-Host "Launcher: $(Join-Path $repoRoot 'start_latest_export.bat')"

@@ -112,7 +112,7 @@ export function toNumber(value: number | string | undefined, fallback: number): 
 }
 
 export function getSimulationHorizonHours(scenario: ScenarioState): number {
-  return Math.max(8, Math.min(720, Math.round(toNumber(scenario.simulationHorizonHours, 8))));
+  return Math.max(8, Math.min(720, Math.round(toNumber(scenario.simulationHorizonHours, 168))));
 }
 
 export function buildScenarioLibraryStepColumns(stepModels: ForecastStepModel[]): string[] {

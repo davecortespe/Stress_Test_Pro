@@ -64,8 +64,8 @@ async function main() {
   const model = readJson(modelPath);
   const scenario = readJson(scenarioPath);
   const elapsedHours = args.elapsedHours
-    ? num(args.elapsedHours, num(scenario.simulationHorizonHours, 24))
-    : num(scenario.simulationHorizonHours, 24);
+    ? num(args.elapsedHours, num(scenario.simulationHorizonHours, 168))
+    : num(scenario.simulationHorizonHours, 168);
 
   const { createBottleneckForecastOutput } = await loadForecastModules();
   const output = withCompatibilityMetrics(createBottleneckForecastOutput(model, scenario, elapsedHours));

@@ -1,41 +1,41 @@
 {
   "title": "LeanStorming Executive Report",
-  "operation_name": "Assembly of SpeedBike 3000",
-  "generated_at": "2026-03-23T16:03:13.978752",
+  "operation_name": "Cordless Power Drill Assembly Line",
+  "generated_at": "2026-03-26T09:46:44.651366",
   "subtitle": "Simulation-backed operational diagnosis",
   "sections": [
     {
       "title": "Executive Summary",
-      "takeaway": "Reduce effective cycle time at Drivetrain Assembly with standard work, faster changeovers, or error removal before spending on larger structural changes."
+      "takeaway": "Stabilize the handoff between Final Drill Assembly and Functional Test first. Clear downstream WIP before releasing more work, and rebalance labor by queue pressure instead of fixed headcount."
     },
     {
       "title": "System Diagnosis",
-      "takeaway": "Drivetrain Assembly is taking demand at about 13.5 units/hr but only clearing about 3.2 units/hr, so arrivals are outrunning service and the queue cannot normalize."
+      "takeaway": "Final Drill Assembly is not failing in isolation. Functional Test is also congested, so downstream WIP is not clearing fast enough and the blockage propagates back upstream."
     },
     {
       "title": "Flow and Operating Behavior",
       "top_queue_steps": [
-        "Frame Kit Prep",
-        "Drivetrain Assembly",
-        "Wheel Assembly",
-        "Final Mechanical Assembly"
+        "Housing Kit Prep",
+        "Gearbox Assembly",
+        "Battery Pack Prep",
+        "Motor Assembly"
       ]
     },
     {
       "title": "Improvement Priorities",
       "focus_steps": [
-        "Frame Kit Prep",
-        "Drivetrain Assembly",
-        "Frame Kit Prep"
+        "Final Drill Assembly",
+        "Final Drill Assembly",
+        "Final Drill Assembly"
       ]
     },
     {
       "title": "Throughput & Economics",
-      "primary_bottleneck": "Drivetrain Assembly"
+      "primary_bottleneck": "Final Drill Assembly"
     },
     {
       "title": "Waste Analysis",
-      "top_delay_step": "Frame Kit Prep"
+      "top_delay_step": "Housing Kit Prep"
     },
     {
       "title": "Model Assumptions",
@@ -46,31 +46,31 @@
       "actions": [
         {
           "title": "Stabilize the active constraint first",
-          "why": "Reduce effective cycle time at Drivetrain Assembly with standard work, faster changeovers, or error removal before spending on larger structural changes.",
-          "effect": "Expected immediate gain is about 0.32 units/hr if the bottleneck mechanism is removed.",
+          "why": "Stabilize the handoff between Final Drill Assembly and Functional Test first. Clear downstream WIP before releasing more work, and rebalance labor by queue pressure instead of fixed headcount.",
+          "effect": "Expected immediate gain is about 0.34 units/hr if the bottleneck mechanism is removed.",
           "when": "This week"
         },
         {
-          "title": "Run the first improvement event at Frame Kit Prep",
-          "why": "Changeovers, batching, and weak release rules add non-value time before units clear Frame Kit Prep. That inflates queue delay to 2644.3 min, stretches lead time to 2648.3 min, and Frame Kit Prep feeds instability into Drivetrain Assembly, which keeps the system bottleneck from recovering.",
-          "effect": "Likely leverage: 559.4 min less queue delay and 336.2 min less lead time.",
+          "title": "Run the first improvement event at Final Drill Assembly",
+          "why": "When coverage or role balance slips at Final Drill Assembly, effective service rate drops below arrivals. Queue delay rises to 176.3 min and WIP builds to 2.2 units, so Final Drill Assembly stays pinned as the system bottleneck.",
+          "effect": "Likely leverage: 37.7 min less queue delay and 20.2 min less lead time.",
           "when": "30 days"
         },
         {
           "title": "Put release and WIP discipline around the largest queue",
-          "why": "Frame Kit Prep is carrying the heaviest queue and is driving system-level delay.",
+          "why": "Housing Kit Prep is carrying the heaviest queue and is driving system-level delay.",
           "effect": "Reduces hidden delay and prevents the line from flooding the next near-constraint.",
           "when": "This week"
         },
         {
           "title": "Separate data validation from action execution",
-          "why": "Confirm this assumption with the process owner before treating results as final.",
+          "why": "Set the real number of operating shifts for this line.",
           "effect": "Improves trust in the recommendation without delaying immediate containment work.",
           "when": "Ongoing"
         },
         {
-          "title": "Attack structural waiting at Frame Kit Prep",
-          "why": "Frame Kit Prep is contributing the largest delay pocket in the current modeled path.",
+          "title": "Attack structural waiting at Housing Kit Prep",
+          "why": "Housing Kit Prep is contributing the largest delay pocket in the current modeled path.",
           "effect": "Separates touch time from waiting so the team works on real delay instead of anecdotal friction.",
           "when": "30\u201360 days"
         }

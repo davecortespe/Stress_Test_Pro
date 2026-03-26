@@ -1,4 +1,4 @@
-# Assembly of SpeedBike 3000 - Executive Report Export
+# Cordless Power Drill Assembly Line - Executive Report Export
 
 Mode: `consulting_grade_organization`
 
@@ -13,13 +13,13 @@ Mode: `consulting_grade_organization`
 
 ## Pages
 
-### 1. Assembly of SpeedBike 3000
+### 1. Cordless Power Drill Assembly Line
 - Section: Cover
 - Layout: `cover_title_status`
 - Content groups:
   - Title Block
-    - appTitle [models/dashboard_config.json#/appTitle]: Assembly of SpeedBike 3000
-    - subtitle [models/dashboard_config.json#/subtitle]: Non-DES bottleneck forecast cockpit
+    - appTitle [models/dashboard_config.json#/appTitle]: Cordless Power Drill Assembly Line
+    - subtitle [models/dashboard_config.json#/subtitle]: FlowStress Dynamics™ | Non-DES Rapid Flow Simulation
   - Report Status
     - status [models/active/operational_diagnosis.json#/status]: overloaded
     - confidence [models/active/operational_diagnosis.json#/confidence]: medium
@@ -34,11 +34,11 @@ Mode: `consulting_grade_organization`
 - Layout: `executive_summary_three_block`
 - Content groups:
   - Current State
-    - statusSummary [models/active/operational_diagnosis.json#/statusSummary]: Drivetrain Assembly is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added.
+    - statusSummary [models/active/operational_diagnosis.json#/statusSummary]: Final Drill Assembly is no longer clearing work at the required rate. The system is effectively overloaded, so queue and WIP growth will continue until load is reduced or capacity is added.
   - Primary Constraint
-    - primaryConstraint [models/active/operational_diagnosis.json#/primaryConstraint]: Drivetrain Assembly is saturated; effective service capacity is capped near 3.2 units/hr.
+    - primaryConstraint [models/active/operational_diagnosis.json#/primaryConstraint]: Final Drill Assembly is the current constraint, and downstream congestion at Functional Test is preventing that queue from clearing cleanly.
   - Recommended Action
-    - recommendedAction [models/active/operational_diagnosis.json#/recommendedAction]: Reduce effective cycle time at Drivetrain Assembly with standard work, faster changeovers, or error removal before spending on larger structural changes.
+    - recommendedAction [models/active/operational_diagnosis.json#/recommendedAction]: Stabilize the handoff between Final Drill Assembly and Functional Test first. Clear downstream WIP before releasing more work, and rebalance labor by queue pressure instead of fixed headcount.
 - Formatting notes:
   - Treat each source sentence as its own executive block.
   - Do not rewrite or compress the wording; only improve hierarchy.
@@ -50,18 +50,18 @@ Mode: `consulting_grade_organization`
 - Layout: `context_overview_with_metrics`
 - Content groups:
   - Model Context
-    - name [models/active/compiled_forecast_model.json#/metadata/name]: Assembly of SpeedBike 3000
+    - name [models/active/compiled_forecast_model.json#/metadata/name]: Cordless Power Drill Assembly Line
     - mode [models/active/compiled_forecast_model.json#/metadata/mode]: constraint-forecast-non-des
     - units [models/active/compiled_forecast_model.json#/metadata/units]: per-hour
   - Current Global Metrics
-    - simElapsedHours [models/active/result_metrics.json#/globalMetrics/simElapsedHours]: `24`
-    - globalThroughput [models/active/result_metrics.json#/globalMetrics/globalThroughput]: `2.3218542136676477`
-    - totalCompletedOutputPieces [models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces]: `55.72450112802355`
-    - totalWipQty [models/active/result_metrics.json#/globalMetrics/totalWipQty]: `268.2754988719821`
-    - totalLeadTimeMinutes [models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes]: `3884.540237801189`
-    - bottleneckMigration [models/active/result_metrics.json#/globalMetrics/bottleneckMigration]: Brake and Gear Adjustment -> Drivetrain Assembly (low confidence)
-    - bottleneckIndex [models/active/result_metrics.json#/globalMetrics/bottleneckIndex]: `0.9964800773430307`
-    - brittleness [models/active/result_metrics.json#/globalMetrics/brittleness]: `0.7184004900066172`
+    - simElapsedHours [models/active/result_metrics.json#/globalMetrics/simElapsedHours]: `168`
+    - globalThroughput [models/active/result_metrics.json#/globalMetrics/globalThroughput]: `1.6129032258064773`
+    - totalCompletedOutputPieces [models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces]: `270.96774193548816`
+    - totalWipQty [models/active/result_metrics.json#/globalMetrics/totalWipQty]: `3509.0322580644006`
+    - totalLeadTimeMinutes [models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes]: `25784.43320945361`
+    - bottleneckMigration [models/active/result_metrics.json#/globalMetrics/bottleneckMigration]: Final Drill Assembly -> Functional Test (low confidence)
+    - bottleneckIndex [models/active/result_metrics.json#/globalMetrics/bottleneckIndex]: `1`
+    - brittleness [models/active/result_metrics.json#/globalMetrics/brittleness]: `0.6296653320731842`
 - Formatting notes:
   - Use a clean two-zone layout: context on the left, key numeric evidence on the right.
   - Keep raw metric labels visible so reviewers can trace them back to source artifacts.
@@ -73,10 +73,10 @@ Mode: `consulting_grade_organization`
 - Layout: `diagnosis_storyline`
 - Content groups:
   - Constraint Definition
-    - primaryConstraint [models/active/operational_diagnosis.json#/primaryConstraint]: Drivetrain Assembly is saturated; effective service capacity is capped near 3.2 units/hr.
-    - constraintMechanism [models/active/operational_diagnosis.json#/constraintMechanism]: Drivetrain Assembly is taking demand at about 13.5 units/hr but only clearing about 3.2 units/hr, so arrivals are outrunning service and the queue cannot normalize.
+    - primaryConstraint [models/active/operational_diagnosis.json#/primaryConstraint]: Final Drill Assembly is the current constraint, and downstream congestion at Functional Test is preventing that queue from clearing cleanly.
+    - constraintMechanism [models/active/operational_diagnosis.json#/constraintMechanism]: Final Drill Assembly is not failing in isolation. Functional Test is also congested, so downstream WIP is not clearing fast enough and the blockage propagates back upstream.
   - Downstream Effects
-    - downstreamEffects [models/active/operational_diagnosis.json#/downstreamEffects]: Throughput is running about 83% below required rate, WIP has built to roughly 268 units, total lead time is now about 3884.5 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.
+    - downstreamEffects [models/active/operational_diagnosis.json#/downstreamEffects]: Throughput is running about 93% below required rate, WIP has built to roughly 3509 units, total lead time is now about 25784.4 minutes, and operators should expect more expediting, rescheduling, and service risk if this state persists.
 - Formatting notes:
   - One diagnostic storyline per page: constraint, mechanism, and downstream effects.
   - Use stacked callout blocks rather than long continuous paragraphs.
@@ -88,7 +88,7 @@ Mode: `consulting_grade_organization`
 - Layout: `implications_with_callouts`
 - Content groups:
   - Business Implications
-    - economicInterpretation [models/active/operational_diagnosis.json#/economicInterpretation]: This is creating hidden capacity loss of roughly 83% versus required output. The likely business impact is overtime pressure, slower inventory availability, and missed throughput that has to be recovered later.
+    - economicInterpretation [models/active/operational_diagnosis.json#/economicInterpretation]: This is creating hidden capacity loss of roughly 93% versus required output. The likely business impact is overtime pressure, slower inventory availability, and missed throughput that has to be recovered later.
   - AI Opportunity Lens
     - dataAlreadyExists [models/active/operational_diagnosis.json#/aiOpportunityLens/dataAlreadyExists]: Utilization, queue, WIP, and lead-time data already exist here but are usually reviewed as separate metrics instead of as one flow signal.
     - manualPatternDecisions [models/active/operational_diagnosis.json#/aiOpportunityLens/manualPatternDecisions]: Labor rebalance, release timing, and expediting decisions are still manual even though the patterns are repetitive and detectable from the same simulation outputs.
@@ -106,9 +106,9 @@ Mode: `consulting_grade_organization`
 - Layout: `recommendation_with_guidance`
 - Content groups:
   - Recommended Action
-    - recommendedAction [models/active/operational_diagnosis.json#/recommendedAction]: Reduce effective cycle time at Drivetrain Assembly with standard work, faster changeovers, or error removal before spending on larger structural changes.
+    - recommendedAction [models/active/operational_diagnosis.json#/recommendedAction]: Stabilize the handoff between Final Drill Assembly and Functional Test first. Clear downstream WIP before releasing more work, and rebalance labor by queue pressure instead of fixed headcount.
   - Scenario Guidance
-    - scenarioGuidance [models/active/operational_diagnosis.json#/scenarioGuidance]: The current relief scenario is directionally right. It improves throughput by about 0.873 units/hr, and it also changes bottleneck behavior to Brake and Gear Adjustment -> Drivetrain Assembly (low confidence).
+    - scenarioGuidance [models/active/operational_diagnosis.json#/scenarioGuidance]: The current relief scenario is directionally right. It improves throughput by about 0.660 units/hr, and it also changes bottleneck behavior to Final Drill Assembly -> Functional Test (low confidence).
   - Confidence
     - confidence [models/active/operational_diagnosis.json#/confidence]: medium
     - confidenceNote [models/active/operational_diagnosis.json#/confidenceNote]: Confidence is medium because key inputs are incomplete. Missing or weak fields: shift hours/uptime, demand rate/product mix.
@@ -123,20 +123,24 @@ Mode: `consulting_grade_organization`
 - Layout: `appendix_metric_table`
 - Content groups:
   - Global Metrics
-    - simElapsedHours [models/active/result_metrics.json#/globalMetrics/simElapsedHours]: `24`
-    - globalThroughput [models/active/result_metrics.json#/globalMetrics/globalThroughput]: `2.3218542136676477`
-    - forecastThroughput [models/active/result_metrics.json#/globalMetrics/forecastThroughput]: `2.3218542136676477`
-    - totalCompletedOutputPieces [models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces]: `55.72450112802355`
-    - totalWipQty [models/active/result_metrics.json#/globalMetrics/totalWipQty]: `268.2754988719821`
-    - worstCaseTouchTime [models/active/result_metrics.json#/globalMetrics/worstCaseTouchTime]: `45.5`
-    - totalLeadTimeMinutes [models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes]: `3884.540237801189`
-    - leadTimeDeltaMinutes [models/active/result_metrics.json#/globalMetrics/leadTimeDeltaMinutes]: `2911.645537801189`
-    - waitSharePct [models/active/result_metrics.json#/globalMetrics/waitSharePct]: `0.08881359926272364`
-    - leadTimeTopContributor [models/active/result_metrics.json#/globalMetrics/leadTimeTopContributor]: Frame Kit Prep
-    - throughputDelta [models/active/result_metrics.json#/globalMetrics/throughputDelta]: `0.8728652751423152`
-    - bottleneckMigration [models/active/result_metrics.json#/globalMetrics/bottleneckMigration]: Brake and Gear Adjustment -> Drivetrain Assembly (low confidence)
-    - bottleneckIndex [models/active/result_metrics.json#/globalMetrics/bottleneckIndex]: `0.9964800773430307`
-    - brittleness [models/active/result_metrics.json#/globalMetrics/brittleness]: `0.7184004900066172`
+    - simElapsedHours [models/active/result_metrics.json#/globalMetrics/simElapsedHours]: `168`
+    - forecastThroughput [models/active/result_metrics.json#/globalMetrics/forecastThroughput]: `1.6129032258064773`
+    - steadyStateThroughput [models/active/result_metrics.json#/globalMetrics/steadyStateThroughput]: `1.6129032258064515`
+    - throughputState [models/active/result_metrics.json#/globalMetrics/throughputState]: steady-state
+    - warmupHours [models/active/result_metrics.json#/globalMetrics/warmupHours]: `0.7433333333333333`
+    - totalCompletedOutputPieces [models/active/result_metrics.json#/globalMetrics/totalCompletedOutputPieces]: `270.96774193548816`
+    - totalWipQty [models/active/result_metrics.json#/globalMetrics/totalWipQty]: `3509.0322580644006`
+    - worstCaseTouchTime [models/active/result_metrics.json#/globalMetrics/worstCaseTouchTime]: `41`
+    - totalLeadTimeMinutes [models/active/result_metrics.json#/globalMetrics/totalLeadTimeMinutes]: `25784.43320945361`
+    - leadTimeDeltaMinutes [models/active/result_metrics.json#/globalMetrics/leadTimeDeltaMinutes]: `14221.396909453611`
+    - waitSharePct [models/active/result_metrics.json#/globalMetrics/waitSharePct]: `0.012255456516458995`
+    - leadTimeTopContributor [models/active/result_metrics.json#/globalMetrics/leadTimeTopContributor]: Housing Kit Prep
+    - throughputDelta [models/active/result_metrics.json#/globalMetrics/throughputDelta]: `0.659824046920821`
+    - bottleneckMigration [models/active/result_metrics.json#/globalMetrics/bottleneckMigration]: Final Drill Assembly -> Functional Test (low confidence)
+    - bottleneckIndex [models/active/result_metrics.json#/globalMetrics/bottleneckIndex]: `1`
+    - brittleness [models/active/result_metrics.json#/globalMetrics/brittleness]: `0.6296653320731842`
+    - littleLawResidualPct [models/active/result_metrics.json#/globalMetrics/littleLawResidualPct]: `4.062589467824092`
+    - globalThroughput [models/active/result_metrics.json#/globalMetrics/globalThroughput]: `1.6129032258064773`
 - Formatting notes:
   - Use an appendix-style metric table with strong alignment and ample row spacing.
   - Keep raw metric keys and values fully traceable to the source file.
@@ -147,62 +151,62 @@ Mode: `consulting_grade_organization`
 - Section: Appendix / Evidence
 - Layout: `appendix_step_metric_grid`
 - Content groups:
-  - Frame Kit Prep
-    - utilization [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/utilization]: `0.8775655114878906`
-    - headroom [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/headroom]: `0.12243448851210936`
-    - queueRisk [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueRisk]: `1`
-    - queueDepth [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/queueDepth]: `218.692138621459`
-    - wipQty [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/wipQty]: `218.692138621459`
-    - completedQty [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/completedQty]: `105.30786137854687`
-    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitHours]: `0.4608544062911965`
-    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/idleWaitPct]: `0.05760680078639956`
-    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/leadTimeMinutes]: `2648.305663457508`
-    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/capacityPerHour]: `5`
-    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckIndex]: `0.9204175824671289`
-    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/bottleneckFlag]: `false`
-    - status [models/active/result_metrics.json#/nodeMetrics/frame_kit_prep/status]: critical
-  - Wheel Assembly
-    - utilization [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/utilization]: `0.716429365009163`
-    - headroom [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/headroom]: `0.283570634990837`
-    - queueRisk [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueRisk]: `1`
-    - queueDepth [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/queueDepth]: `13.604902657373868`
-    - wipQty [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/wipQty]: `13.604902657373868`
-    - completedQty [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/completedQty]: `91.70295872117286`
-    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitHours]: `1.9918397658952376`
-    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/idleWaitPct]: `0.2489799707369047`
-    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/leadTimeMinutes]: `205.55515489545604`
-    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/capacityPerHour]: `5.333333333333333`
-    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckIndex]: `0.815679087255956`
-    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/bottleneckFlag]: `false`
-    - status [models/active/result_metrics.json#/nodeMetrics/wheel_assembly/status]: risk
-  - Drivetrain Assembly
-    - utilization [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/utilization]: `0.9945847343738934`
-    - headroom [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/headroom]: `0.0054152656261066134`
-    - queueRisk [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueRisk]: `1`
-    - queueDepth [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/queueDepth]: `14.70285025351651`
-    - wipQty [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/wipQty]: `14.70285025351651`
-    - completedQty [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/completedQty]: `77.00010846765626`
-    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitHours]: `0.016655458342250302`
-    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/idleWaitPct]: `0.002081932292781288`
-    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/leadTimeMinutes]: `314.6730147154071`
-    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/capacityPerHour]: `3.225806451612903`
-    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckIndex]: `0.9964800773430307`
-    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/bottleneckFlag]: `true`
-    - status [models/active/result_metrics.json#/nodeMetrics/drivetrain_assembly/status]: critical
-  - Frame Sub-Assembly
-    - utilization [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/utilization]: `0.6245796878343927`
-    - headroom [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/headroom]: `0.37542031216560734`
-    - queueRisk [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueRisk]: `0.04184773861258469`
-    - queueDepth [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/queueDepth]: `0.12876227265410672`
-    - wipQty [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/wipQty]: `0.12876227265410672`
-    - completedQty [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/completedQty]: `76.87134619500216`
-    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitHours]: `0`
-    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/idleWaitPct]: `0`
-    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/leadTimeMinutes]: `59.306518590053045`
-    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/capacityPerHour]: `5.128205128205128`
-    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckIndex]: `0.4206235056067599`
-    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/bottleneckFlag]: `false`
-    - status [models/active/result_metrics.json#/nodeMetrics/frame_sub_assembly/status]: healthy
+  - Housing Kit Prep
+    - utilization [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/utilization]: `0.2122605302960596`
+    - headroom [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/headroom]: `0.7877394697039404`
+    - queueRisk [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/queueRisk]: `0.2122605302960596`
+    - queueDepth [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/queueDepth]: `3482.8352575854024`
+    - wipQty [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/wipQty]: `3482.8352575854024`
+    - completedQty [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/completedQty]: `0`
+    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/idleWaitHours]: `44.085850800085964`
+    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/idleWaitPct]: `0.7872473357158208`
+    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/leadTimeMinutes]: `25093.813854614902`
+    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/capacityPerHour]: `8.333333333333332`
+    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/bottleneckIndex]: `0.2122605302960596`
+    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/bottleneckFlag]: `false`
+    - status [models/active/result_metrics.json#/nodeMetrics/housing_kit_prep/status]: healthy
+  - Motor Assembly
+    - utilization [models/active/result_metrics.json#/nodeMetrics/motor_assembly/utilization]: `0.38838787986578854`
+    - headroom [models/active/result_metrics.json#/nodeMetrics/motor_assembly/headroom]: `0.6116121201342115`
+    - queueRisk [models/active/result_metrics.json#/nodeMetrics/motor_assembly/queueRisk]: `0.38838787986578854`
+    - queueDepth [models/active/result_metrics.json#/nodeMetrics/motor_assembly/queueDepth]: `7.168458781362005`
+    - wipQty [models/active/result_metrics.json#/nodeMetrics/motor_assembly/wipQty]: `7.168458781362005`
+    - completedQty [models/active/result_metrics.json#/nodeMetrics/motor_assembly/completedQty]: `0`
+    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/motor_assembly/idleWaitHours]: `34.25027872751602`
+    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/motor_assembly/idleWaitPct]: `0.6116121201342146`
+    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/motor_assembly/leadTimeMinutes]: `129.27419354838707`
+    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/motor_assembly/capacityPerHour]: `4.444444444444445`
+    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/motor_assembly/bottleneckIndex]: `0.38838787986578854`
+    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/motor_assembly/bottleneckFlag]: `false`
+    - status [models/active/result_metrics.json#/nodeMetrics/motor_assembly/status]: healthy
+  - Gearbox Assembly
+    - utilization [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/utilization]: `0.23407908428720414`
+    - headroom [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/headroom]: `0.7659209157127959`
+    - queueRisk [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/queueRisk]: `0.23407908428720414`
+    - queueDepth [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/queueDepth]: `9.101382488479262`
+    - wipQty [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/wipQty]: `9.101382488479262`
+    - completedQty [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/completedQty]: `0`
+    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/idleWaitHours]: `42.53386793232027`
+    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/idleWaitPct]: `0.7595333559342905`
+    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/leadTimeMinutes]: `117.05161290322579`
+    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/capacityPerHour]: `7.142857142857143`
+    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/bottleneckIndex]: `0.23407908428720414`
+    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/bottleneckFlag]: `false`
+    - status [models/active/result_metrics.json#/nodeMetrics/gearbox_assembly/status]: healthy
+  - Battery Pack Prep
+    - utilization [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/utilization]: `0.32518210197711217`
+    - headroom [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/headroom]: `0.6748178980228878`
+    - queueRisk [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/queueRisk]: `0.32518210197711217`
+    - queueDepth [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/queueDepth]: `7.741935483870968`
+    - wipQty [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/wipQty]: `7.741935483870968`
+    - completedQty [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/completedQty]: `0`
+    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/idleWaitHours]: `37.770632659652314`
+    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/idleWaitPct]: `0.674475583208077`
+    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/leadTimeMinutes]: `121.90322580645162`
+    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/capacityPerHour]: `5`
+    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/bottleneckIndex]: `0.32518210197711217`
+    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/bottleneckFlag]: `false`
+    - status [models/active/result_metrics.json#/nodeMetrics/battery_pack_prep/status]: healthy
 - Formatting notes:
   - Group step cards in process order and keep each step label exactly as shown in the model.
   - Use compact appendix cards to avoid rewriting the step evidence into prose.
@@ -213,62 +217,62 @@ Mode: `consulting_grade_organization`
 - Section: Appendix / Evidence
 - Layout: `appendix_step_metric_grid`
 - Content groups:
-  - Final Mechanical Assembly
-    - utilization [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/utilization]: `0.7494942861899685`
-    - headroom [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/headroom]: `0.2505057138100315`
-    - queueRisk [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueRisk]: `1`
-    - queueDepth [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/queueDepth]: `11.460935763877742`
-    - wipQty [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/wipQty]: `11.460935763877742`
-    - completedQty [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/completedQty]: `65.41041043112452`
-    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitHours]: `1.797260351777721`
-    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/idleWaitPct]: `0.22465754397221513`
-    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/leadTimeMinutes]: `280.1054401039828`
-    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/capacityPerHour]: `3.636363636363636`
-    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckIndex]: `0.8371712860234795`
-    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/bottleneckFlag]: `false`
-    - status [models/active/result_metrics.json#/nodeMetrics/final_mechanical_assembly/status]: critical
-  - Brake and Gear Adjustment
-    - utilization [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/utilization]: `0.9901161535730416`
-    - headroom [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/headroom]: `0.009883846426958387`
-    - queueRisk [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueRisk]: `1`
-    - queueDepth [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/queueDepth]: `9.497968817587909`
-    - wipQty [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/wipQty]: `9.497968817587909`
-    - completedQty [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/completedQty]: `55.912441613536465`
-    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitHours]: `0.01240410474906212`
-    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/idleWaitPct]: `0.001550513093632765`
-    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/leadTimeMinutes]: `310.69820484849174`
-    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/capacityPerHour]: `2.352941176470588`
-    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckIndex]: `0.9935754998224771`
-    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/bottleneckFlag]: `false`
-    - status [models/active/result_metrics.json#/nodeMetrics/brake_and_gear_adjustment/status]: critical
-  - Inspection and Touch-Up
-    - utilization [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/utilization]: `0.46515392808983347`
-    - headroom [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/headroom]: `0.5348460719101665`
-    - queueRisk [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueRisk]: `0.03132341425215212`
-    - queueDepth [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/queueDepth]: `0.09397024275645637`
-    - wipQty [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/wipQty]: `0.09397024275645637`
-    - completedQty [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/completedQty]: `55.81847137078001`
-    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitHours]: `0`
-    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/idleWaitPct]: `0`
-    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/leadTimeMinutes]: `35.12764291307748`
-    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/capacityPerHour]: `5`
-    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckIndex]: `0.313313248246645`
-    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/bottleneckFlag]: `false`
-    - status [models/active/result_metrics.json#/nodeMetrics/inspection_and_touch_up/status]: healthy
-  - Packaging and Staging
-    - utilization [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/utilization]: `0.5224171980752207`
-    - headroom [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/headroom]: `0.4775828019247793`
-    - queueRisk [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueRisk]: `0.03523884103367349`
-    - queueDepth [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/queueDepth]: `0.09397024275646262`
-    - wipQty [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/wipQty]: `0.09397024275646262`
-    - completedQty [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/completedQty]: `55.72450112802355`
-    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitHours]: `0`
-    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/idleWaitPct]: `0`
-    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/leadTimeMinutes]: `30.768598277212245`
-    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/capacityPerHour]: `4.444444444444445`
-    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckIndex]: `0.3519047731106792`
-    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/bottleneckFlag]: `false`
-    - status [models/active/result_metrics.json#/nodeMetrics/packaging_and_staging/status]: healthy
+  - Final Drill Assembly
+    - utilization [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/utilization]: `1.000000000000016`
+    - headroom [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/headroom]: `0`
+    - queueRisk [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/queueRisk]: `1`
+    - queueDepth [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/queueDepth]: `2.1852237252861597`
+    - wipQty [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/wipQty]: `2.1852237252861597`
+    - completedQty [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/completedQty]: `0`
+    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/idleWaitHours]: `0`
+    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/idleWaitPct]: `0`
+    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/leadTimeMinutes]: `188.69032258064516`
+    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/capacityPerHour]: `1.6129032258064515`
+    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/bottleneckIndex]: `1`
+    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/bottleneckFlag]: `true`
+    - status [models/active/result_metrics.json#/nodeMetrics/final_drill_assembly/status]: critical
+  - Functional Test
+    - utilization [models/active/result_metrics.json#/nodeMetrics/functional_test/utilization]: `0.7096774193548501`
+    - headroom [models/active/result_metrics.json#/nodeMetrics/functional_test/headroom]: `0.29032258064514993`
+    - queueRisk [models/active/result_metrics.json#/nodeMetrics/functional_test/queueRisk]: `0.7096774193548501`
+    - queueDepth [models/active/result_metrics.json#/nodeMetrics/functional_test/queueDepth]: `0`
+    - wipQty [models/active/result_metrics.json#/nodeMetrics/functional_test/wipQty]: `0`
+    - completedQty [models/active/result_metrics.json#/nodeMetrics/functional_test/completedQty]: `0`
+    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/functional_test/idleWaitHours]: `0`
+    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/functional_test/idleWaitPct]: `0`
+    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/functional_test/leadTimeMinutes]: `78.8`
+    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/functional_test/capacityPerHour]: `2.2727272727272725`
+    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/functional_test/bottleneckIndex]: `0.7096774193548501`
+    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/functional_test/bottleneckFlag]: `false`
+    - status [models/active/result_metrics.json#/nodeMetrics/functional_test/status]: risk
+  - Cosmetic Inspection and Rework
+    - utilization [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/utilization]: `0.3225806451612955`
+    - headroom [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/headroom]: `0.6774193548387045`
+    - queueRisk [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/queueRisk]: `0.3225806451612955`
+    - queueDepth [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/queueDepth]: `0`
+    - wipQty [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/wipQty]: `0`
+    - completedQty [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/completedQty]: `0`
+    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/idleWaitHours]: `0`
+    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/idleWaitPct]: `0`
+    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/leadTimeMinutes]: `34`
+    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/capacityPerHour]: `5`
+    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/bottleneckIndex]: `0.3225806451612955`
+    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/bottleneckFlag]: `false`
+    - status [models/active/result_metrics.json#/nodeMetrics/cosmetic_inspection_and_rework/status]: healthy
+  - Packaging and Palletizing
+    - utilization [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/utilization]: `0.23387096774193922`
+    - headroom [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/headroom]: `0.7661290322580607`
+    - queueRisk [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/queueRisk]: `0.23387096774193922`
+    - queueDepth [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/queueDepth]: `0`
+    - wipQty [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/wipQty]: `0`
+    - completedQty [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/completedQty]: `270.96774193548816`
+    - idleWaitHours [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/idleWaitHours]: `0`
+    - idleWaitPct [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/idleWaitPct]: `0`
+    - leadTimeMinutes [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/leadTimeMinutes]: `20.9`
+    - capacityPerHour [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/capacityPerHour]: `6.896551724137931`
+    - bottleneckIndex [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/bottleneckIndex]: `0.23387096774193922`
+    - bottleneckFlag [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/bottleneckFlag]: `false`
+    - status [models/active/result_metrics.json#/nodeMetrics/packaging_and_palletizing/status]: healthy
 - Formatting notes:
   - Group step cards in process order and keep each step label exactly as shown in the model.
   - Use compact appendix cards to avoid rewriting the step evidence into prose.
@@ -283,15 +287,16 @@ Mode: `consulting_grade_organization`
     - confidence [models/active/operational_diagnosis.json#/confidence]: medium
     - confidenceNote [models/active/operational_diagnosis.json#/confidenceNote]: Confidence is medium because key inputs are incomplete. Missing or weak fields: shift hours/uptime, demand rate/product mix.
   - Assumptions Log
-    - strict-001 [models/active/compiled_forecast_model.json#/assumptions/0]: `{"id":"strict-001","severity":"warning","text":"The VSM title is not visible in the image; model metadata was inferred as Assembly of SpeedBike 3000."}`
+    - strict-001 [models/active/compiled_forecast_model.json#/assumptions/0]: `{"id":"strict-001","severity":"info","text":"The visible VSM title was copied exactly as Cordless Power Drill Assembly Line."}`
     - strict-002 [models/active/compiled_forecast_model.json#/assumptions/1]: `{"id":"strict-002","severity":"info","text":"People Needed was mapped directly to workers because that is the visible staffing field in the image."}`
     - strict-003 [models/active/compiled_forecast_model.json#/assumptions/2]: `{"id":"strict-003","severity":"info","text":"# of Equipment was mapped directly to parallelProcedures / effectiveUnits because that is the visible concurrency field in the image."}`
     - strict-004 [models/active/compiled_forecast_model.json#/assumptions/3]: `{"id":"strict-004","severity":"warning","text":"Hours per shift are not visible in the image, so the forecast calendar still assumes 8 hours per shift when converting shift count to active capacity."}`
     - strict-005 [models/active/compiled_forecast_model.json#/assumptions/4]: `{"id":"strict-005","severity":"warning","text":"Demand rate and product mix are not visible in the image; baseline demand will be inferred in phase 2 from the start-step release capacity."}`
-    - compile-001 [models/active/compiled_forecast_model.json#/assumptions/5]: `{"id":"compile-001","severity":"warning","text":"Demand rate is not shown in the source image; baseline demandRatePerHour is seeded at 90% of computed release capacity from the start step."}`
-    - compile-002 [models/active/compiled_forecast_model.json#/assumptions/6]: `{"id":"compile-002","severity":"warning","text":"The source image shows a consistent visible shift count of 1; activeShiftCount defaults to that value so runtime capacity aligns with the VSM."}`
-    - compile-003 [models/active/compiled_forecast_model.json#/assumptions/7]: `{"id":"compile-003","severity":"warning","text":"Step-level variability is not shown in the source image; baseline variabilityCv defaults to 0.18 for all steps."}`
-    - compile-004 [models/active/compiled_forecast_model.json#/assumptions/8]: `{"id":"compile-004","severity":"info","text":"Queue risk, bottleneck index, brittleness, and migration outputs are deterministic non-DES forecast heuristics for rapid recompute."}`
+    - strict-006 [models/active/compiled_forecast_model.json#/assumptions/5]: `{"id":"strict-006","severity":"warning","text":"The rework note at Cosmetic Inspection and Rework is visible, but the routing split back to Final Drill Assembly versus Functional Test is not numeric, so the forecast model keeps the main left-to-right chain only."}`
+    - compile-001 [models/active/compiled_forecast_model.json#/assumptions/6]: `{"id":"compile-001","severity":"warning","text":"Demand rate is not shown in the source image; baseline demandRatePerHour is seeded at 90% of computed release capacity from the start step."}`
+    - compile-002 [models/active/compiled_forecast_model.json#/assumptions/7]: `{"id":"compile-002","severity":"warning","text":"The source image shows a consistent visible shift count of 1; activeShiftCount defaults to that value so runtime capacity aligns with the VSM."}`
+    - compile-003 [models/active/compiled_forecast_model.json#/assumptions/8]: `{"id":"compile-003","severity":"warning","text":"Step-level variability is not shown in the source image; baseline variabilityCv defaults to 0.18 for all steps."}`
+    - compile-004 [models/active/compiled_forecast_model.json#/assumptions/9]: `{"id":"compile-004","severity":"info","text":"Queue risk is an equivalent single-server wait-probability approximation (P(wait) ~= rho), while bottleneck index, brittleness, and migration remain deterministic non-DES forecast heuristics for rapid recompute."}`
 - Formatting notes:
   - Present evidence gaps and assumptions as a clean appendix rather than hiding them in narrative pages.
   - Make uncertainty explicit and easy for reviewers to audit.

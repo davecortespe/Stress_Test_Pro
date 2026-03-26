@@ -85,6 +85,7 @@ export default function SimulatorApp() {
     discardStepOverrides,
     loadScenario,
     toggleStartPause,
+    applyChangesAndStart,
     resetSimulation
   } = useScenarioSession({ baselineScenario });
 
@@ -261,6 +262,10 @@ export default function SimulatorApp() {
     if (!Number.isFinite(simHorizonHours) || simHorizonHours <= 0) return 0;
     return Math.max(0, Math.min(100, (simElapsedHours / simHorizonHours) * 100));
   }, [simElapsedHours, simHorizonHours]);
+  const isRunComplete = useMemo(
+    () => isPaused && simElapsedHours >= simHorizonHours - 1e-6,
+    [isPaused, simElapsedHours, simHorizonHours]
+  );
 
   // pinnedEntries: derived directly from slots — no library lookup needed.
   // Falls back to metric recomputation for entries opened from old files without savedMetrics.
@@ -468,6 +473,10 @@ export default function SimulatorApp() {
 
   // ── Other actions ───────────────────────────────────────────────────────────
   const startPauseWithInspectorReset = () => {
+    if (isPaused && simElapsedHours >= simHorizonHours - 1e-6) {
+      showNotice("warning", "Simulation has reached the horizon. Use Reset to run it again from the start.");
+      return;
+    }
     toggleStartPause();
     closeInspector();
   };
@@ -478,11 +487,16 @@ export default function SimulatorApp() {
     closeInspector();
   };
 
+  const applyInspectorChangesAndStart = () => {
+    applyChangesAndStart();
+    closeInspector();
+  };
+
   const openExecutivePdf = () => {
     if (pdfAvailability === false) {
       showNotice(
         "error",
-        "Executive PDF is not available yet. Rerun npm run export:pdf-report first."
+        "Executive PDF is not available yet. Rerun npm run refresh:forecast:active or npm run export:pdf-report first."
       );
       return;
     }
@@ -533,6 +547,7 @@ export default function SimulatorApp() {
           hasStagedChanges={hasStagedChanges}
           simElapsedHours={simElapsedHours}
           simHorizonHours={simHorizonHours}
+          isRunComplete={isRunComplete}
           simHorizonValue={activeScenario.simulationHorizonHours ?? simHorizonHours}
           simHorizonOptions={simulationHorizonField?.options ?? []}
           simProgressPct={simProgressPct}
@@ -643,7 +658,7 @@ export default function SimulatorApp() {
             discardStepOverrides(inspectorStep.stepId);
           }}
           onStage={closeInspector}
-          onApplyResume={startPauseWithInspectorReset}
+          onApplyResume={applyInspectorChangesAndStart}
           onClose={closeInspector}
         />
 
