@@ -268,7 +268,7 @@ export interface CompiledForecastModel {
 }
 
 export interface SimulationOutput {
-  globalMetrics: Record<string, number | string>;
+  globalMetrics: ForecastGlobalMetrics;
   nodeMetrics: Record<
     string,
     {
@@ -289,6 +289,27 @@ export interface SimulationOutput {
     }
   >;
   warnings?: string[];
+}
+
+export interface ForecastGlobalMetrics {
+  [key: string]: number | string | undefined;
+  simElapsedHours?: number;
+  forecastThroughput?: number | string;
+  steadyStateThroughput?: number | string;
+  throughputState?: "steady-state" | "transient" | "fallback-analytical";
+  warmupHours?: number | string;
+  totalCompletedOutputPieces?: number | string;
+  totalWipQty?: number | string;
+  worstCaseTouchTime?: number | string;
+  totalLeadTimeMinutes?: number | string;
+  leadTimeDeltaMinutes?: number | string;
+  waitSharePct?: number | string;
+  leadTimeTopContributor?: string;
+  throughputDelta?: number | string;
+  bottleneckMigration?: string;
+  bottleneckIndex?: number | string;
+  brittleness?: number | string;
+  littleLawResidualPct?: number | string;
 }
 
 export type ThroughputEfficiencyStatus = "high" | "medium" | "low";

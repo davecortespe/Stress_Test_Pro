@@ -1,4 +1,10 @@
-import type { CompiledForecastModel, SimulationOutput, VsmEdge, VsmGraph } from "../types/contracts";
+import type {
+  CompiledForecastModel,
+  ForecastGlobalMetrics,
+  SimulationOutput,
+  VsmEdge,
+  VsmGraph
+} from "../types/contracts";
 
 export interface ConstraintStepEval {
   demandRatePerHour: number | null;
@@ -195,12 +201,28 @@ function stepStatus(utilization: number, bottleneckIndex: number): "healthy" | "
   return "healthy";
 }
 
-function queueRiskFromDepth(queueDepth: number, capacityPerHour: number): number {
-  return clamp(queueDepth / Math.max(1, capacityPerHour * 0.6), 0, 1);
+// Equivalent single-server wait-probability approximation.
+// Under M/G/1-style single-server semantics, P(wait) = rho when rho < 1.
+// We keep queueRisk as that arrival-waits approximation, not a queue-occupancy ratio.
+function queueRiskFromUtilization(utilizationRaw: number): number {
+  return clamp(utilizationRaw, 0, 1);
 }
 
 function bottleneckIndexFrom(utilization: number, queueRisk: number): number {
   return clamp(0.65 * clamp(utilization, 0, 1.35) + 0.35 * clamp(queueRisk, 0, 1), 0, 1);
+}
+
+function littleLawResidualPct(
+  throughputPerHour: number,
+  leadTimeMinutes: number,
+  wipQty: number
+): number {
+  const expectedWipQty = Math.max(0, throughputPerHour) * Math.max(0, leadTimeMinutes) / 60;
+  return Math.abs(Math.max(0, wipQty) - expectedWipQty) / Math.max(1e-9, expectedWipQty);
+}
+
+function littleLawReferenceWipQty(throughputPerHour: number, leadTimeMinutes: number): number {
+  return Math.max(0, throughputPerHour) * Math.max(0, leadTimeMinutes) / 60;
 }
 
 function analyzeGraph(graph: VsmGraph): GraphAnalysis {
@@ -526,7 +548,7 @@ function evaluateSystem(
     const headroom = Math.max(0, 1 - utilizationRaw);
     const cv = Math.max(0.03, num(step.variabilityCv, 0.18) * variabilityMultiplier);
     const queueDepth = analyticalQueueDepth(stepDemandRate, calendarCapacityRate, cv, horizonHours);
-    const queueRisk = queueRiskFromDepth(queueDepth, calendarCapacityRate);
+    const queueRisk = queueRiskFromUtilization(utilizationRaw);
     const queueDelayMinutes = (queueDepth / Math.max(0.001, calendarCapacityRate)) * 60;
     const explicitLeadTimeMinutesBase =
       typeof step.leadTimeMinutes === "number" && Number.isFinite(step.leadTimeMinutes)
@@ -633,7 +655,14 @@ interface RuntimeSnapshot {
   completedQtyByStep: Record<string, number>;
   sortedByBottleneck: Array<{ stepId: string; score: number }>;
   throughputState: "steady-state" | "transient" | "fallback-analytical";
-  warmupHours: number;
+  warmupHours: number | "unbounded";
+  warnings: string[];
+}
+
+interface WarmupEstimate {
+  comparisonHours: number;
+  displayHours: number | "unbounded";
+  hasUnboundedWarmup: boolean;
   warnings: string[];
 }
 
@@ -654,32 +683,145 @@ function resolveTerminalNodeIds(
   );
 }
 
+function reachableFromStarts(
+  startNodes: string[],
+  outgoingMap: Map<string, Array<{ to: string; probability: number }>>
+): Set<string> {
+  const visited = new Set<string>();
+  const queue = [...startNodes];
+  while (queue.length > 0) {
+    const nodeId = queue.shift() as string;
+    if (visited.has(nodeId)) {
+      continue;
+    }
+    visited.add(nodeId);
+    for (const edge of outgoingMap.get(nodeId) ?? []) {
+      if (!visited.has(edge.to)) {
+        queue.push(edge.to);
+      }
+    }
+  }
+  return visited;
+}
+
 function estimateWarmupHours(
   orderedNodes: string[],
   outgoingMap: Map<string, Array<{ to: string; probability: number }>>,
   system: ConstraintSystemEval,
   startNodes: string[],
-  isDag: boolean
-): number {
-  if (!isDag) {
-    return 0;
+  isDag: boolean,
+  terminalNodeSet: Set<string>
+): WarmupEstimate {
+  const reachableNodeIds = reachableFromStarts(startNodes, outgoingMap);
+  if (reachableNodeIds.size === 0) {
+    return {
+      comparisonHours: 0,
+      displayHours: 0,
+      hasUnboundedWarmup: false,
+      warnings: []
+    };
   }
-  const pathHours = new Map<string, number>(orderedNodes.map((nodeId) => [nodeId, 0]));
+
+  if (!isDag) {
+    if (terminalNodeSet.size === 0) {
+      return {
+        comparisonHours: Number.POSITIVE_INFINITY,
+        displayHours: "unbounded",
+        hasUnboundedWarmup: true,
+        warnings: [
+          "Warmup is unbounded because the graph has a cyclic path with no absorbing terminal completion."
+        ]
+      };
+    }
+
+    const relevantNodes = orderedNodes.filter((nodeId) => reachableNodeIds.has(nodeId));
+    const indexByNode = new Map(relevantNodes.map((nodeId, index) => [nodeId, index]));
+    const matrix = relevantNodes.map((nodeId) =>
+      relevantNodes.map((candidate) => (candidate === nodeId ? 1 : 0))
+    );
+    const vector = relevantNodes.map((nodeId) =>
+      Math.max(0, system.stepEvals[nodeId]?.serviceTimeHours ?? 0)
+    );
+
+    for (const nodeId of relevantNodes) {
+      if (terminalNodeSet.has(nodeId)) {
+        continue;
+      }
+      const rowIndex = indexByNode.get(nodeId);
+      if (rowIndex === undefined) {
+        continue;
+      }
+      for (const edge of outgoingMap.get(nodeId) ?? []) {
+        const toIndex = indexByNode.get(edge.to);
+        if (toIndex === undefined) {
+          continue;
+        }
+        matrix[rowIndex][toIndex] -= edge.probability;
+      }
+    }
+
+    const solved = solveLinearSystem(matrix, vector);
+    const startWarmupHours = startNodes
+      .map((nodeId) => {
+        const index = indexByNode.get(nodeId);
+        return index === undefined ? null : solved?.[index] ?? null;
+      })
+      .filter((value): value is number => typeof value === "number");
+
+    if (
+      !solved ||
+      solved.some((value) => !Number.isFinite(value) || value < -1e-6) ||
+      startWarmupHours.length === 0
+    ) {
+      return {
+        comparisonHours: Number.POSITIVE_INFINITY,
+        displayHours: "unbounded",
+        hasUnboundedWarmup: true,
+        warnings: [
+          "Warmup is unbounded because the cyclic graph has no finite expected forward completion time."
+        ]
+      };
+    }
+
+    return {
+      comparisonHours: Math.max(0, ...startWarmupHours),
+      displayHours: Math.max(0, ...startWarmupHours),
+      hasUnboundedWarmup: false,
+      warnings: []
+    };
+  }
+
+  const pathHours = new Map<string, number>();
   for (const startId of startNodes) {
     pathHours.set(startId, 0);
   }
   for (const nodeId of orderedNodes) {
+    if (!reachableNodeIds.has(nodeId) || !pathHours.has(nodeId)) {
+      continue;
+    }
     const current = pathHours.get(nodeId) ?? 0;
     const serviceTimeHours = Math.max(0, system.stepEvals[nodeId]?.serviceTimeHours ?? 0);
     const departure = current + serviceTimeHours;
     for (const edge of outgoingMap.get(nodeId) ?? []) {
+      if (!reachableNodeIds.has(edge.to)) {
+        continue;
+      }
       pathHours.set(edge.to, Math.max(pathHours.get(edge.to) ?? 0, departure));
     }
   }
-  return orderedNodes.reduce((max, nodeId) => {
+  const warmupHours = orderedNodes.reduce((max, nodeId) => {
+    if (!reachableNodeIds.has(nodeId) || !pathHours.has(nodeId)) {
+      return max;
+    }
     const total = (pathHours.get(nodeId) ?? 0) + Math.max(0, system.stepEvals[nodeId]?.serviceTimeHours ?? 0);
     return Math.max(max, total);
   }, 0);
+  return {
+    comparisonHours: warmupHours,
+    displayHours: warmupHours,
+    hasUnboundedWarmup: false,
+    warnings: []
+  };
 }
 
 function simulateRuntimeFlow(
@@ -716,13 +858,15 @@ function simulateRuntimeFlow(
   if (!graphAnalysis.isDag) {
     warnings.push("Runtime flow uses conservative next-tick carry for cycle edges; cyclic throughput should be treated cautiously.");
   }
-  const warmupHours = estimateWarmupHours(
+  const warmupEstimate = estimateWarmupHours(
     orderedNodes,
     outgoingMap,
     system,
     startNodes,
-    graphAnalysis.isDag
+    graphAnalysis.isDag,
+    terminalNodeSet
   );
+  warnings.push(...warmupEstimate.warnings);
   if (cappedElapsed > 0) {
     const maxSteps = 1800;
     const targetDt = 1 / 240; // 15 seconds in simulation time
@@ -888,7 +1032,7 @@ function simulateRuntimeFlow(
     const idleWaitHours = Math.max(0, blockedIdleHoursByStep.get(nodeId) ?? 0);
     const idleWaitPct =
       activeElapsedHours > 0 ? clamp(idleWaitHours / activeElapsedHours, 0, 1) : 0;
-    const queueRisk = queueRiskFromDepth(queueDepth, displayedCapacityPerHour);
+    const queueRisk = queueRiskFromUtilization(utilizationRaw);
     const stepBottleneckIndex = bottleneckIndexFrom(utilization, queueRisk);
     const status = stepStatus(utilization, stepBottleneckIndex);
 
@@ -932,11 +1076,20 @@ function simulateRuntimeFlow(
 
   let throughputState: RuntimeSnapshot["throughputState"] = "fallback-analytical";
   if (cappedElapsed > 0) {
-    throughputState = cappedElapsed + 1e-9 < warmupHours ? "transient" : "steady-state";
+    throughputState =
+      warmupEstimate.hasUnboundedWarmup || cappedElapsed + 1e-9 < warmupEstimate.comparisonHours
+        ? "transient"
+        : "steady-state";
     if (throughputState === "transient") {
-      warnings.push(
-        `Forecast throughput is transient because elapsed time (${cappedElapsed.toFixed(2)} h) is shorter than the estimated warmup (${warmupHours.toFixed(2)} h).`
-      );
+      if (warmupEstimate.hasUnboundedWarmup) {
+        warnings.push(
+          "Forecast throughput remains transient because the graph has no finite expected forward completion time."
+        );
+      } else {
+        warnings.push(
+          `Forecast throughput is transient because elapsed time (${cappedElapsed.toFixed(2)} h) is shorter than the estimated warmup (${warmupEstimate.comparisonHours.toFixed(2)} h).`
+        );
+      }
     }
   }
 
@@ -951,7 +1104,7 @@ function simulateRuntimeFlow(
     completedQtyByStep: completedQtyRecord,
     sortedByBottleneck: ranked,
     throughputState,
-    warmupHours,
+    warmupHours: warmupEstimate.displayHours,
     warnings
   };
 }
@@ -1014,16 +1167,19 @@ export function createBottleneckForecastOutput(
   const knownNodes = Object.values(runtime.node).filter((step) => step.utilization !== null);
   const nearSatCount = knownNodes.filter((step) => (step.utilization ?? 0) >= 0.9).length;
   const cascadePressure = knownNodes.length > 0 ? nearSatCount / knownNodes.length : 0;
+  const referenceWipQty = littleLawReferenceWipQty(baseline.throughput, baseline.totalLeadTimeMinutes);
   const wipPressure = clamp(
-    runtime.totalWipQty / Math.max(1, baseline.horizonHours * Math.max(1, model.stepModels.length) * 10),
+    runtime.totalWipQty / Math.max(1, referenceWipQty),
     0,
     1
   );
+  const migrationPenalty = baseline.bottleneckStepId !== relief.bottleneckStepId ? 0.08 : 0;
   const brittleness = clamp(
     0.48 * topScore +
       0.18 * (knownNodes.reduce((sum, row) => sum + (row.queueRisk ?? 0), 0) / Math.max(1, knownNodes.length)) +
       0.16 * cascadePressure +
       0.18 * wipPressure +
+      migrationPenalty +
       (margin < 0.08 ? 0.06 : 0) -
       margin * 0.3,
     0,
@@ -1095,28 +1251,45 @@ export function createBottleneckForecastOutput(
     baseline.totalLeadTimeMinutes
   );
   const waitSharePct = totalLeadTimeMinutes > 0 ? totalExplicitLeadTimeMinutes / totalLeadTimeMinutes : 0;
+  const steadyStateThroughput = baseline.throughput;
   const forecastThroughput =
     runtime.throughputState === "fallback-analytical" ? baseline.throughput : runtime.realizedThroughput;
+  const residualBasisThroughput =
+    runtime.throughputState === "steady-state" ? forecastThroughput : baseline.throughput;
+  const residualBasisLeadTimeHours =
+    runtime.throughputState === "steady-state"
+      ? totalLeadTimeMinutes / 60
+      : baseline.totalLeadTimeMinutes / 60;
+  const residualBasisWip =
+    runtime.throughputState === "steady-state" ? runtime.totalWipQty : baseline.totalWipQty;
+  const littleLawResidual = littleLawResidualPct(
+    residualBasisThroughput,
+    residualBasisLeadTimeHours * 60,
+    residualBasisWip
+  );
   const warnings = [...forecast.warnings, ...runtime.warnings];
+  const globalMetrics: ForecastGlobalMetrics = {
+    simElapsedHours: elapsedHours,
+    forecastThroughput,
+    steadyStateThroughput,
+    throughputState: runtime.throughputState,
+    warmupHours: runtime.warmupHours,
+    totalCompletedOutputPieces: runtime.completedOutputQty,
+    totalWipQty: runtime.totalWipQty,
+    worstCaseTouchTime: baseline.worstCaseTouchTime,
+    totalLeadTimeMinutes,
+    leadTimeDeltaMinutes: totalLeadTimeMinutes - compiledBaselineLeadTime,
+    waitSharePct,
+    leadTimeTopContributor: stepLabelById.get(leadTimeTopStepId) ?? "n/a",
+    throughputDelta: relief.throughput - baseline.throughput,
+    bottleneckMigration: migrationLabel(model, baseline, relief),
+    bottleneckIndex: topScore,
+    brittleness,
+    littleLawResidualPct: littleLawResidual
+  };
 
   return {
-    globalMetrics: {
-      simElapsedHours: elapsedHours,
-      forecastThroughput,
-      throughputState: runtime.throughputState,
-      warmupHours: runtime.warmupHours,
-      totalCompletedOutputPieces: runtime.completedOutputQty,
-      totalWipQty: runtime.totalWipQty,
-      worstCaseTouchTime: baseline.worstCaseTouchTime,
-      totalLeadTimeMinutes,
-      leadTimeDeltaMinutes: totalLeadTimeMinutes - compiledBaselineLeadTime,
-      waitSharePct,
-      leadTimeTopContributor: stepLabelById.get(leadTimeTopStepId) ?? "n/a",
-      throughputDelta: relief.throughput - baseline.throughput,
-      bottleneckMigration: migrationLabel(model, baseline, relief),
-      bottleneckIndex: topScore,
-      brittleness
-    },
+    globalMetrics,
     nodeMetrics,
     warnings
   };

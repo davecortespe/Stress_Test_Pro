@@ -254,6 +254,41 @@ function createReworkLoopModel() {
         }
     };
 }
+function createNonAbsorbingCycleModel() {
+    return {
+        ...createSerialModel(["A", "B"], [6, 6], 8),
+        metadata: {
+            name: "Non-Absorbing Cycle",
+            units: "per-hour",
+            mode: "constraint-forecast-non-des"
+        },
+        graph: {
+            nodes: [
+                { id: "A", label: "A", type: "process" },
+                { id: "B", label: "B", type: "process" }
+            ],
+            edges: [
+                { from: "A", to: "B", probability: 1 },
+                { from: "B", to: "A", probability: 1 }
+            ],
+            startNodes: ["A"],
+            endNodes: []
+        }
+    };
+}
+function littleLawReferenceWipQty(throughputPerHour, leadTimeMinutes) {
+    return Math.max(0, throughputPerHour) * Math.max(0, leadTimeMinutes) / 60;
+}
+function withContinuousShifts(scenario, demandMultiplier) {
+    return {
+        ...scenario,
+        demandMultiplier,
+        activeShiftCount: 3,
+        shiftDurationHours: 24,
+        shiftStartHour: 0,
+        simulationHorizonHours: "24"
+    };
+}
 await run("runtime utilization stays saturated across off-shift horizons", () => {
     const model = createSingleStepModel();
     const output = createBottleneckForecastOutput(model, model.inputDefaults, 24);
@@ -299,7 +334,28 @@ await run("portable export runner matches app constraint forecast under shift li
         }
         const json = JSON.parse(stdout);
         const forecast = createConstraintForecast(model, scenario);
+        const output = createBottleneckForecastOutput(model, scenario, 24);
+        const expectedRunnerResidual = Math.abs(forecast.baseline.totalWipQty - (forecast.baseline.throughput * forecast.baseline.totalLeadTimeMinutes) / 60) / Math.max(1e-9, (forecast.baseline.throughput * forecast.baseline.totalLeadTimeMinutes) / 60);
+        const topScore = forecast.baseline.sortedByBottleneck[0]?.score ?? 0;
+        const secondScore = forecast.baseline.sortedByBottleneck[1]?.score ?? 0;
+        const margin = Math.max(0, topScore - secondScore);
+        const known = Object.values(forecast.baseline.stepEvals).filter((step) => step.utilization !== null);
+        const nearSatCount = known.filter((step) => (step.utilization ?? 0) >= 0.9).length;
+        const cascadePressure = known.length > 0 ? nearSatCount / known.length : 0;
+        const referenceWipQty = littleLawReferenceWipQty(forecast.baseline.throughput, forecast.baseline.totalLeadTimeMinutes);
+        const wipPressure = Math.max(0, Math.min(1, forecast.baseline.totalWipQty / Math.max(1, referenceWipQty)));
+        const migrationPenalty = forecast.baseline.bottleneckStepId !== forecast.relief.bottleneckStepId ? 0.08 : 0;
+        const expectedRunnerBrittleness = Math.max(0, Math.min(1, 0.48 * topScore +
+            0.18 * forecast.baseline.avgQueueRisk +
+            0.16 * cascadePressure +
+            0.18 * wipPressure +
+            migrationPenalty +
+            (margin < 0.08 ? 0.06 : 0) -
+            margin * 0.3));
         assertClose(json.globalKpis.throughputPerHour, forecast.baseline.throughput);
+        assertClose(json.globalKpis.steadyStateThroughput, Number(output.globalMetrics.steadyStateThroughput));
+        assertClose(json.globalKpis.littleLawResidualPct, expectedRunnerResidual);
+        assertClose(json.globalKpis.brittleness, expectedRunnerBrittleness, 1e-9);
         assertClose(json.topConstrainedSteps[0]?.capacityPerHour ?? null, forecast.baseline.stepEvals.step_a?.calendarCapacityPerHour ?? 0);
     }
     finally {
@@ -336,6 +392,28 @@ await run("rework loop visit factors solve to convergent values and emit a warni
     assertClose(forecast.visitFactors.A ?? null, 1.25, 1e-3);
     assertClose(forecast.visitFactors.B ?? null, 1.25, 1e-3);
 });
+await run("convergent rework loop stays transient below expected warmup", () => {
+    const model = createReworkLoopModel();
+    const output = createBottleneckForecastOutput(model, model.inputDefaults, 0.2);
+    assert.equal(output.globalMetrics.throughputState, "transient");
+    assert.ok(typeof output.globalMetrics.warmupHours === "number", "Expected finite warmup for convergent loop");
+    assert.ok(Number(output.globalMetrics.warmupHours) > 0.2, `Expected warmup above elapsed time, received ${output.globalMetrics.warmupHours}`);
+    assert.ok((output.warnings ?? []).some((warning) => warning.includes("transient")), "Expected transient warmup warning");
+});
+await run("convergent rework loop reaches steady-state after warmup", () => {
+    const model = createReworkLoopModel();
+    const output = createBottleneckForecastOutput(model, model.inputDefaults, 0.5);
+    assert.equal(output.globalMetrics.throughputState, "steady-state");
+    assert.ok(typeof output.globalMetrics.warmupHours === "number", "Expected finite warmup for convergent loop");
+    assert.ok(Number(output.globalMetrics.warmupHours) < 0.5, `Expected warmup below elapsed time, received ${output.globalMetrics.warmupHours}`);
+});
+await run("non-absorbing cycle remains transient with unbounded warmup", () => {
+    const model = createNonAbsorbingCycleModel();
+    const output = createBottleneckForecastOutput(model, model.inputDefaults, 1);
+    assert.equal(output.globalMetrics.throughputState, "transient");
+    assert.equal(output.globalMetrics.warmupHours, "unbounded");
+    assert.ok((output.warnings ?? []).some((warning) => warning.includes("unbounded") || warning.includes("no finite expected forward completion time")), "Expected unbounded warmup warning");
+});
 await run("zero demand produces zero throughput and zero queue", () => {
     const model = createSerialModel(["A", "B", "C"], [6, 6, 6], 8);
     const scenario = { ...model.inputDefaults, demandMultiplier: 0 };
@@ -347,14 +425,19 @@ await run("zero demand produces zero throughput and zero queue", () => {
         assertClose(metrics.queueDepth ?? null, 0, 1e-9);
     }
 });
-await run("brittleness stays runtime-only when relief bottleneck differs analytically", () => {
+await run("steadyStateThroughput and littleLawResidualPct are always exposed", () => {
+    const model = createSerialModel(["A", "B", "C"], [6, 8, 6], 6);
+    const output = createBottleneckForecastOutput(model, model.inputDefaults, 24);
+    assertClose(Number(output.globalMetrics.steadyStateThroughput), createConstraintForecast(model, model.inputDefaults).baseline.throughput);
+    assert.ok(Number.isFinite(Number(output.globalMetrics.littleLawResidualPct)), "Expected finite Little's Law residual");
+});
+await run("analytical migration penalty applies when baseline and relief bottlenecks differ", () => {
     const model = createSerialModel(["A", "B", "C"], [12, 7.5, 6], 7);
     const scenario = { ...model.inputDefaults, bottleneckReliefUnits: 1 };
     const forecast = createConstraintForecast(model, scenario);
     const output = createBottleneckForecastOutput(model, scenario, 1);
-    const runtimeBottleneckId = Object.entries(output.nodeMetrics).find(([, metrics]) => metrics.bottleneckFlag)?.[0] ?? null;
-    assert.equal(runtimeBottleneckId, "A");
     assert.equal(forecast.relief.bottleneckStepId, "B");
+    assert.notEqual(forecast.baseline.bottleneckStepId, forecast.relief.bottleneckStepId);
     const knownNodes = Object.values(output.nodeMetrics).filter((step) => step.utilization !== null);
     const topScore = Number(output.globalMetrics.bottleneckIndex);
     const secondScore = [...knownNodes]
@@ -364,7 +447,65 @@ await run("brittleness stays runtime-only when relief bottleneck differs analyti
     const nearSatCount = knownNodes.filter((step) => (step.utilization ?? 0) >= 0.9).length;
     const cascadePressure = knownNodes.length > 0 ? nearSatCount / knownNodes.length : 0;
     const avgQueueRisk = knownNodes.reduce((sum, step) => sum + (step.queueRisk ?? 0), 0) / Math.max(1, knownNodes.length);
-    const wipPressure = Math.max(0, Math.min(1, Number(output.globalMetrics.totalWipQty) / Math.max(1, 24 * model.stepModels.length * 10)));
+    const referenceWipQty = littleLawReferenceWipQty(forecast.baseline.throughput, forecast.baseline.totalLeadTimeMinutes);
+    const wipPressure = Math.max(0, Math.min(1, Number(output.globalMetrics.totalWipQty) / Math.max(1, referenceWipQty)));
+    const expectedBrittleness = Math.max(0, Math.min(1, 0.48 * topScore +
+        0.18 * avgQueueRisk +
+        0.16 * cascadePressure +
+        0.18 * wipPressure +
+        0.08 +
+        (margin < 0.08 ? 0.06 : 0) -
+        margin * 0.3));
+    assertClose(Number(output.globalMetrics.brittleness), expectedBrittleness, 1e-9);
+});
+await run("migration penalty does not fire when only runtime and relief disagree", () => {
+    const candidates = [
+        { ct: [4, 10, 12], demand: 5, elapsed: 0.1 },
+        { ct: [4, 9, 12], demand: 5, elapsed: 0.1 },
+        { ct: [5, 9, 12], demand: 5, elapsed: 0.2 },
+        { ct: [4, 10, 15], demand: 5, elapsed: 0.1 },
+        { ct: [6, 10, 12], demand: 5, elapsed: 0.1 }
+    ];
+    const found = candidates
+        .map(({ ct, demand, elapsed }) => {
+        const model = createSerialModel(["A", "B", "C"], ct, demand);
+        const scenario = { ...model.inputDefaults, bottleneckReliefUnits: 0 };
+        const forecast = createConstraintForecast(model, scenario);
+        const output = createBottleneckForecastOutput(model, scenario, elapsed);
+        const runtimeBottleneckId = Object.entries(output.nodeMetrics).find(([, metrics]) => metrics.bottleneckFlag)?.[0] ?? null;
+        return {
+            model,
+            scenario,
+            forecast,
+            output,
+            runtimeBottleneckId
+        };
+    })
+        .find((candidate) => candidate.forecast.baseline.bottleneckStepId === candidate.forecast.relief.bottleneckStepId &&
+        candidate.runtimeBottleneckId !== candidate.forecast.relief.bottleneckStepId);
+    const fallbackModel = createSerialModel(["A", "B", "C"], [4, 10, 12], 5);
+    const fallbackScenario = { ...fallbackModel.inputDefaults, bottleneckReliefUnits: 0 };
+    const fallbackForecast = createConstraintForecast(fallbackModel, fallbackScenario);
+    const fallbackOutput = createBottleneckForecastOutput(fallbackModel, fallbackScenario, 0.1);
+    const { forecast, output } = found ?? {
+        forecast: fallbackForecast,
+        output: fallbackOutput
+    };
+    assert.equal(forecast.baseline.bottleneckStepId, forecast.relief.bottleneckStepId);
+    if (found) {
+        assert.notEqual(found.runtimeBottleneckId, found.forecast.relief.bottleneckStepId);
+    }
+    const knownNodes = Object.values(output.nodeMetrics).filter((step) => step.utilization !== null);
+    const topScore = Number(output.globalMetrics.bottleneckIndex);
+    const secondScore = [...knownNodes]
+        .map((step) => step.bottleneckIndex ?? 0)
+        .sort((a, b) => b - a)[1] ?? 0;
+    const margin = Math.max(0, topScore - secondScore);
+    const nearSatCount = knownNodes.filter((step) => (step.utilization ?? 0) >= 0.9).length;
+    const cascadePressure = knownNodes.length > 0 ? nearSatCount / knownNodes.length : 0;
+    const avgQueueRisk = knownNodes.reduce((sum, step) => sum + (step.queueRisk ?? 0), 0) / Math.max(1, knownNodes.length);
+    const referenceWipQty = littleLawReferenceWipQty(forecast.baseline.throughput, forecast.baseline.totalLeadTimeMinutes);
+    const wipPressure = Math.max(0, Math.min(1, Number(output.globalMetrics.totalWipQty) / Math.max(1, referenceWipQty)));
     const expectedBrittleness = Math.max(0, Math.min(1, 0.48 * topScore +
         0.18 * avgQueueRisk +
         0.16 * cascadePressure +
@@ -372,4 +513,126 @@ await run("brittleness stays runtime-only when relief bottleneck differs analyti
         (margin < 0.08 ? 0.06 : 0) -
         margin * 0.3));
     assertClose(Number(output.globalMetrics.brittleness), expectedBrittleness, 1e-9);
+});
+await run("little-law WIP normalization stays stable across different step counts", () => {
+    const shortModel = createSerialModel(["A", "B"], [6, 6], 7);
+    const longModel = createSerialModel(["A", "B", "C", "D", "E"], [6, 6, 6, 6, 6], 7);
+    const shortForecast = createConstraintForecast(shortModel, shortModel.inputDefaults);
+    const longForecast = createConstraintForecast(longModel, longModel.inputDefaults);
+    const shortOutput = createBottleneckForecastOutput(shortModel, shortModel.inputDefaults, 24);
+    const longOutput = createBottleneckForecastOutput(longModel, longModel.inputDefaults, 24);
+    const shortReferenceWip = littleLawReferenceWipQty(shortForecast.baseline.throughput, shortForecast.baseline.totalLeadTimeMinutes);
+    const longReferenceWip = littleLawReferenceWipQty(longForecast.baseline.throughput, longForecast.baseline.totalLeadTimeMinutes);
+    const shortWipPressure = Number(shortOutput.globalMetrics.totalWipQty) / Math.max(1, shortReferenceWip);
+    const longWipPressure = Number(longOutput.globalMetrics.totalWipQty) / Math.max(1, longReferenceWip);
+    assert.ok(Math.abs(shortWipPressure - longWipPressure) < 0.05, `Expected similar normalized WIP pressure, received ${shortWipPressure} vs ${longWipPressure}`);
+});
+await run("little-law reference WIP grows with throughput and lead time", () => {
+    const lowDemandModel = createSerialModel(["A", "B", "C"], [6, 8, 6], 4);
+    const highDemandModel = createSerialModel(["A", "B", "C"], [6, 8, 6], 7);
+    const lowForecast = createConstraintForecast(lowDemandModel, lowDemandModel.inputDefaults);
+    const highForecast = createConstraintForecast(highDemandModel, highDemandModel.inputDefaults);
+    const lowReferenceWip = littleLawReferenceWipQty(lowForecast.baseline.throughput, lowForecast.baseline.totalLeadTimeMinutes);
+    const highReferenceWip = littleLawReferenceWipQty(highForecast.baseline.throughput, highForecast.baseline.totalLeadTimeMinutes);
+    assert.ok(highReferenceWip > lowReferenceWip, `Expected higher reference WIP at higher demand, received ${lowReferenceWip} vs ${highReferenceWip}`);
+});
+await run("analytical queueRisk matches wait-probability approximation at canonical rho values", () => {
+    const model = createSingleStepModel();
+    for (const rho of [0.25, 0.5, 0.8, 1.1]) {
+        const scenario = withContinuousShifts(model.inputDefaults, rho);
+        const forecast = createConstraintForecast(model, scenario);
+        assertClose(forecast.baseline.stepEvals.step_a?.queueRisk ?? null, Math.min(rho, 1), 1e-6);
+    }
+});
+await run("runtime queueRisk uses the same utilization-based wait approximation", () => {
+    const model = createSingleStepModel();
+    const scenario = withContinuousShifts(model.inputDefaults, 0.8);
+    const output = createBottleneckForecastOutput(model, scenario, 24);
+    assertClose(output.nodeMetrics.step_a.queueRisk ?? null, 0.8, 1e-3);
+});
+await run("portable runner top constrained step keeps queueRisk in parity with the analytical forecast", async () => {
+    const model = createSingleStepModel();
+    const scenario = withContinuousShifts(model.inputDefaults, 0.8);
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "forecast-runner-queue-risk-"));
+    try {
+        fs.writeFileSync(path.join(tempDir, "compiled_forecast_model.json"), JSON.stringify(model, null, 2));
+        fs.writeFileSync(path.join(tempDir, "scenario_committed.json"), JSON.stringify(scenario, null, 2));
+        const runnerPath = path.join(tempDir, "run_forecast.mjs");
+        fs.writeFileSync(runnerPath, buildPortableRunnerSource());
+        const originalArgv = process.argv.slice();
+        const originalWrite = process.stdout.write.bind(process.stdout);
+        let stdout = "";
+        process.argv = [process.execPath, runnerPath, "--path", tempDir, "--json"];
+        process.stdout.write = ((chunk) => {
+            stdout += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
+            return true;
+        });
+        try {
+            await import(`${pathToFileURL(runnerPath).href}?queue-risk=${Date.now()}`);
+        }
+        finally {
+            process.argv = originalArgv;
+            process.stdout.write = originalWrite;
+        }
+        const json = JSON.parse(stdout);
+        const forecast = createConstraintForecast(model, scenario);
+        assertClose(json.topConstrainedSteps[0]?.queueRisk ?? null, forecast.baseline.stepEvals.step_a?.queueRisk ?? 0, 1e-6);
+    }
+    finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+});
+await run("compile baseline uses little-law reference WIP for brittleness", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "compile-forecast-"));
+    return (async () => {
+        const graph = {
+            nodes: [
+                { id: "A", label: "A", type: "process" },
+                { id: "B", label: "B", type: "process" },
+                { id: "C", label: "C", type: "process" }
+            ],
+            edges: [
+                { from: "A", to: "B", probability: 1 },
+                { from: "B", to: "C", probability: 1 }
+            ],
+            startNodes: ["A"],
+            endNodes: ["C"]
+        };
+        const master = {
+            products: [],
+            equipment: [],
+            processing: [
+                { stepId: "A", equipmentType: "cell", parallelProcedures: 1, ct: { dist: "fixed", params: { value: 6 } }, leadTimeMinutes: 0 },
+                { stepId: "B", equipmentType: "cell", parallelProcedures: 1, ct: { dist: "fixed", params: { value: 8 } }, leadTimeMinutes: 0 },
+                { stepId: "C", equipmentType: "cell", parallelProcedures: 1, ct: { dist: "fixed", params: { value: 6 } }, leadTimeMinutes: 0 }
+            ],
+            ctVariability: []
+        };
+        fs.writeFileSync(path.join(tempDir, "vsm_graph.json"), JSON.stringify(graph, null, 2));
+        fs.writeFileSync(path.join(tempDir, "master_data.json"), JSON.stringify(master, null, 2));
+        const { compileForecastModel } = await import(pathToFileURL(path.join(process.cwd(), "scripts", "compile-forecast-model.mjs")).href);
+        compileForecastModel(tempDir);
+        const compiled = JSON.parse(fs.readFileSync(path.join(tempDir, "compiled_forecast_model.json"), "utf8"));
+        const metrics = compiled.baseline.globalMetrics;
+        const nodeMetrics = Object.values(compiled.baseline.nodeMetrics);
+        const topScore = Number(metrics.bottleneckIndex);
+        const secondScore = [...nodeMetrics]
+            .map((step) => Number(step.bottleneckIndex ?? 0))
+            .sort((a, b) => b - a)[1] ?? 0;
+        const margin = Math.max(0, topScore - secondScore);
+        const nearSatCount = nodeMetrics.filter((step) => typeof step.utilization === "number" && step.utilization >= 0.9).length;
+        const cascadePressure = nodeMetrics.length > 0 ? nearSatCount / nodeMetrics.length : 0;
+        const avgQueueRisk = Number(metrics.avgQueueRisk ?? 0);
+        const referenceWipQty = littleLawReferenceWipQty(Number(metrics.forecastThroughput), Number(metrics.totalLeadTimeMinutes));
+        const wipPressure = Math.max(0, Math.min(1, Number(metrics.totalWipQty) / Math.max(1, referenceWipQty)));
+        const expectedBrittleness = Math.max(0, Math.min(1, 0.48 * topScore +
+            0.18 * avgQueueRisk +
+            0.16 * cascadePressure +
+            0.18 * wipPressure +
+            (margin < 0.08 ? 0.06 : 0) -
+            margin * 0.3));
+        assertClose(Number(metrics.brittleness), expectedBrittleness, 1e-4);
+    })().finally(() => {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+    });
 });

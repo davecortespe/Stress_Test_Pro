@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { KpiConfig } from "../types/contracts";
+import type { ForecastGlobalMetrics, KpiConfig } from "../types/contracts";
 
 interface KpiRowProps {
   kpis: KpiConfig[];
-  metrics: Record<string, number | string>;
+  metrics: ForecastGlobalMetrics | Record<string, number | string | undefined>;
   featuredKey?: string;
   variant?: "default" | "compact" | "overlay";
   referenceMetrics?: Record<string, number>;

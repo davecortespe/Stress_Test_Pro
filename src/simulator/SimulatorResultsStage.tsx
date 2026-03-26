@@ -13,6 +13,7 @@ import type {
   AssumptionsReportResult,
   CompiledForecastModel,
   DashboardConfig,
+  ForecastGlobalMetrics,
   KaizenReportResult,
   KpiConfig,
   OperationalDiagnosis,
@@ -36,7 +37,7 @@ interface SimulatorResultsStageProps {
   resultsMode: SimulatorResultsMode;
   isParameterRailOpen: boolean;
   activeKpis: KpiConfig[];
-  activeMetrics: Record<string, number | string>;
+  activeMetrics: ForecastGlobalMetrics | Record<string, number | string | undefined>;
   output: SimulationOutput;
   forecastModel: CompiledForecastModel;
   dashboardConfig: DashboardConfig;

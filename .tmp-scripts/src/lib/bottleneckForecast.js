@@ -466,121 +466,26 @@ function resolveTerminalNodeIds(graph, outgoingMap) {
         .map((node) => node.id)
         .filter((nodeId) => (outgoingMap.get(nodeId) ?? []).length === 0));
 }
-function reachableFromStarts(startNodes, outgoingMap) {
-    const visited = new Set();
-    const queue = [...startNodes];
-    while (queue.length > 0) {
-        const nodeId = queue.shift();
-        if (visited.has(nodeId)) {
-            continue;
-        }
-        visited.add(nodeId);
-        for (const edge of outgoingMap.get(nodeId) ?? []) {
-            if (!visited.has(edge.to)) {
-                queue.push(edge.to);
-            }
-        }
-    }
-    return visited;
-}
-function estimateWarmupHours(orderedNodes, outgoingMap, system, startNodes, isDag, terminalNodeSet) {
-    const reachableNodeIds = reachableFromStarts(startNodes, outgoingMap);
-    if (reachableNodeIds.size === 0) {
-        return {
-            comparisonHours: 0,
-            displayHours: 0,
-            hasUnboundedWarmup: false,
-            warnings: []
-        };
-    }
+function estimateWarmupHours(orderedNodes, outgoingMap, system, startNodes, isDag) {
     if (!isDag) {
-        if (terminalNodeSet.size === 0) {
-            return {
-                comparisonHours: Number.POSITIVE_INFINITY,
-                displayHours: "unbounded",
-                hasUnboundedWarmup: true,
-                warnings: [
-                    "Warmup is unbounded because the graph has a cyclic path with no absorbing terminal completion."
-                ]
-            };
-        }
-        const relevantNodes = orderedNodes.filter((nodeId) => reachableNodeIds.has(nodeId));
-        const indexByNode = new Map(relevantNodes.map((nodeId, index) => [nodeId, index]));
-        const matrix = relevantNodes.map((nodeId) => relevantNodes.map((candidate) => (candidate === nodeId ? 1 : 0)));
-        const vector = relevantNodes.map((nodeId) => Math.max(0, system.stepEvals[nodeId]?.serviceTimeHours ?? 0));
-        for (const nodeId of relevantNodes) {
-            if (terminalNodeSet.has(nodeId)) {
-                continue;
-            }
-            const rowIndex = indexByNode.get(nodeId);
-            if (rowIndex === undefined) {
-                continue;
-            }
-            for (const edge of outgoingMap.get(nodeId) ?? []) {
-                const toIndex = indexByNode.get(edge.to);
-                if (toIndex === undefined) {
-                    continue;
-                }
-                matrix[rowIndex][toIndex] -= edge.probability;
-            }
-        }
-        const solved = solveLinearSystem(matrix, vector);
-        const startWarmupHours = startNodes
-            .map((nodeId) => {
-            const index = indexByNode.get(nodeId);
-            return index === undefined ? null : solved?.[index] ?? null;
-        })
-            .filter((value) => typeof value === "number");
-        if (!solved ||
-            solved.some((value) => !Number.isFinite(value) || value < -1e-6) ||
-            startWarmupHours.length === 0) {
-            return {
-                comparisonHours: Number.POSITIVE_INFINITY,
-                displayHours: "unbounded",
-                hasUnboundedWarmup: true,
-                warnings: [
-                    "Warmup is unbounded because the cyclic graph has no finite expected forward completion time."
-                ]
-            };
-        }
-        return {
-            comparisonHours: Math.max(0, ...startWarmupHours),
-            displayHours: Math.max(0, ...startWarmupHours),
-            hasUnboundedWarmup: false,
-            warnings: []
-        };
+        return 0;
     }
-    const pathHours = new Map();
+    const pathHours = new Map(orderedNodes.map((nodeId) => [nodeId, 0]));
     for (const startId of startNodes) {
         pathHours.set(startId, 0);
     }
     for (const nodeId of orderedNodes) {
-        if (!reachableNodeIds.has(nodeId) || !pathHours.has(nodeId)) {
-            continue;
-        }
         const current = pathHours.get(nodeId) ?? 0;
         const serviceTimeHours = Math.max(0, system.stepEvals[nodeId]?.serviceTimeHours ?? 0);
         const departure = current + serviceTimeHours;
         for (const edge of outgoingMap.get(nodeId) ?? []) {
-            if (!reachableNodeIds.has(edge.to)) {
-                continue;
-            }
             pathHours.set(edge.to, Math.max(pathHours.get(edge.to) ?? 0, departure));
         }
     }
-    const warmupHours = orderedNodes.reduce((max, nodeId) => {
-        if (!reachableNodeIds.has(nodeId) || !pathHours.has(nodeId)) {
-            return max;
-        }
+    return orderedNodes.reduce((max, nodeId) => {
         const total = (pathHours.get(nodeId) ?? 0) + Math.max(0, system.stepEvals[nodeId]?.serviceTimeHours ?? 0);
         return Math.max(max, total);
     }, 0);
-    return {
-        comparisonHours: warmupHours,
-        displayHours: warmupHours,
-        hasUnboundedWarmup: false,
-        warnings: []
-    };
 }
 function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
     const graphAnalysis = analyzeGraph(model.graph);
@@ -604,8 +509,7 @@ function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
     if (!graphAnalysis.isDag) {
         warnings.push("Runtime flow uses conservative next-tick carry for cycle edges; cyclic throughput should be treated cautiously.");
     }
-    const warmupEstimate = estimateWarmupHours(orderedNodes, outgoingMap, system, startNodes, graphAnalysis.isDag, terminalNodeSet);
-    warnings.push(...warmupEstimate.warnings);
+    const warmupHours = estimateWarmupHours(orderedNodes, outgoingMap, system, startNodes, graphAnalysis.isDag);
     if (cappedElapsed > 0) {
         const maxSteps = 1800;
         const targetDt = 1 / 240; // 15 seconds in simulation time
@@ -778,17 +682,9 @@ function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
     }
     let throughputState = "fallback-analytical";
     if (cappedElapsed > 0) {
-        throughputState =
-            warmupEstimate.hasUnboundedWarmup || cappedElapsed + 1e-9 < warmupEstimate.comparisonHours
-                ? "transient"
-                : "steady-state";
+        throughputState = cappedElapsed + 1e-9 < warmupHours ? "transient" : "steady-state";
         if (throughputState === "transient") {
-            if (warmupEstimate.hasUnboundedWarmup) {
-                warnings.push("Forecast throughput remains transient because the graph has no finite expected forward completion time.");
-            }
-            else {
-                warnings.push(`Forecast throughput is transient because elapsed time (${cappedElapsed.toFixed(2)} h) is shorter than the estimated warmup (${warmupEstimate.comparisonHours.toFixed(2)} h).`);
-            }
+            warnings.push(`Forecast throughput is transient because elapsed time (${cappedElapsed.toFixed(2)} h) is shorter than the estimated warmup (${warmupHours.toFixed(2)} h).`);
         }
     }
     return {
@@ -802,7 +698,7 @@ function simulateRuntimeFlow(model, system, elapsedHours, scenario) {
         completedQtyByStep: completedQtyRecord,
         sortedByBottleneck: ranked,
         throughputState,
-        warmupHours: warmupEstimate.displayHours,
+        warmupHours,
         warnings
     };
 }

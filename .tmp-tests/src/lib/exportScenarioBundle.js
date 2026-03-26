@@ -215,12 +215,23 @@ function analyticalQueueDepth(demandRatePerHour, capacityPerHour, variabilityCv,
   return Math.max(0, demandRatePerHour - capacityPerHour) * Math.max(0, horizonHours);
 }
 
-function queueRiskFromDepth(queueDepth, capacityPerHour) {
-  return clamp(queueDepth / Math.max(1, capacityPerHour * 0.6), 0, 1);
+// Equivalent single-server wait-probability approximation.
+// Under M/G/1-style single-server semantics, P(wait) = rho when rho < 1.
+function queueRiskFromUtilization(utilizationRaw) {
+  return clamp(utilizationRaw, 0, 1);
 }
 
 function bottleneckIndexFrom(utilization, queueRisk) {
   return clamp(0.65 * clamp(utilization, 0, 1.35) + 0.35 * clamp(queueRisk, 0, 1), 0, 1);
+}
+
+function littleLawResidualPct(throughputPerHour, leadTimeMinutes, wipQty) {
+  const expectedWipQty = Math.max(0, throughputPerHour) * Math.max(0, leadTimeMinutes) / 60;
+  return Math.abs(Math.max(0, wipQty) - expectedWipQty) / Math.max(1e-9, expectedWipQty);
+}
+
+function littleLawReferenceWipQty(throughputPerHour, leadTimeMinutes) {
+  return Math.max(0, throughputPerHour) * Math.max(0, leadTimeMinutes) / 60;
 }
 
 function stepStatus(utilization, bottleneckIndex) {
@@ -259,6 +270,7 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
   let lineCapacity = Number.POSITIVE_INFINITY;
   let totalWipQty = 0;
   let worstCaseTouchTime = 0;
+  let totalLeadTimeMinutes = 0;
 
   model.stepModels.forEach((step, index) => {
     const ctMinutes = typeof step.ctMinutes === "number" ? step.ctMinutes : null;
@@ -316,10 +328,12 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
     const headroom = Math.max(0, 1 - utilizationRaw);
     const cv = Math.max(0.03, num(step.variabilityCv, 0.18) * variabilityMultiplier);
     const queueDepth = analyticalQueueDepth(stepDemandRate, calendarCapacityRate, cv, horizonHours);
-    const queueRisk = queueRiskFromDepth(queueDepth, calendarCapacityRate);
+    const queueRisk = queueRiskFromUtilization(utilizationRaw);
+    const queueDelayMinutes = (queueDepth / Math.max(0.001, calendarCapacityRate)) * 60;
     const inServiceWip = Math.max(0, Math.min(stepDemandRate, calendarCapacityRate) * (effectiveCt / 60));
     const wipQty = Math.max(0, queueDepth + inServiceWip);
     totalWipQty += wipQty;
+    totalLeadTimeMinutes += effectiveCt + queueDelayMinutes + Math.max(0, step.leadTimeMinutes ?? 0);
 
     const bottleneckIndex = bottleneckIndexFrom(utilization, queueRisk);
     const status = stepStatus(utilization, bottleneckIndex);
@@ -362,6 +376,7 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
     bottleneckStepId: ranked[0]?.stepId ?? "",
     avgQueueRisk,
     totalWipQty,
+    totalLeadTimeMinutes,
     worstCaseTouchTime,
     horizonHours,
     sortedByBottleneck: ranked
@@ -399,8 +414,9 @@ function runForecast(model, scenario) {
   const known = Object.values(baseline.stepEvals).filter((step) => step.utilization !== null);
   const nearSatCount = known.filter((step) => (step.utilization ?? 0) >= 0.9).length;
   const cascadePressure = known.length > 0 ? nearSatCount / known.length : 0;
+  const referenceWipQty = littleLawReferenceWipQty(baseline.throughput, baseline.totalLeadTimeMinutes);
   const wipPressure = clamp(
-    baseline.totalWipQty / Math.max(1, baseline.horizonHours * Math.max(1, model.stepModels.length) * 10),
+    baseline.totalWipQty / Math.max(1, referenceWipQty),
     0,
     1
   );
@@ -415,6 +431,11 @@ function runForecast(model, scenario) {
       margin * 0.3,
     0,
     1
+  );
+  const littleLawResidual = littleLawResidualPct(
+    baseline.throughput,
+    baseline.totalLeadTimeMinutes,
+    baseline.totalWipQty
   );
 
   const labels = new Map(model.graph.nodes.map((node) => [node.id, node.label]));
@@ -435,9 +456,11 @@ function runForecast(model, scenario) {
   return {
     globalKpis: {
       throughputPerHour: baseline.throughput,
+      steadyStateThroughput: baseline.throughput,
       totalWipQty: baseline.totalWipQty,
       bottleneck: labels.get(baseline.bottleneckStepId) ?? baseline.bottleneckStepId,
       brittleness,
+      littleLawResidualPct: littleLawResidual,
       worstCaseTouchTimeMinutes: baseline.worstCaseTouchTime,
       bottleneckMigration: migrationLabel(model, baseline, relief)
     },
@@ -546,8 +569,9 @@ ${metricsLine}
 ## Metric semantics
 
 - \`forecastThroughput\` may be steady-state, transient, or fallback-analytical. Check \`globalMetrics.throughputState\`.
-- \`globalMetrics.warmupHours\` estimates when runtime throughput should be treated as warmed up.
+- \`globalMetrics.warmupHours\` estimates when runtime throughput should be treated as warmed up and may be \`"unbounded"\` for non-absorbing cycles.
 - \`warnings[]\` flags degraded-confidence conditions such as cyclic graphs or transient runtime output.
+- \`queueRisk\` is an equivalent single-server wait-probability approximation: \`P(wait) ~= rho\`. It is theory-based, but not a full network waiting model across arbitrary routing or blocking.
 - \`nodeMetrics.processedQty\` is pass-through volume at a step over elapsed time.
 - \`nodeMetrics.completedQty\` is terminal completions only.
 `;
@@ -555,7 +579,7 @@ ${metricsLine}
 function safeJsonForScript(value) {
     return JSON.stringify(value).replace(/</g, "\\u003c");
 }
-function buildBrowserSnapshotHtmlSource(dashboardConfig, compiledForecastModel, scenarioCommitted, resultMetrics, operationalDiagnosis) {
+export function buildBrowserSnapshotHtmlSource(dashboardConfig, compiledForecastModel, scenarioCommitted, resultMetrics, operationalDiagnosis) {
     const dashboardJson = safeJsonForScript(dashboardConfig);
     const modelJson = safeJsonForScript(compiledForecastModel);
     const scenarioJson = safeJsonForScript(scenarioCommitted);

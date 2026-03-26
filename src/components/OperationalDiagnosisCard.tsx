@@ -1,9 +1,9 @@
 import { useRef, useLayoutEffect } from "react";
-import type { OperationalDiagnosis } from "../types/contracts";
+import type { ForecastGlobalMetrics, OperationalDiagnosis } from "../types/contracts";
 
 interface OperationalDiagnosisCardProps {
   diagnosis: OperationalDiagnosis;
-  metrics: Record<string, number | string>;
+  metrics: ForecastGlobalMetrics | Record<string, number | string | undefined>;
 }
 
 function TitleCaseStatus(status: OperationalDiagnosis["status"]): string {
@@ -28,7 +28,10 @@ function clampSentences(text: string, maxSentences: number): string {
   return parts.slice(0, maxSentences).join(" ");
 }
 
-function readNumber(metrics: Record<string, number | string>, key: string): number | null {
+function readNumber(
+  metrics: ForecastGlobalMetrics | Record<string, number | string | undefined>,
+  key: string
+): number | null {
   const value = metrics[key];
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

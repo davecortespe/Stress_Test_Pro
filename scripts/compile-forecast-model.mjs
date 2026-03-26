@@ -1,11 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-
-const args = process.argv.slice(2);
-const activeDir = args[0] ?? path.join("models", "active");
-const graphPath = path.join(activeDir, "vsm_graph.json");
-const masterPath = path.join(activeDir, "master_data.json");
-const outputPath = path.join(activeDir, "compiled_forecast_model.json");
+import { pathToFileURL } from "node:url";
 
 const BASELINE_HORIZON_HOURS = 24;
 const DEFAULT_VARIABILITY_CV = 0.18;
@@ -225,12 +220,23 @@ function analyticalQueueDepth(demandRatePerHour, capacityPerHour, variabilityCv,
   return Math.max(0, demandRatePerHour - capacityPerHour) * Math.max(0, horizonHours);
 }
 
-function queueRiskFromDepth(queueDepth, capacityPerHour) {
-  return clamp(queueDepth / Math.max(1, capacityPerHour * 0.6), 0, 1);
+// Equivalent single-server wait-probability approximation.
+// Under M/G/1-style single-server semantics, P(wait) = rho when rho < 1.
+function queueRiskFromUtilization(utilizationRaw) {
+  return clamp(utilizationRaw, 0, 1);
 }
 
 function bottleneckIndexFrom(utilization, queueRisk) {
   return clamp(0.65 * clamp(utilization, 0, 1.35) + 0.35 * clamp(queueRisk, 0, 1), 0, 1);
+}
+
+function littleLawResidualPct(throughputPerHour, leadTimeMinutes, wipQty) {
+  const expectedWipQty = Math.max(0, throughputPerHour) * Math.max(0, leadTimeMinutes) / 60;
+  return Math.abs(Math.max(0, wipQty) - expectedWipQty) / Math.max(1e-9, expectedWipQty);
+}
+
+function littleLawReferenceWipQty(throughputPerHour, leadTimeMinutes) {
+  return Math.max(0, throughputPerHour) * Math.max(0, leadTimeMinutes) / 60;
 }
 
 function statusFrom(utilization, bottleneckIndex) {
@@ -279,7 +285,7 @@ function buildCompileAssumptions(masterAssumptions, compileTexts) {
   assumptions.push({
     id: nextAssumptionId(compileIndex),
     severity: "info",
-    text: "Queue risk, bottleneck index, brittleness, and migration outputs are deterministic non-DES forecast heuristics for rapid recompute."
+      text: "Queue risk is an equivalent single-server wait-probability approximation (P(wait) ~= rho), while bottleneck index, brittleness, and migration remain deterministic non-DES forecast heuristics for rapid recompute."
   });
 
   return assumptions;
@@ -326,256 +332,265 @@ function inferEffectiveUnits(processing, compileTexts) {
   };
 }
 
-const graph = readJson(graphPath);
-const master = readJson(masterPath);
-const processingByStepId = new Map((master.processing ?? []).map((row) => [row.stepId, row]));
-const variabilityByStepId = new Map(
-  (master.ctVariability ?? []).map((row) => [row.stepId, toNumber(row?.cv, DEFAULT_VARIABILITY_CV)])
-);
-const compileTexts = new Set();
-
-const sellingPricePerUnit =
-  typeof master?.economicsDefaults?.sellingPricePerUnit === "number" &&
-  Number.isFinite(master.economicsDefaults.sellingPricePerUnit)
-    ? master.economicsDefaults.sellingPricePerUnit
-    : 0;
-const defaultActiveShiftCount = deriveDefaultActiveShiftCount(master.processing ?? []);
-
-compileTexts.add(
-  "Demand rate is not shown in the source image; baseline demandRatePerHour is seeded at 90% of computed release capacity from the start step."
-);
-compileTexts.add(
-  `The source image shows a consistent visible shift count of ${defaultActiveShiftCount}; activeShiftCount defaults to that value so runtime capacity aligns with the VSM.`
-);
-compileTexts.add(
-  "Step-level variability is not shown in the source image; baseline variabilityCv defaults to 0.18 for all steps."
-);
-
-const stepModels = (graph.nodes ?? []).map((node) => {
-  const processing = processingByStepId.get(node.id) ?? {};
-  const ctMinutesRaw = ctMinutesOf(processing);
-  const ctMinutes = Number.isFinite(ctMinutesRaw) && ctMinutesRaw > 0 ? ctMinutesRaw : null;
-
-  const changeoverMinutesRaw = changeoverMinutesOf(processing);
-  const changeoverMinutes =
-    Number.isFinite(changeoverMinutesRaw) && changeoverMinutesRaw >= 0 ? changeoverMinutesRaw : null;
-
-  const lotSize = toNumber(processing?.lotSize, Number.NaN);
-  const normalizedLotSize = Number.isFinite(lotSize) && lotSize > 0 ? lotSize : null;
-  const changeoverPenaltyPerUnitMinutes =
-    changeoverMinutes === null
-      ? null
-      : Number((changeoverMinutes / Math.max(1, normalizedLotSize ?? 1)).toFixed(4));
-
-  if (changeoverMinutes !== null && normalizedLotSize === null) {
-    compileTexts.add(
-      "Visible changeover minutes without a visible lot size are converted to per-unit setup penalty using a lot-size fallback of 1."
-    );
-  }
-
-  const leadTimeMinutesRaw = leadTimeMinutesOf(processing);
-  const leadTimeMinutes =
-    typeof leadTimeMinutesRaw === "number" && Number.isFinite(leadTimeMinutesRaw) && leadTimeMinutesRaw >= 0
-      ? Number(leadTimeMinutesRaw.toFixed(4))
-      : null;
-
-  const workers = toNumber(processing?.workers, Number.NaN);
-  const workerCount = Number.isFinite(workers) && workers > 0 ? workers : 0;
-  const resourcePools = normalizeResourcePools(processing);
-  const unitInference = inferEffectiveUnits(processing, compileTexts);
-  const effectiveUnits = Number(unitInference.effectiveUnits.toFixed(3));
-  const variabilityCv = Number(
-    clamp(variabilityByStepId.get(node.id) ?? DEFAULT_VARIABILITY_CV, 0.03, 2).toFixed(4)
+export function compileForecastModel(activeDir = path.join("models", "active")) {
+  const graphPath = path.join(activeDir, "vsm_graph.json");
+  const masterPath = path.join(activeDir, "master_data.json");
+  const outputPath = path.join(activeDir, "compiled_forecast_model.json");
+  const graph = readJson(graphPath);
+  const master = readJson(masterPath);
+  const processingByStepId = new Map((master.processing ?? []).map((row) => [row.stepId, row]));
+  const variabilityByStepId = new Map(
+    (master.ctVariability ?? []).map((row) => [row.stepId, toNumber(row?.cv, DEFAULT_VARIABILITY_CV)])
   );
-  const effectiveCtMinutes =
-    ctMinutes === null
-      ? null
-      : Number((Math.max(0.05, ctMinutes + (changeoverPenaltyPerUnitMinutes ?? 0))).toFixed(4));
-  const effectiveCapacityPerHour =
-    effectiveCtMinutes === null
-      ? null
-      : Number(((effectiveUnits * 60) / Math.max(0.05, effectiveCtMinutes)).toFixed(4));
+  const compileTexts = new Set();
 
-  return {
-    stepId: node.id,
-    label: node.label,
-    equipmentType:
-      processing.equipmentType ??
-      resourcePools.find((pool) => !pool.external)?.name ??
-      node.label,
-    workerCount,
-    parallelProcedures: unitInference.parallelProcedures ?? 1,
-    effectiveUnits,
-    ctMinutes,
-    changeoverMinutes,
-    changeoverPenaltyPerUnitMinutes,
-    leadTimeMinutes,
-    variabilityCv,
-    effectiveCtMinutes,
-    effectiveCapacityPerHour,
-    baseline: {
-      demandRatePerHour: 0,
-      utilization: null,
-      headroom: null,
-      queueRisk: null,
-      bottleneckIndex: null,
-      status: "unknown"
+  const sellingPricePerUnit =
+    typeof master?.economicsDefaults?.sellingPricePerUnit === "number" &&
+    Number.isFinite(master.economicsDefaults.sellingPricePerUnit)
+      ? master.economicsDefaults.sellingPricePerUnit
+      : 0;
+  const defaultActiveShiftCount = deriveDefaultActiveShiftCount(master.processing ?? []);
+
+  compileTexts.add(
+    "Demand rate is not shown in the source image; baseline demandRatePerHour is seeded at 90% of computed release capacity from the start step."
+  );
+  compileTexts.add(
+    `The source image shows a consistent visible shift count of ${defaultActiveShiftCount}; activeShiftCount defaults to that value so runtime capacity aligns with the VSM.`
+  );
+  compileTexts.add(
+    "Step-level variability is not shown in the source image; baseline variabilityCv defaults to 0.18 for all steps."
+  );
+
+  const stepModels = (graph.nodes ?? []).map((node) => {
+    const processing = processingByStepId.get(node.id) ?? {};
+    const ctMinutesRaw = ctMinutesOf(processing);
+    const ctMinutes = Number.isFinite(ctMinutesRaw) && ctMinutesRaw > 0 ? ctMinutesRaw : null;
+
+    const changeoverMinutesRaw = changeoverMinutesOf(processing);
+    const changeoverMinutes =
+      Number.isFinite(changeoverMinutesRaw) && changeoverMinutesRaw >= 0 ? changeoverMinutesRaw : null;
+
+    const lotSize = toNumber(processing?.lotSize, Number.NaN);
+    const normalizedLotSize = Number.isFinite(lotSize) && lotSize > 0 ? lotSize : null;
+    const changeoverPenaltyPerUnitMinutes =
+      changeoverMinutes === null
+        ? null
+        : Number((changeoverMinutes / Math.max(1, normalizedLotSize ?? 1)).toFixed(4));
+
+    if (changeoverMinutes !== null && normalizedLotSize === null) {
+      compileTexts.add(
+        "Visible changeover minutes without a visible lot size are converted to per-unit setup penalty using a lot-size fallback of 1."
+      );
     }
-  };
-});
 
-const validCapacities = stepModels
-  .map((step) => step.effectiveCapacityPerHour)
-  .filter((value) => typeof value === "number" && Number.isFinite(value) && value > 0);
-const lineCapacityPerHour = validCapacities.length > 0 ? Math.min(...validCapacities) : 1;
-const startNodeIds =
-  Array.isArray(graph.startNodes) && graph.startNodes.length > 0
-    ? graph.startNodes
-    : stepModels.length > 0
-      ? [stepModels[0].stepId]
-      : [];
-const startCapacityPerHour = startNodeIds
-  .map((startId) => stepModels.find((step) => step.stepId === startId)?.effectiveCapacityPerHour ?? null)
-  .filter((value) => typeof value === "number" && Number.isFinite(value) && value > 0)
-  .reduce((sum, value) => sum + value, 0);
-const releaseCapacityPerHour = startCapacityPerHour > 0 ? startCapacityPerHour : lineCapacityPerHour;
-const demandRatePerHour = Number((releaseCapacityPerHour * 0.9).toFixed(4));
-const throughputPerHour = Number(Math.min(demandRatePerHour, lineCapacityPerHour).toFixed(4));
+    const leadTimeMinutesRaw = leadTimeMinutesOf(processing);
+    const leadTimeMinutes =
+      typeof leadTimeMinutesRaw === "number" && Number.isFinite(leadTimeMinutesRaw) && leadTimeMinutesRaw >= 0
+        ? Number(leadTimeMinutesRaw.toFixed(4))
+        : null;
 
-const nodeMetrics = {};
-const ranked = [];
-let avgQueueRiskAccumulator = 0;
-let totalWipQty = 0;
-let worstCaseTouchTime = 0;
-let totalLeadTimeMinutes = 0;
-let totalExplicitLeadTimeMinutes = 0;
-let leadTimeTopContributor = "n/a";
-let leadTimeTopValue = -1;
-const mixFactors = buildMixModifiers(stepModels.length, "balanced");
+    const workers = toNumber(processing?.workers, Number.NaN);
+    const workerCount = Number.isFinite(workers) && workers > 0 ? workers : 0;
+    const resourcePools = normalizeResourcePools(processing);
+    const unitInference = inferEffectiveUnits(processing, compileTexts);
+    const effectiveUnits = Number(unitInference.effectiveUnits.toFixed(3));
+    const variabilityCv = Number(
+      clamp(variabilityByStepId.get(node.id) ?? DEFAULT_VARIABILITY_CV, 0.03, 2).toFixed(4)
+    );
+    const effectiveCtMinutes =
+      ctMinutes === null
+        ? null
+        : Number((Math.max(0.05, ctMinutes + (changeoverPenaltyPerUnitMinutes ?? 0))).toFixed(4));
+    const effectiveCapacityPerHour =
+      effectiveCtMinutes === null
+        ? null
+        : Number(((effectiveUnits * 60) / Math.max(0.05, effectiveCtMinutes)).toFixed(4));
 
-for (const [index, step] of stepModels.entries()) {
-  if (step.ctMinutes === null || step.effectiveCapacityPerHour === null) {
-    step.baseline = {
-      demandRatePerHour,
-      utilization: null,
-      headroom: null,
-      queueRisk: null,
-      bottleneckIndex: null,
-      status: "unknown"
+    return {
+      stepId: node.id,
+      label: node.label,
+      equipmentType:
+        processing.equipmentType ??
+        resourcePools.find((pool) => !pool.external)?.name ??
+        node.label,
+      workerCount,
+      parallelProcedures: unitInference.parallelProcedures ?? 1,
+      effectiveUnits,
+      ctMinutes,
+      changeoverMinutes,
+      changeoverPenaltyPerUnitMinutes,
+      leadTimeMinutes,
+      variabilityCv,
+      effectiveCtMinutes,
+      effectiveCapacityPerHour,
+      baseline: {
+        demandRatePerHour: 0,
+        utilization: null,
+        headroom: null,
+        queueRisk: null,
+        bottleneckIndex: null,
+        status: "unknown"
+      }
     };
+  });
+
+  const validCapacities = stepModels
+    .map((step) => step.effectiveCapacityPerHour)
+    .filter((value) => typeof value === "number" && Number.isFinite(value) && value > 0);
+  const lineCapacityPerHour = validCapacities.length > 0 ? Math.min(...validCapacities) : 1;
+  const startNodeIds =
+    Array.isArray(graph.startNodes) && graph.startNodes.length > 0
+      ? graph.startNodes
+      : stepModels.length > 0
+        ? [stepModels[0].stepId]
+        : [];
+  const startCapacityPerHour = startNodeIds
+    .map((startId) => stepModels.find((step) => step.stepId === startId)?.effectiveCapacityPerHour ?? null)
+    .filter((value) => typeof value === "number" && Number.isFinite(value) && value > 0)
+    .reduce((sum, value) => sum + value, 0);
+  const releaseCapacityPerHour = startCapacityPerHour > 0 ? startCapacityPerHour : lineCapacityPerHour;
+  const demandRatePerHour = Number((releaseCapacityPerHour * 0.9).toFixed(4));
+  const throughputPerHour = Number(Math.min(demandRatePerHour, lineCapacityPerHour).toFixed(4));
+
+  const nodeMetrics = {};
+  const ranked = [];
+  let avgQueueRiskAccumulator = 0;
+  let totalWipQty = 0;
+  let worstCaseTouchTime = 0;
+  let totalLeadTimeMinutes = 0;
+  let totalExplicitLeadTimeMinutes = 0;
+  let leadTimeTopContributor = "n/a";
+  let leadTimeTopValue = -1;
+  const mixFactors = buildMixModifiers(stepModels.length, "balanced");
+
+  for (const [index, step] of stepModels.entries()) {
+    if (step.ctMinutes === null || step.effectiveCapacityPerHour === null) {
+      step.baseline = {
+        demandRatePerHour,
+        utilization: null,
+        headroom: null,
+        queueRisk: null,
+        bottleneckIndex: null,
+        status: "unknown"
+      };
+      nodeMetrics[step.stepId] = {
+        utilization: null,
+        headroom: null,
+        queueRisk: null,
+        queueDepth: null,
+        wipQty: null,
+        processedQty: 0,
+        completedQty: 0,
+        leadTimeMinutes: step.leadTimeMinutes,
+        capacityPerHour: null,
+        bottleneckIndex: null,
+        bottleneckFlag: false,
+        status: "unknown"
+      };
+      continue;
+    }
+
+    const stepDemandRate = demandRatePerHour * (mixFactors[index] ?? 1);
+    const utilizationRaw = stepDemandRate / Math.max(0.001, step.effectiveCapacityPerHour);
+    const utilization = clamp(utilizationRaw, 0, 1.35);
+    const headroom = Math.max(0, 1 - utilizationRaw);
+    const queueDepth = analyticalQueueDepth(
+      stepDemandRate,
+      step.effectiveCapacityPerHour,
+      step.variabilityCv,
+      BASELINE_HORIZON_HOURS
+    );
+    const queueRisk = queueRiskFromUtilization(utilizationRaw);
+    const queueDelayMinutes = (queueDepth / Math.max(0.001, step.effectiveCapacityPerHour)) * 60;
+    const explicitLeadMinutes = Math.max(0, step.leadTimeMinutes ?? 0);
+    const stepLeadMinutes = step.ctMinutes + queueDelayMinutes + explicitLeadMinutes;
+    const inServiceWip = Math.max(
+      0,
+      Math.min(stepDemandRate, step.effectiveCapacityPerHour) * (step.effectiveCtMinutes / 60)
+    );
+    const wipQty = queueDepth + inServiceWip;
+    const bottleneckIndex = bottleneckIndexFrom(utilization, queueRisk);
+    const status = statusFrom(utilization, bottleneckIndex);
+
+    step.baseline = {
+      demandRatePerHour: Number(stepDemandRate.toFixed(4)),
+      utilization: Number(utilization.toFixed(4)),
+      headroom: Number(headroom.toFixed(4)),
+      queueRisk: Number(queueRisk.toFixed(4)),
+      bottleneckIndex: Number(bottleneckIndex.toFixed(4)),
+      status
+    };
+
+    avgQueueRiskAccumulator += queueRisk;
+    totalWipQty += wipQty;
+    worstCaseTouchTime += step.ctMinutes;
+    totalLeadTimeMinutes += stepLeadMinutes;
+    totalExplicitLeadTimeMinutes += explicitLeadMinutes;
+    ranked.push({ stepId: step.stepId, score: bottleneckIndex, capacityPerHour: step.effectiveCapacityPerHour });
+
+    if (stepLeadMinutes > leadTimeTopValue) {
+      leadTimeTopValue = stepLeadMinutes;
+      leadTimeTopContributor = step.label;
+    }
+
     nodeMetrics[step.stepId] = {
-      utilization: null,
-      headroom: null,
-      queueRisk: null,
-      queueDepth: null,
-      wipQty: null,
+      utilization: Number(utilization.toFixed(4)),
+      headroom: Number(headroom.toFixed(4)),
+      queueRisk: Number(queueRisk.toFixed(4)),
+      queueDepth: Number(queueDepth.toFixed(4)),
+      wipQty: Number(wipQty.toFixed(4)),
       processedQty: 0,
       completedQty: 0,
-      leadTimeMinutes: step.leadTimeMinutes,
-      capacityPerHour: null,
-      bottleneckIndex: null,
+      leadTimeMinutes: Number(stepLeadMinutes.toFixed(4)),
+      capacityPerHour: Number(step.effectiveCapacityPerHour.toFixed(4)),
+      bottleneckIndex: Number(bottleneckIndex.toFixed(4)),
       bottleneckFlag: false,
-      status: "unknown"
+      status
     };
-    continue;
   }
 
-  const stepDemandRate = demandRatePerHour * (mixFactors[index] ?? 1);
-  const utilizationRaw = stepDemandRate / Math.max(0.001, step.effectiveCapacityPerHour);
-  const utilization = clamp(utilizationRaw, 0, 1.35);
-  const headroom = Math.max(0, 1 - utilizationRaw);
-  const queueDepth = analyticalQueueDepth(
-    stepDemandRate,
-    step.effectiveCapacityPerHour,
-    step.variabilityCv,
-    BASELINE_HORIZON_HOURS
-  );
-  const queueRisk = queueRiskFromDepth(queueDepth, step.effectiveCapacityPerHour);
-  const queueDelayMinutes = (queueDepth / Math.max(0.001, step.effectiveCapacityPerHour)) * 60;
-  const explicitLeadMinutes = Math.max(0, step.leadTimeMinutes ?? 0);
-  const stepLeadMinutes = step.ctMinutes + queueDelayMinutes + explicitLeadMinutes;
-  const inServiceWip = Math.max(
+  ranked.sort((a, b) => {
+    const scoreDelta = b.score - a.score;
+    if (Math.abs(scoreDelta) > 1e-9) {
+      return scoreDelta;
+    }
+    return (a.capacityPerHour ?? Number.POSITIVE_INFINITY) - (b.capacityPerHour ?? Number.POSITIVE_INFINITY);
+  });
+  const bottleneckStepId = ranked[0]?.stepId ?? null;
+  if (bottleneckStepId && nodeMetrics[bottleneckStepId]) {
+    nodeMetrics[bottleneckStepId].bottleneckFlag = true;
+  }
+
+  const avgQueueRisk = ranked.length > 0 ? avgQueueRiskAccumulator / ranked.length : 0;
+  const topScore = ranked[0]?.score ?? 0;
+  const secondScore = ranked[1]?.score ?? 0;
+  const nearSatCount = Object.values(nodeMetrics).filter(
+    (item) => typeof item.utilization === "number" && item.utilization >= 0.9
+  ).length;
+  const cascadePressure = ranked.length > 0 ? nearSatCount / ranked.length : 0;
+  const referenceWipQty = littleLawReferenceWipQty(throughputPerHour, totalLeadTimeMinutes);
+  const wipPressure = clamp(
+    totalWipQty / Math.max(1, referenceWipQty),
     0,
-    Math.min(stepDemandRate, step.effectiveCapacityPerHour) * (step.effectiveCtMinutes / 60)
+    1
   );
-  const wipQty = queueDepth + inServiceWip;
-  const bottleneckIndex = bottleneckIndexFrom(utilization, queueRisk);
-  const status = statusFrom(utilization, bottleneckIndex);
+  const migrationPenalty = 0;
+  const brittleness = clamp(
+    0.48 * topScore +
+      0.18 * avgQueueRisk +
+      0.16 * cascadePressure +
+      0.18 * wipPressure +
+      migrationPenalty +
+      (topScore - secondScore < 0.08 ? 0.06 : 0) -
+      (topScore - secondScore) * 0.3,
+    0,
+    1
+  );
+  const waitSharePct =
+    totalLeadTimeMinutes > 0 ? totalExplicitLeadTimeMinutes / totalLeadTimeMinutes : 0;
+  const littleLawResidual = littleLawResidualPct(throughputPerHour, totalLeadTimeMinutes, totalWipQty);
 
-  step.baseline = {
-    demandRatePerHour: Number(stepDemandRate.toFixed(4)),
-    utilization: Number(utilization.toFixed(4)),
-    headroom: Number(headroom.toFixed(4)),
-    queueRisk: Number(queueRisk.toFixed(4)),
-    bottleneckIndex: Number(bottleneckIndex.toFixed(4)),
-    status
-  };
-
-  avgQueueRiskAccumulator += queueRisk;
-  totalWipQty += wipQty;
-  worstCaseTouchTime += step.ctMinutes;
-  totalLeadTimeMinutes += stepLeadMinutes;
-  totalExplicitLeadTimeMinutes += explicitLeadMinutes;
-  ranked.push({ stepId: step.stepId, score: bottleneckIndex, capacityPerHour: step.effectiveCapacityPerHour });
-
-  if (stepLeadMinutes > leadTimeTopValue) {
-    leadTimeTopValue = stepLeadMinutes;
-    leadTimeTopContributor = step.label;
-  }
-
-  nodeMetrics[step.stepId] = {
-    utilization: Number(utilization.toFixed(4)),
-    headroom: Number(headroom.toFixed(4)),
-    queueRisk: Number(queueRisk.toFixed(4)),
-    queueDepth: Number(queueDepth.toFixed(4)),
-    wipQty: Number(wipQty.toFixed(4)),
-    processedQty: 0,
-    completedQty: 0,
-    leadTimeMinutes: Number(stepLeadMinutes.toFixed(4)),
-    capacityPerHour: Number(step.effectiveCapacityPerHour.toFixed(4)),
-    bottleneckIndex: Number(bottleneckIndex.toFixed(4)),
-    bottleneckFlag: false,
-    status
-  };
-}
-
-ranked.sort((a, b) => {
-  const scoreDelta = b.score - a.score;
-  if (Math.abs(scoreDelta) > 1e-9) {
-    return scoreDelta;
-  }
-  return (a.capacityPerHour ?? Number.POSITIVE_INFINITY) - (b.capacityPerHour ?? Number.POSITIVE_INFINITY);
-});
-const bottleneckStepId = ranked[0]?.stepId ?? null;
-if (bottleneckStepId && nodeMetrics[bottleneckStepId]) {
-  nodeMetrics[bottleneckStepId].bottleneckFlag = true;
-}
-
-const avgQueueRisk = ranked.length > 0 ? avgQueueRiskAccumulator / ranked.length : 0;
-const topScore = ranked[0]?.score ?? 0;
-const secondScore = ranked[1]?.score ?? 0;
-const nearSatCount = Object.values(nodeMetrics).filter(
-  (item) => typeof item.utilization === "number" && item.utilization >= 0.9
-).length;
-const cascadePressure = ranked.length > 0 ? nearSatCount / ranked.length : 0;
-const wipPressure = clamp(
-  totalWipQty / Math.max(1, BASELINE_HORIZON_HOURS * Math.max(1, stepModels.length) * 10),
-  0,
-  1
-);
-const brittleness = clamp(
-  0.5 * topScore +
-    0.18 * avgQueueRisk +
-    0.16 * cascadePressure +
-    0.16 * wipPressure +
-    (topScore - secondScore < 0.08 ? 0.05 : 0),
-  0,
-  1
-);
-const waitSharePct =
-  totalLeadTimeMinutes > 0 ? totalExplicitLeadTimeMinutes / totalLeadTimeMinutes : 0;
-
-const compiled = {
+  const compiled = {
   version: "0.3.0",
   generatedAt: new Date().toISOString(),
   metadata: {
@@ -742,12 +757,14 @@ const compiled = {
       throughput: throughputPerHour,
       globalThroughput: throughputPerHour,
       forecastThroughput: throughputPerHour,
+      steadyStateThroughput: throughputPerHour,
       throughputState: "steady-state",
       warmupHours: 0,
       throughputDelta: 0,
       bottleneckMigration: "baseline only",
       bottleneckIndex: Number(topScore.toFixed(4)),
       brittleness: Number(brittleness.toFixed(4)),
+      littleLawResidualPct: Number(littleLawResidual.toFixed(4)),
       avgQueueRisk: Number(avgQueueRisk.toFixed(4)),
       totalWipQty: Number(totalWipQty.toFixed(4)),
       worstCaseTouchTime: Number(worstCaseTouchTime.toFixed(4)),
@@ -759,9 +776,29 @@ const compiled = {
     nodeMetrics
   },
   assumptions: buildCompileAssumptions(master.assumptions, compileTexts)
-};
+  };
 
-writeJson(outputPath, compiled);
+  writeJson(outputPath, compiled);
+  return {
+    compiled,
+    outputPath,
+    stepCount: stepModels.length,
+    bottleneckStepId
+  };
+}
 
-console.log(`Compiled forecast model written: ${outputPath}`);
-console.log(`Steps: ${stepModels.length} | Bottleneck: ${bottleneckStepId ?? "n/a"}`);
+function isDirectExecution() {
+  if (!process.argv[1]) {
+    return false;
+  }
+
+  return import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+}
+
+if (isDirectExecution()) {
+  const args = process.argv.slice(2);
+  const activeDir = args[0] ?? path.join("models", "active");
+  const result = compileForecastModel(activeDir);
+  console.log(`Compiled forecast model written: ${result.outputPath}`);
+  console.log(`Steps: ${result.stepCount} | Bottleneck: ${result.bottleneckStepId ?? "n/a"}`);
+}
