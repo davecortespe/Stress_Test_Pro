@@ -118,8 +118,9 @@ function readActiveShiftCount(scenario) {
   return clamp(Math.round(num(scenario.activeShiftCount, 3)), 1, 3);
 }
 
-function getActiveHoursPerDay(shiftCount) {
-  return clamp(shiftCount, 1, 3) * 8;
+function getActiveHoursPerDay(scenario) {
+  const shiftCount = readActiveShiftCount(scenario);
+  return clamp(num(scenario.shiftDurationHours, shiftCount * 8), 1, 24);
 }
 
 function normalizeOutgoing(edges) {
@@ -204,8 +205,7 @@ function computeVisitFactors(graph) {
   return result;
 }
 
-function mixModifier(stepId, index, total, mixProfile) {
-  void stepId;
+function rawMixModifier(index, total, mixProfile) {
   if (mixProfile === "front-loaded") {
     return index < Math.ceil(total / 3) ? 1.12 : 0.94;
   }
@@ -218,6 +218,37 @@ function mixModifier(stepId, index, total, mixProfile) {
     return index >= Math.floor((total * 2) / 3) ? 1.12 : 0.94;
   }
   return 1;
+}
+
+function buildMixModifiers(total, mixProfile) {
+  if (total <= 0) {
+    return [];
+  }
+  const raw = Array.from({ length: total }, (_, index) => rawMixModifier(index, total, mixProfile));
+  const sum = raw.reduce((acc, value) => acc + value, 0);
+  if (sum <= 0) {
+    return raw.map(() => 1);
+  }
+  const normalization = total / sum;
+  return raw.map((value) => value * normalization);
+}
+
+function analyticalQueueDepth(demandRatePerHour, capacityPerHour, variabilityCv, horizonHours) {
+  const rhoRaw = demandRatePerHour / Math.max(0.001, capacityPerHour);
+  if (rhoRaw < 1) {
+    const rho = Math.min(0.9999, Math.max(0, rhoRaw));
+    const cv = Math.max(0.03, variabilityCv);
+    return (rho * rho * (1 + cv * cv)) / (2 * Math.max(0.0001, 1 - rho));
+  }
+  return Math.max(0, demandRatePerHour - capacityPerHour) * Math.max(0, horizonHours);
+}
+
+function queueRiskFromDepth(queueDepth, capacityPerHour) {
+  return clamp(queueDepth / Math.max(1, capacityPerHour * 0.6), 0, 1);
+}
+
+function bottleneckIndexFrom(utilization, queueRisk) {
+  return clamp(0.65 * clamp(utilization, 0, 1.35) + 0.35 * clamp(queueRisk, 0, 1), 0, 1);
 }
 
 function stepStatus(utilization, bottleneckIndex) {
@@ -237,8 +268,8 @@ function readStepOverride(scenario, stepId, field) {
 
 function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits) {
   const baselineDemand = num(model.inputDefaults?.demandRatePerHour, num(model.baseline?.demandRatePerHour, 10));
-  const demandMultiplier = clamp(num(scenario.demandMultiplier, 1), 0.2, 3);
-  const lineDemand = Math.max(0.1, baselineDemand * demandMultiplier);
+  const demandMultiplier = clamp(num(scenario.demandMultiplier, 1), 0, 3);
+  const lineDemand = Math.max(0, baselineDemand * demandMultiplier);
   const staffingMultiplier = clamp(num(scenario.staffingMultiplier, 1), 0.25, 3);
   const equipmentMultiplier = clamp(num(scenario.equipmentMultiplier, 1), 0.25, 3);
   const availabilityMultiplier = clamp(1 - num(scenario.unplannedDowntimePct, 7) / 100, 0.2, 1);
@@ -246,11 +277,10 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
   const setupPenaltyMultiplier = clamp(num(scenario.setupPenaltyMultiplier, 1), 0, 3);
   const variabilityMultiplier = clamp(num(scenario.variabilityMultiplier, 1), 0.2, 3);
   const horizonHours = clamp(num(scenario.simulationHorizonHours, 8), 8, 720);
-  const activeShiftCount = readActiveShiftCount(scenario);
-  const activeHoursPerDay = getActiveHoursPerDay(activeShiftCount);
+  const activeHoursPerDay = getActiveHoursPerDay(scenario);
   const activeCapacityFraction = activeHoursPerDay / 24;
-  const horizonSeverity = 1 + ((horizonHours - 8) / 16) * 0.22;
   const mixProfile = String(scenario.mixProfile ?? "balanced");
+  const mixFactors = buildMixModifiers(model.stepModels.length, mixProfile);
 
   const stepEvals = {};
   const ranked = [];
@@ -278,7 +308,7 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
     }
 
     const stepVisitFactor = Math.max(0.01, num(visitFactors[step.stepId], 1));
-    const stepMixFactor = mixModifier(step.stepId, index, model.stepModels.length, mixProfile);
+    const stepMixFactor = mixFactors[index] ?? 1;
     const stepDemandRate = lineDemand * stepVisitFactor * stepMixFactor;
 
     const stepCapacityUnitsOverride = readStepOverride(scenario, step.stepId, "capacityUnits");
@@ -306,31 +336,21 @@ function evaluateSystem(model, scenario, visitFactors, reliefStepId, reliefUnits
     const capacityRate = Math.max(0.001, computedCapacityRate);
     const calendarCapacityRate = Math.max(0.001, capacityRate * activeCapacityFraction);
 
-    const worstCtMinutes =
-      Math.max(0.05, ctBaseline * ctMultiplier * stepCtMultiplier) * (1 + stepDowntimePct / 100);
+    const worstCtMinutes = Math.max(0.05, ctBaseline * ctMultiplier * stepCtMultiplier);
     worstCaseTouchTime += worstCtMinutes;
 
     const utilizationRaw = stepDemandRate / Math.max(0.001, calendarCapacityRate);
     const utilization = clamp(utilizationRaw, 0, 1.35);
     const headroom = Math.max(0, 1 - utilizationRaw);
     const cv = Math.max(0.03, num(step.variabilityCv, 0.18) * variabilityMultiplier);
-    const queuePressure = (utilization * utilization) / Math.max(0.06, 1 - utilization);
-    const queueRisk = clamp((queuePressure * (0.52 + cv)) / 7.2, 0, 1);
-    const queueDepth = Math.max(
-      0,
-      Math.min(24, (Math.max(0, utilizationRaw - 0.66) * 8 + queueRisk * 14) * stepVisitFactor)
-    );
-    const accumulationRate = Math.max(0, stepDemandRate - calendarCapacityRate);
-    const wipQty = Math.max(0, queueDepth + accumulationRate * horizonHours);
+    const queueDepth = analyticalQueueDepth(stepDemandRate, calendarCapacityRate, cv, horizonHours);
+    const queueRisk = queueRiskFromDepth(queueDepth, calendarCapacityRate);
+    const inServiceWip = Math.max(0, Math.min(stepDemandRate, calendarCapacityRate) * (effectiveCt / 60));
+    const wipQty = Math.max(0, queueDepth + inServiceWip);
     totalWipQty += wipQty;
 
-    const shortage = clamp(utilizationRaw - 1, 0, 1);
-    const bottleneckIndex = clamp(
-      (0.6 * (Math.min(utilizationRaw, 1.25) / 1.25) + 0.3 * queueRisk + 0.1 * shortage) * horizonSeverity,
-      0,
-      1
-    );
-    const status = stepStatus(utilizationRaw, bottleneckIndex);
+    const bottleneckIndex = bottleneckIndexFrom(utilization, queueRisk);
+    const status = stepStatus(utilization, bottleneckIndex);
     const throughputLimit = calendarCapacityRate / Math.max(0.01, stepVisitFactor * stepMixFactor);
 
     lineCapacity = Math.min(lineCapacity, throughputLimit);
@@ -659,8 +679,9 @@ function buildBrowserSnapshotHtmlSource(
       const klass = status === "critical" ? "critical" : (status === "risk" ? "risk" : "");
       const util = typeof m.utilization === "number" ? (m.utilization * 100).toFixed(1) + "%" : "--";
       const wip = typeof m.wipQty === "number" ? Math.round(m.wipQty) + " pcs" : "--";
+      const processed = typeof m.processedQty === "number" ? Math.round(m.processedQty) + " pcs" : "--";
       const completed = typeof m.completedQty === "number" ? Math.round(m.completedQty) + " pcs" : "--";
-      return "<article class=\\"node " + klass + "\\"><h3>" + node.label + "</h3><p>util: " + util + "</p><p>lot/wip: " + wip + "</p><p>Completed Lot: " + completed + "</p><p>status: " + status + "</p></article>";
+      return "<article class=\\"node " + klass + "\\"><h3>" + node.label + "</h3><p>util: " + util + "</p><p>lot/wip: " + wip + "</p><p>processed: " + processed + "</p><p>completed: " + completed + "</p><p>status: " + status + "</p></article>";
     }).join("");
 
     const diagnosisEl = document.getElementById("diagnosis");

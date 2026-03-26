@@ -4,7 +4,9 @@
       "Bash(npm run:*)",
       "Bash(npx tsc:*)",
       "Bash(python -m py_compile scripts/export_executive_report_pdf.py)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(find 'c:/Users/webda/CODEX_FILES/FlowStress Dynamics Rev1/src' -type f \\\\\\(-name *.js -o -name *.ts -o -name *.jsx -o -name *.tsx -o -name *.json \\\\\\))",
+      "Bash(grep -E \"\\\\.mjs$|\\\\.js$\")"
     ]
   }
 }

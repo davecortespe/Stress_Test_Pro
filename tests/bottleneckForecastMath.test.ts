@@ -167,6 +167,106 @@ function createMalformedEndNodeModel(): CompiledForecastModel {
   };
 }
 
+function createSerialModel(stepIds: string[], ctMinutes: number[], demandRatePerHour: number): CompiledForecastModel {
+  const nodes = stepIds.map((stepId) => ({ id: stepId, label: stepId, type: "process" }));
+  const edges = stepIds.slice(0, -1).map((stepId, index) => ({
+    from: stepId,
+    to: stepIds[index + 1],
+    probability: 1
+  }));
+  const lineCapacityPerHour = Math.min(...ctMinutes.map((value) => 60 / value));
+
+  return {
+    version: "test",
+    generatedAt: "2026-03-10T00:00:00.000Z",
+    metadata: {
+      name: "Serial Model",
+      units: "per-hour",
+      mode: "constraint-forecast-non-des"
+    },
+    graph: {
+      nodes,
+      edges,
+      startNodes: stepIds.length > 0 ? [stepIds[0]] : [],
+      endNodes: stepIds.length > 0 ? [stepIds[stepIds.length - 1]] : []
+    },
+    inputs: [],
+    inputDefaults: {
+      demandRatePerHour,
+      demandMultiplier: 1,
+      mixProfile: "balanced",
+      staffingMultiplier: 1,
+      equipmentMultiplier: 1,
+      unplannedDowntimePct: 0,
+      ctMultiplier: 1,
+      setupPenaltyMultiplier: 1,
+      variabilityMultiplier: 1,
+      simulationHorizonHours: "24",
+      activeShiftCount: "3",
+      bottleneckReliefUnits: 0,
+      sellingPricePerUnit: 10
+    },
+    stepModels: stepIds.map((stepId, index) => ({
+      stepId,
+      label: stepId,
+      equipmentType: null,
+      workerCount: 1,
+      parallelProcedures: 1,
+      effectiveUnits: 1,
+      ctMinutes: ctMinutes[index],
+      changeoverMinutes: null,
+      changeoverPenaltyPerUnitMinutes: 0,
+      leadTimeMinutes: 0,
+      variabilityCv: 0.18,
+      effectiveCtMinutes: ctMinutes[index],
+      effectiveCapacityPerHour: 60 / ctMinutes[index],
+      baseline: {
+        demandRatePerHour,
+        utilization: demandRatePerHour / (60 / ctMinutes[index]),
+        headroom: Math.max(0, 1 - demandRatePerHour / (60 / ctMinutes[index])),
+        queueRisk: 0,
+        bottleneckIndex: 0,
+        status: "healthy" as const
+      }
+    })),
+    baseline: {
+      demandRatePerHour,
+      lineCapacityPerHour,
+      bottleneckStepId: stepIds[0] ?? null,
+      globalMetrics: {
+        totalLeadTimeMinutes: ctMinutes.reduce((sum, value) => sum + value, 0)
+      },
+      nodeMetrics: {}
+    },
+    assumptions: []
+  };
+}
+
+function createReworkLoopModel(): CompiledForecastModel {
+  return {
+    ...createSerialModel(["A", "B", "C"], [6, 6, 6], 8),
+    metadata: {
+      name: "Rework Loop",
+      units: "per-hour",
+      mode: "constraint-forecast-non-des"
+    },
+    graph: {
+      nodes: [
+        { id: "A", label: "A", type: "process" },
+        { id: "B", label: "B", type: "process" },
+        { id: "C", label: "C", type: "process" }
+      ],
+      edges: [
+        { from: "A", to: "B", probability: 1 },
+        { from: "B", to: "A", probability: 0.2 },
+        { from: "B", to: "C", probability: 0.8 }
+      ],
+      startNodes: ["A"],
+      endNodes: ["C"]
+    }
+  };
+}
+
 await run("runtime utilization stays saturated across off-shift horizons", () => {
   const model = createSingleStepModel();
   const output = createBottleneckForecastOutput(model, model.inputDefaults, 24);
@@ -232,5 +332,56 @@ await run("portable export runner matches app constraint forecast under shift li
     );
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+await run("long horizon keeps balanced steps below forced saturation", () => {
+  const model = createSerialModel(["A", "B", "C", "D", "E"], [6, 6, 6, 6, 6], 7);
+  const scenario = { ...model.inputDefaults, simulationHorizonHours: "720" };
+  const output = createBottleneckForecastOutput(model, scenario, 720);
+
+  for (const metrics of Object.values(output.nodeMetrics)) {
+    assert.ok((metrics.bottleneckIndex ?? 0) < 1, `Expected long-horizon score below 1, received ${metrics.bottleneckIndex}`);
+    assert.notEqual(metrics.status, "critical", "Balanced 70% line should not force critical status at long horizon");
+  }
+});
+
+await run("bottleneck flag stays independent from status under light load", () => {
+  const model = createSerialModel(["A", "B", "C"], [6, 6, 6], 3);
+  const output = createBottleneckForecastOutput(model, model.inputDefaults, 24);
+  const flagged = Object.values(output.nodeMetrics).find((metrics) => metrics.bottleneckFlag);
+
+  assert.ok(flagged, "Expected one bottleneck flag");
+  assert.equal(flagged?.status, "healthy");
+});
+
+await run("processed quantity is pass-through while completed quantity is terminal-only", () => {
+  const model = createSerialModel(["A", "B", "C"], [6, 6, 6], 8);
+  const output = createBottleneckForecastOutput(model, model.inputDefaults, 8);
+
+  assert.ok((output.nodeMetrics.A.processedQty ?? 0) > 0, "Expected upstream processed quantity");
+  assert.equal(output.nodeMetrics.A.completedQty ?? 0, 0, "Upstream step should not report terminal completions");
+  assert.ok((output.nodeMetrics.C.completedQty ?? 0) > 0, "Terminal step should report completions");
+});
+
+await run("rework loop visit factors solve to convergent values and emit a warning", () => {
+  const model = createReworkLoopModel();
+  const forecast = createConstraintForecast(model, model.inputDefaults);
+
+  assert.ok(forecast.warnings.length > 0, "Expected rework warning");
+  assertClose(forecast.visitFactors.A ?? null, 1.25, 1e-3);
+  assertClose(forecast.visitFactors.B ?? null, 1.25, 1e-3);
+});
+
+await run("zero demand produces zero throughput and zero queue", () => {
+  const model = createSerialModel(["A", "B", "C"], [6, 6, 6], 8);
+  const scenario = { ...model.inputDefaults, demandMultiplier: 0 };
+  const output = createBottleneckForecastOutput(model, scenario, 24);
+
+  assertClose(Number(output.globalMetrics.forecastThroughput), 0, 1e-9);
+  assertClose(Number(output.globalMetrics.totalCompletedOutputPieces), 0, 1e-9);
+  for (const metrics of Object.values(output.nodeMetrics)) {
+    assertClose(metrics.utilization ?? null, 0, 1e-9);
+    assertClose(metrics.queueDepth ?? null, 0, 1e-9);
   }
 });

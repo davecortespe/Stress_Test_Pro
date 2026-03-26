@@ -187,7 +187,7 @@ function deriveDefaultActiveShiftCount(processingRows) {
   return winner;
 }
 
-function mixModifier(index, total, mixProfile) {
+function rawMixModifier(index, total, mixProfile) {
   if (mixProfile === "front-loaded") {
     return index < Math.ceil(total / 3) ? 1.12 : 0.94;
   }
@@ -200,6 +200,37 @@ function mixModifier(index, total, mixProfile) {
     return index >= Math.floor((total * 2) / 3) ? 1.12 : 0.94;
   }
   return 1;
+}
+
+function buildMixModifiers(total, mixProfile) {
+  if (total <= 0) {
+    return [];
+  }
+  const raw = Array.from({ length: total }, (_, index) => rawMixModifier(index, total, mixProfile));
+  const sum = raw.reduce((acc, value) => acc + value, 0);
+  if (sum <= 0) {
+    return raw.map(() => 1);
+  }
+  const normalization = total / sum;
+  return raw.map((value) => value * normalization);
+}
+
+function analyticalQueueDepth(demandRatePerHour, capacityPerHour, variabilityCv, horizonHours) {
+  const rhoRaw = demandRatePerHour / Math.max(0.001, capacityPerHour);
+  if (rhoRaw < 1) {
+    const rho = Math.min(0.9999, Math.max(0, rhoRaw));
+    const cv = Math.max(0.03, variabilityCv);
+    return (rho * rho * (1 + cv * cv)) / (2 * Math.max(0.0001, 1 - rho));
+  }
+  return Math.max(0, demandRatePerHour - capacityPerHour) * Math.max(0, horizonHours);
+}
+
+function queueRiskFromDepth(queueDepth, capacityPerHour) {
+  return clamp(queueDepth / Math.max(1, capacityPerHour * 0.6), 0, 1);
+}
+
+function bottleneckIndexFrom(utilization, queueRisk) {
+  return clamp(0.65 * clamp(utilization, 0, 1.35) + 0.35 * clamp(queueRisk, 0, 1), 0, 1);
 }
 
 function statusFrom(utilization, bottleneckIndex) {
@@ -420,6 +451,7 @@ let totalLeadTimeMinutes = 0;
 let totalExplicitLeadTimeMinutes = 0;
 let leadTimeTopContributor = "n/a";
 let leadTimeTopValue = -1;
+const mixFactors = buildMixModifiers(stepModels.length, "balanced");
 
 for (const [index, step] of stepModels.entries()) {
   if (step.ctMinutes === null || step.effectiveCapacityPerHour === null) {
@@ -437,6 +469,7 @@ for (const [index, step] of stepModels.entries()) {
       queueRisk: null,
       queueDepth: null,
       wipQty: null,
+      processedQty: 0,
       completedQty: 0,
       leadTimeMinutes: step.leadTimeMinutes,
       capacityPerHour: null,
@@ -447,25 +480,27 @@ for (const [index, step] of stepModels.entries()) {
     continue;
   }
 
-  const stepDemandRate = demandRatePerHour * mixModifier(index, stepModels.length, "balanced");
+  const stepDemandRate = demandRatePerHour * (mixFactors[index] ?? 1);
   const utilizationRaw = stepDemandRate / Math.max(0.001, step.effectiveCapacityPerHour);
   const utilization = clamp(utilizationRaw, 0, 1.35);
   const headroom = Math.max(0, 1 - utilizationRaw);
-  const queuePressure = (utilization * utilization) / Math.max(0.08, 1 - utilization);
-  const queueRisk = clamp((queuePressure * (0.5 + step.variabilityCv)) / 6.8, 0, 1);
-  const queueDepth = Math.max(0, Math.max(0, utilizationRaw - 0.68) * 7 + queueRisk * 12);
+  const queueDepth = analyticalQueueDepth(
+    stepDemandRate,
+    step.effectiveCapacityPerHour,
+    step.variabilityCv,
+    BASELINE_HORIZON_HOURS
+  );
+  const queueRisk = queueRiskFromDepth(queueDepth, step.effectiveCapacityPerHour);
   const queueDelayMinutes = (queueDepth / Math.max(0.001, step.effectiveCapacityPerHour)) * 60;
   const explicitLeadMinutes = Math.max(0, step.leadTimeMinutes ?? 0);
   const stepLeadMinutes = step.ctMinutes + queueDelayMinutes + explicitLeadMinutes;
-  const wipQty =
-    queueDepth + Math.max(0, stepDemandRate - step.effectiveCapacityPerHour) * BASELINE_HORIZON_HOURS;
-  const shortage = clamp(utilizationRaw - 1, 0, 1);
-  const bottleneckIndex = clamp(
-    0.6 * (Math.min(utilizationRaw, 1.25) / 1.25) + 0.3 * queueRisk + 0.1 * shortage,
+  const inServiceWip = Math.max(
     0,
-    1
+    Math.min(stepDemandRate, step.effectiveCapacityPerHour) * (step.effectiveCtMinutes / 60)
   );
-  const status = statusFrom(utilizationRaw, bottleneckIndex);
+  const wipQty = queueDepth + inServiceWip;
+  const bottleneckIndex = bottleneckIndexFrom(utilization, queueRisk);
+  const status = statusFrom(utilization, bottleneckIndex);
 
   step.baseline = {
     demandRatePerHour: Number(stepDemandRate.toFixed(4)),
@@ -494,6 +529,7 @@ for (const [index, step] of stepModels.entries()) {
     queueRisk: Number(queueRisk.toFixed(4)),
     queueDepth: Number(queueDepth.toFixed(4)),
     wipQty: Number(wipQty.toFixed(4)),
+    processedQty: 0,
     completedQty: 0,
     leadTimeMinutes: Number(stepLeadMinutes.toFixed(4)),
     capacityPerHour: Number(step.effectiveCapacityPerHour.toFixed(4)),
@@ -513,7 +549,6 @@ ranked.sort((a, b) => {
 const bottleneckStepId = ranked[0]?.stepId ?? null;
 if (bottleneckStepId && nodeMetrics[bottleneckStepId]) {
   nodeMetrics[bottleneckStepId].bottleneckFlag = true;
-  nodeMetrics[bottleneckStepId].status = "critical";
 }
 
 const avgQueueRisk = ranked.length > 0 ? avgQueueRiskAccumulator / ranked.length : 0;
@@ -645,6 +680,24 @@ const compiled = {
       ]
     },
     {
+      key: "shiftDurationHours",
+      label: "Shift Duration (hours)",
+      type: "number",
+      defaultValue: Number(defaultActiveShiftCount) * 8,
+      min: 1,
+      max: 24,
+      step: 1
+    },
+    {
+      key: "shiftStartHour",
+      label: "Shift Start Hour",
+      type: "number",
+      defaultValue: 0,
+      min: 0,
+      max: 23,
+      step: 1
+    },
+    {
       key: "bottleneckReliefUnits",
       label: "Bottleneck Relief (+units)",
       type: "number",
@@ -675,6 +728,8 @@ const compiled = {
     variabilityMultiplier: 1,
     simulationHorizonHours: "24",
     activeShiftCount: defaultActiveShiftCount,
+    shiftDurationHours: Number(defaultActiveShiftCount) * 8,
+    shiftStartHour: 0,
     bottleneckReliefUnits: 1,
     sellingPricePerUnit
   },
@@ -687,6 +742,8 @@ const compiled = {
       throughput: throughputPerHour,
       globalThroughput: throughputPerHour,
       forecastThroughput: throughputPerHour,
+      throughputState: "steady-state",
+      warmupHours: 0,
       throughputDelta: 0,
       bottleneckMigration: "baseline only",
       bottleneckIndex: Number(topScore.toFixed(4)),

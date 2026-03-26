@@ -33,6 +33,7 @@ export interface ConstraintSystemEval {
   worstCaseTouchTime: number;
   horizonHours: number;
   sortedByBottleneck: Array<{ stepId: string; score: number }>;
+  warnings: string[];
 }
 
 export interface ConstraintForecastSnapshot {
@@ -40,6 +41,7 @@ export interface ConstraintForecastSnapshot {
   relief: ConstraintSystemEval;
   reliefUnits: number;
   visitFactors: Record<string, number>;
+  warnings: string[];
 }
 
 function num(input: unknown, fallback: number): number {
@@ -59,19 +61,51 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function readActiveShiftCount(scenario: Record<string, number | string>): number {
-  return clamp(Math.round(num(scenario.activeShiftCount, 3)), 1, 3);
+type ScenarioState = Record<string, number | string>;
+
+interface ShiftConfig {
+  activeShiftCount: number;
+  shiftDurationHours: number;
+  shiftStartHour: number;
+  activeHoursPerDay: number;
 }
 
-function getActiveHoursPerDay(shiftCount: number): number {
-  return clamp(shiftCount, 1, 3) * 8;
+interface GraphAnalysis {
+  orderedNodes: string[];
+  nodeOrder: Map<string, number>;
+  outgoingMap: Map<string, Array<{ to: string; probability: number }>>;
+  isDag: boolean;
 }
 
-function activeHoursBetween(startHour: number, endHour: number, activeHoursPerDay: number): number {
-  if (endHour <= startHour || activeHoursPerDay <= 0) {
+interface VisitFactorResult {
+  visitFactors: Record<string, number>;
+  warnings: string[];
+  graph: GraphAnalysis;
+}
+
+function readShiftConfig(scenario: ScenarioState): ShiftConfig {
+  const activeShiftCount = clamp(Math.round(num(scenario.activeShiftCount, 3)), 1, 3);
+  const defaultShiftDuration = activeShiftCount * 8;
+  const shiftDurationHours = clamp(num(scenario.shiftDurationHours, defaultShiftDuration), 1, 24);
+  const shiftStartHour = clamp(num(scenario.shiftStartHour, 0), 0, 23.99);
+  return {
+    activeShiftCount,
+    shiftDurationHours,
+    shiftStartHour,
+    activeHoursPerDay: shiftDurationHours
+  };
+}
+
+function activeHoursBetween(
+  startHour: number,
+  endHour: number,
+  shiftDurationHours: number,
+  shiftStartHour: number
+): number {
+  if (endHour <= startHour || shiftDurationHours <= 0) {
     return 0;
   }
-  if (activeHoursPerDay >= 24) {
+  if (shiftDurationHours >= 24) {
     return endHour - startHour;
   }
 
@@ -80,12 +114,18 @@ function activeHoursBetween(startHour: number, endHour: number, activeHoursPerDa
   while (cursor < endHour - 1e-9) {
     const dayIndex = Math.floor(cursor / 24);
     const dayStart = dayIndex * 24;
-    const activeWindowEnd = dayStart + activeHoursPerDay;
     const nextBoundary = Math.min(endHour, dayStart + 24);
+    const shiftStart = dayStart + shiftStartHour;
+    const shiftEnd = shiftStart + shiftDurationHours;
 
-    if (cursor < activeWindowEnd) {
-      activeHours += Math.max(0, Math.min(nextBoundary, activeWindowEnd) - cursor);
+    const overlap = (windowStart: number, windowEnd: number) =>
+      Math.max(0, Math.min(nextBoundary, windowEnd) - Math.max(cursor, windowStart));
+
+    activeHours += overlap(shiftStart, Math.min(shiftEnd, dayStart + 24));
+    if (shiftEnd > dayStart + 24) {
+      activeHours += overlap(dayStart, dayStart + (shiftEnd - (dayStart + 24)));
     }
+
     cursor = nextBoundary;
   }
 
@@ -117,45 +157,163 @@ function normalizeOutgoing(edges: VsmEdge[]): Array<{ to: string; probability: n
   return provisional.map((edge) => ({ to: edge.to, probability: edge.probability / total }));
 }
 
-function computeVisitFactors(graph: VsmGraph): Record<string, number> {
+function rawMixModifier(index: number, total: number, mixProfile: string): number {
+  if (mixProfile === "front-loaded") {
+    return index < Math.ceil(total / 3) ? 1.12 : 0.94;
+  }
+  if (mixProfile === "midstream-heavy") {
+    const start = Math.floor(total / 3);
+    const end = Math.ceil((total * 2) / 3);
+    return index >= start && index < end ? 1.12 : 0.94;
+  }
+  if (mixProfile === "back-loaded") {
+    return index >= Math.floor((total * 2) / 3) ? 1.12 : 0.94;
+  }
+  return 1;
+}
+
+function buildMixModifiers(total: number, mixProfile: string): number[] {
+  if (total <= 0) {
+    return [];
+  }
+  const raw = Array.from({ length: total }, (_, index) => rawMixModifier(index, total, mixProfile));
+  const sum = raw.reduce((acc, value) => acc + value, 0);
+  if (sum <= 0) {
+    return raw.map(() => 1);
+  }
+  const normalization = total / sum;
+  return raw.map((value) => value * normalization);
+}
+
+function stepStatus(utilization: number, bottleneckIndex: number): "healthy" | "risk" | "critical" {
+  if (utilization >= 0.98 || bottleneckIndex >= 0.82) {
+    return "critical";
+  }
+  if (utilization >= 0.85 || bottleneckIndex >= 0.62) {
+    return "risk";
+  }
+  return "healthy";
+}
+
+function queueRiskFromDepth(queueDepth: number, capacityPerHour: number): number {
+  return clamp(queueDepth / Math.max(1, capacityPerHour * 0.6), 0, 1);
+}
+
+function bottleneckIndexFrom(utilization: number, queueRisk: number): number {
+  return clamp(0.65 * clamp(utilization, 0, 1.35) + 0.35 * clamp(queueRisk, 0, 1), 0, 1);
+}
+
+function analyzeGraph(graph: VsmGraph): GraphAnalysis {
   const nodeIds = graph.nodes.map((node) => node.id);
   const outgoingRaw = new Map<string, VsmEdge[]>();
-  const outgoing = new Map<string, Array<{ to: string; probability: number }>>();
+  const outgoingMap = new Map<string, Array<{ to: string; probability: number }>>();
+  const indegree = new Map<string, number>();
 
   for (const nodeId of nodeIds) {
     outgoingRaw.set(nodeId, []);
-    outgoing.set(nodeId, []);
+    outgoingMap.set(nodeId, []);
+    indegree.set(nodeId, 0);
   }
   for (const edge of graph.edges) {
     const group = outgoingRaw.get(edge.from) ?? [];
     group.push(edge);
     outgoingRaw.set(edge.from, group);
+    if (indegree.has(edge.to) && indegree.has(edge.from)) {
+      indegree.set(edge.to, (indegree.get(edge.to) ?? 0) + 1);
+    }
   }
   for (const [nodeId, edges] of outgoingRaw.entries()) {
-    outgoing.set(nodeId, normalizeOutgoing(edges));
+    outgoingMap.set(nodeId, normalizeOutgoing(edges));
   }
 
+  const queue = nodeIds.filter((nodeId) => (indegree.get(nodeId) ?? 0) === 0);
+  const orderedNodes: string[] = [];
+  while (queue.length > 0) {
+    const nodeId = queue.shift() as string;
+    orderedNodes.push(nodeId);
+    for (const edge of outgoingMap.get(nodeId) ?? []) {
+      const nextDegree = (indegree.get(edge.to) ?? 0) - 1;
+      indegree.set(edge.to, nextDegree);
+      if (nextDegree === 0) {
+        queue.push(edge.to);
+      }
+    }
+  }
+  const isDag = orderedNodes.length === nodeIds.length;
+  const finalOrder = isDag ? orderedNodes : nodeIds;
+  return {
+    orderedNodes: finalOrder,
+    nodeOrder: new Map(finalOrder.map((nodeId, index) => [nodeId, index])),
+    outgoingMap,
+    isDag
+  };
+}
+
+function solveLinearSystem(matrix: number[][], vector: number[]): number[] | null {
+  const size = matrix.length;
+  const augmented = matrix.map((row, index) => [...row, vector[index] ?? 0]);
+
+  for (let pivotIndex = 0; pivotIndex < size; pivotIndex += 1) {
+    let maxRow = pivotIndex;
+    for (let rowIndex = pivotIndex + 1; rowIndex < size; rowIndex += 1) {
+      if (Math.abs(augmented[rowIndex][pivotIndex]) > Math.abs(augmented[maxRow][pivotIndex])) {
+        maxRow = rowIndex;
+      }
+    }
+    if (Math.abs(augmented[maxRow][pivotIndex]) < 1e-9) {
+      return null;
+    }
+    if (maxRow !== pivotIndex) {
+      const tmp = augmented[pivotIndex];
+      augmented[pivotIndex] = augmented[maxRow];
+      augmented[maxRow] = tmp;
+    }
+    const pivot = augmented[pivotIndex][pivotIndex];
+    for (let column = pivotIndex; column <= size; column += 1) {
+      augmented[pivotIndex][column] /= pivot;
+    }
+    for (let rowIndex = 0; rowIndex < size; rowIndex += 1) {
+      if (rowIndex === pivotIndex) {
+        continue;
+      }
+      const factor = augmented[rowIndex][pivotIndex];
+      if (Math.abs(factor) < 1e-12) {
+        continue;
+      }
+      for (let column = pivotIndex; column <= size; column += 1) {
+        augmented[rowIndex][column] -= factor * augmented[pivotIndex][column];
+      }
+    }
+  }
+
+  return augmented.map((row) => row[size]);
+}
+
+function fallbackVisitFactors(
+  graph: VsmGraph,
+  outgoingMap: Map<string, Array<{ to: string; probability: number }>>
+): Record<string, number> {
+  const nodeIds = graph.nodes.map((node) => node.id);
   const fallbackStart = nodeIds.length > 0 ? [nodeIds[0]] : [];
   const startNodes = graph.startNodes.length > 0 ? graph.startNodes : fallbackStart;
   const base = new Map<string, number>();
   for (const nodeId of nodeIds) {
     base.set(nodeId, 0);
   }
-
   const perStart = 1 / Math.max(1, startNodes.length);
   for (const nodeId of startNodes) {
     base.set(nodeId, (base.get(nodeId) ?? 0) + perStart);
   }
 
   let visits = new Map(base);
-  for (let i = 0; i < 350; i += 1) {
+  for (let iteration = 0; iteration < 350; iteration += 1) {
     const next = new Map(base);
     for (const nodeId of nodeIds) {
       const fromVisits = visits.get(nodeId) ?? 0;
       if (fromVisits <= 0) {
         continue;
       }
-      for (const edge of outgoing.get(nodeId) ?? []) {
+      for (const edge of outgoingMap.get(nodeId) ?? []) {
         next.set(edge.to, (next.get(edge.to) ?? 0) + fromVisits * edge.probability);
       }
     }
@@ -176,29 +334,87 @@ function computeVisitFactors(graph: VsmGraph): Record<string, number> {
   return result;
 }
 
-function mixModifier(_stepId: string, index: number, total: number, mixProfile: string): number {
-  if (mixProfile === "front-loaded") {
-    return index < Math.ceil(total / 3) ? 1.12 : 0.94;
+function computeVisitFactors(graph: VsmGraph): VisitFactorResult {
+  const nodeIds = graph.nodes.map((node) => node.id);
+  const graphAnalysis = analyzeGraph(graph);
+  const warnings: string[] = [];
+  const fallbackStart = nodeIds.length > 0 ? [nodeIds[0]] : [];
+  const startNodes = graph.startNodes.length > 0 ? graph.startNodes : fallbackStart;
+  const base = new Map<string, number>();
+  for (const nodeId of nodeIds) {
+    base.set(nodeId, 0);
   }
-  if (mixProfile === "midstream-heavy") {
-    const start = Math.floor(total / 3);
-    const end = Math.ceil((total * 2) / 3);
-    return index >= start && index < end ? 1.12 : 0.94;
+  const perStart = 1 / Math.max(1, startNodes.length);
+  for (const nodeId of startNodes) {
+    base.set(nodeId, (base.get(nodeId) ?? 0) + perStart);
   }
-  if (mixProfile === "back-loaded") {
-    return index >= Math.floor((total * 2) / 3) ? 1.12 : 0.94;
+
+  if (graphAnalysis.isDag) {
+    const visits = new Map(base);
+    for (const nodeId of graphAnalysis.orderedNodes) {
+      const fromVisits = visits.get(nodeId) ?? 0;
+      for (const edge of graphAnalysis.outgoingMap.get(nodeId) ?? []) {
+        visits.set(edge.to, (visits.get(edge.to) ?? 0) + fromVisits * edge.probability);
+      }
+    }
+    const visitFactors: Record<string, number> = {};
+    for (const nodeId of nodeIds) {
+      visitFactors[nodeId] = Math.max(0.01, num(visits.get(nodeId), 0));
+    }
+    return { visitFactors, warnings, graph: graphAnalysis };
   }
-  return 1;
+
+  const indexByNode = new Map(nodeIds.map((nodeId, index) => [nodeId, index]));
+  const matrix = nodeIds.map((nodeId) => nodeIds.map((candidate) => (candidate === nodeId ? 1 : 0)));
+  const vector = nodeIds.map((nodeId) => base.get(nodeId) ?? 0);
+  for (const fromNodeId of nodeIds) {
+    const fromIndex = indexByNode.get(fromNodeId) ?? 0;
+    for (const edge of graphAnalysis.outgoingMap.get(fromNodeId) ?? []) {
+      const toIndex = indexByNode.get(edge.to);
+      if (toIndex === undefined) {
+        continue;
+      }
+      matrix[toIndex][fromIndex] -= edge.probability;
+    }
+  }
+
+  const solved = solveLinearSystem(matrix, vector);
+  if (
+    solved &&
+    solved.every((value) => Number.isFinite(value) && value >= -1e-6) &&
+    solved.some((value) => value > 0)
+  ) {
+    const visitFactors: Record<string, number> = {};
+    nodeIds.forEach((nodeId, index) => {
+      visitFactors[nodeId] = Math.max(0.01, solved[index] ?? 0);
+    });
+    warnings.push("Graph contains a rework loop; visit factors were solved analytically for a convergent cycle.");
+    return { visitFactors, warnings, graph: graphAnalysis };
+  }
+
+  warnings.push(
+    "Graph contains a non-absorbing or unstable cycle; visit factors are capped using a fallback approximation and outputs are not decision-grade."
+  );
+  return {
+    visitFactors: fallbackVisitFactors(graph, graphAnalysis.outgoingMap),
+    warnings,
+    graph: graphAnalysis
+  };
 }
 
-function stepStatus(utilization: number, bottleneckIndex: number): "healthy" | "risk" | "critical" {
-  if (utilization >= 0.98 || bottleneckIndex >= 0.82) {
-    return "critical";
+function analyticalQueueDepth(
+  demandRatePerHour: number,
+  capacityPerHour: number,
+  variabilityCv: number,
+  horizonHours: number
+): number {
+  const rhoRaw = demandRatePerHour / Math.max(0.001, capacityPerHour);
+  if (rhoRaw < 1) {
+    const rho = Math.min(0.9999, Math.max(0, rhoRaw));
+    const cv = Math.max(0.03, variabilityCv);
+    return (rho * rho * (1 + cv * cv)) / (2 * Math.max(0.0001, 1 - rho));
   }
-  if (utilization >= 0.85 || bottleneckIndex >= 0.62) {
-    return "risk";
-  }
-  return "healthy";
+  return Math.max(0, demandRatePerHour - capacityPerHour) * Math.max(0, horizonHours);
 }
 
 function readStepOverride(
@@ -212,14 +428,14 @@ function readStepOverride(
 
 function evaluateSystem(
   model: CompiledForecastModel,
-  scenario: Record<string, number | string>,
+  scenario: ScenarioState,
   visitFactors: Record<string, number>,
   reliefStepId: string,
   reliefUnits: number
 ): ConstraintSystemEval {
   const baselineDemand = num(model.inputDefaults.demandRatePerHour, num(model.baseline.demandRatePerHour, 10));
-  const demandMultiplier = clamp(num(scenario.demandMultiplier, 1), 0.2, 3);
-  const lineDemand = Math.max(0.1, baselineDemand * demandMultiplier);
+  const demandMultiplier = clamp(num(scenario.demandMultiplier, 1), 0, 3);
+  const lineDemand = Math.max(0, baselineDemand * demandMultiplier);
   const staffingMultiplier = clamp(num(scenario.staffingMultiplier, 1), 0.25, 3);
   const equipmentMultiplier = clamp(num(scenario.equipmentMultiplier, 1), 0.25, 3);
   const availabilityMultiplier = clamp(1 - num(scenario.unplannedDowntimePct, 7) / 100, 0.2, 1);
@@ -227,11 +443,10 @@ function evaluateSystem(
   const setupPenaltyMultiplier = clamp(num(scenario.setupPenaltyMultiplier, 1), 0, 3);
   const variabilityMultiplier = clamp(num(scenario.variabilityMultiplier, 1), 0.2, 3);
   const horizonHours = clamp(num(scenario.simulationHorizonHours, 8), 8, 720);
-  const activeShiftCount = readActiveShiftCount(scenario);
-  const activeHoursPerDay = getActiveHoursPerDay(activeShiftCount);
-  const activeCapacityFraction = activeHoursPerDay / 24;
-  const horizonSeverity = 1 + ((horizonHours - 8) / 16) * 0.22;
+  const shiftConfig = readShiftConfig(scenario);
+  const activeCapacityFraction = shiftConfig.activeHoursPerDay / 24;
   const mixProfile = String(scenario.mixProfile ?? "balanced");
+  const mixFactors = buildMixModifiers(model.stepModels.length, mixProfile);
 
   const stepEvals: Record<string, ConstraintStepEval> = {};
   const ranked: Array<{ stepId: string; score: number }> = [];
@@ -269,7 +484,7 @@ function evaluateSystem(
     }
 
     const stepVisitFactor = Math.max(0.01, num(visitFactors[step.stepId], 1));
-    const stepMixFactor = mixModifier(step.stepId, index, model.stepModels.length, mixProfile);
+    const stepMixFactor = mixFactors[index] ?? 1;
     const stepDemandRate = lineDemand * stepVisitFactor * stepMixFactor;
 
     const stepCapacityUnitsOverride = readStepOverride(scenario, step.stepId, "capacityUnits");
@@ -303,20 +518,15 @@ function evaluateSystem(
     const calendarCapacityRate = Math.max(0.001, capacityRate * activeCapacityFraction);
     const serviceTimeHours = effectiveCt / 60;
 
-    const worstCtMinutes =
-      Math.max(0.05, ctBaseline * ctMultiplier * stepCtMultiplier) * (1 + stepDowntimePct / 100);
+    const worstCtMinutes = Math.max(0.05, ctBaseline * ctMultiplier * stepCtMultiplier);
     worstCaseTouchTime += worstCtMinutes;
 
     const utilizationRaw = stepDemandRate / Math.max(0.001, calendarCapacityRate);
     const utilization = clamp(utilizationRaw, 0, 1.35);
     const headroom = Math.max(0, 1 - utilizationRaw);
     const cv = Math.max(0.03, num(step.variabilityCv, 0.18) * variabilityMultiplier);
-    const queuePressure = (utilization * utilization) / Math.max(0.06, 1 - utilization);
-    const queueRisk = clamp((queuePressure * (0.52 + cv)) / 7.2, 0, 1);
-    const queueDepth = Math.max(
-      0,
-      Math.min(24, (Math.max(0, utilizationRaw - 0.66) * 8 + queueRisk * 14) * stepVisitFactor)
-    );
+    const queueDepth = analyticalQueueDepth(stepDemandRate, calendarCapacityRate, cv, horizonHours);
+    const queueRisk = queueRiskFromDepth(queueDepth, calendarCapacityRate);
     const queueDelayMinutes = (queueDepth / Math.max(0.001, calendarCapacityRate)) * 60;
     const explicitLeadTimeMinutesBase =
       typeof step.leadTimeMinutes === "number" && Number.isFinite(step.leadTimeMinutes)
@@ -336,18 +546,12 @@ function evaluateSystem(
       leadTimeTopValue = stepLeadTimeMinutes;
       leadTimeTopStepId = step.stepId;
     }
-    const accumulationRate = Math.max(0, stepDemandRate - calendarCapacityRate);
-    const wipQty = Math.max(0, queueDepth + accumulationRate * horizonHours);
+    const inServiceWip = Math.max(0, Math.min(stepDemandRate, calendarCapacityRate) * serviceTimeHours);
+    const wipQty = Math.max(0, queueDepth + inServiceWip);
     totalWipQty += wipQty;
 
-    const shortage = clamp(utilizationRaw - 1, 0, 1);
-    const bottleneckIndex = clamp(
-      (0.6 * (Math.min(utilizationRaw, 1.25) / 1.25) + 0.3 * queueRisk + 0.1 * shortage) *
-        horizonSeverity,
-      0,
-      1
-    );
-    const status = stepStatus(utilizationRaw, bottleneckIndex);
+    const bottleneckIndex = bottleneckIndexFrom(utilization, queueRisk);
+    const status = stepStatus(utilization, bottleneckIndex);
     const throughputLimit = calendarCapacityRate / Math.max(0.01, stepVisitFactor * stepMixFactor);
 
     lineCapacity = Math.min(lineCapacity, throughputLimit);
@@ -400,7 +604,8 @@ function evaluateSystem(
     totalExplicitLeadTimeMinutes,
     worstCaseTouchTime,
     horizonHours,
-    sortedByBottleneck: ranked
+    sortedByBottleneck: ranked,
+    warnings: []
   };
 }
 
@@ -409,6 +614,7 @@ interface RuntimeStepSnapshot {
   queueRisk: number | null;
   queueDepth: number | null;
   wipQty: number | null;
+  processedQty: number | null;
   completedQty: number | null;
   idleWaitHours: number | null;
   idleWaitPct: number | null;
@@ -423,46 +629,12 @@ interface RuntimeSnapshot {
   bottleneckIndex: number;
   realizedThroughput: number;
   completedOutputQty: number;
+  processedQtyByStep: Record<string, number>;
   completedQtyByStep: Record<string, number>;
-}
-
-function topologicalOrder(graph: VsmGraph): string[] {
-  const indegree = new Map<string, number>();
-  const outgoing = new Map<string, string[]>();
-  const nodeIds = graph.nodes.map((node) => node.id);
-
-  nodeIds.forEach((nodeId) => {
-    indegree.set(nodeId, 0);
-    outgoing.set(nodeId, []);
-  });
-
-  graph.edges.forEach((edge) => {
-    if (!indegree.has(edge.from) || !indegree.has(edge.to)) {
-      return;
-    }
-    indegree.set(edge.to, (indegree.get(edge.to) ?? 0) + 1);
-    outgoing.set(edge.from, [...(outgoing.get(edge.from) ?? []), edge.to]);
-  });
-
-  const queue = nodeIds.filter((nodeId) => (indegree.get(nodeId) ?? 0) === 0);
-  const ordered: string[] = [];
-
-  while (queue.length > 0) {
-    const current = queue.shift() as string;
-    ordered.push(current);
-    for (const next of outgoing.get(current) ?? []) {
-      const nextDegree = (indegree.get(next) ?? 0) - 1;
-      indegree.set(next, nextDegree);
-      if (nextDegree === 0) {
-        queue.push(next);
-      }
-    }
-  }
-
-  if (ordered.length === nodeIds.length) {
-    return ordered;
-  }
-  return nodeIds;
+  sortedByBottleneck: Array<{ stepId: string; score: number }>;
+  throughputState: "steady-state" | "transient" | "fallback-analytical";
+  warmupHours: number;
+  warnings: string[];
 }
 
 function resolveTerminalNodeIds(
@@ -482,67 +654,127 @@ function resolveTerminalNodeIds(
   );
 }
 
+function estimateWarmupHours(
+  orderedNodes: string[],
+  outgoingMap: Map<string, Array<{ to: string; probability: number }>>,
+  system: ConstraintSystemEval,
+  startNodes: string[],
+  isDag: boolean
+): number {
+  if (!isDag) {
+    return 0;
+  }
+  const pathHours = new Map<string, number>(orderedNodes.map((nodeId) => [nodeId, 0]));
+  for (const startId of startNodes) {
+    pathHours.set(startId, 0);
+  }
+  for (const nodeId of orderedNodes) {
+    const current = pathHours.get(nodeId) ?? 0;
+    const serviceTimeHours = Math.max(0, system.stepEvals[nodeId]?.serviceTimeHours ?? 0);
+    const departure = current + serviceTimeHours;
+    for (const edge of outgoingMap.get(nodeId) ?? []) {
+      pathHours.set(edge.to, Math.max(pathHours.get(edge.to) ?? 0, departure));
+    }
+  }
+  return orderedNodes.reduce((max, nodeId) => {
+    const total = (pathHours.get(nodeId) ?? 0) + Math.max(0, system.stepEvals[nodeId]?.serviceTimeHours ?? 0);
+    return Math.max(max, total);
+  }, 0);
+}
+
 function simulateRuntimeFlow(
   model: CompiledForecastModel,
   system: ConstraintSystemEval,
   elapsedHours: number,
-  scenario: Record<string, number | string>
+  scenario: ScenarioState
 ): RuntimeSnapshot {
-  const orderedNodes = topologicalOrder(model.graph);
+  const graphAnalysis = analyzeGraph(model.graph);
+  const orderedNodes = graphAnalysis.orderedNodes;
   const nodeIds = model.graph.nodes.map((node) => node.id);
   const startNodes =
     model.graph.startNodes.length > 0 ? model.graph.startNodes : orderedNodes.length > 0 ? [orderedNodes[0]] : [];
   const startRatePerNode = startNodes.length > 0 ? system.lineDemand / startNodes.length : 0;
-  const activeHoursPerDay = getActiveHoursPerDay(readActiveShiftCount(scenario));
-  const outgoingMap = new Map<string, Array<{ to: string; probability: number }>>();
-
-  nodeIds.forEach((nodeId) => {
-    const edges = model.graph.edges.filter((edge) => edge.from === nodeId);
-    outgoingMap.set(nodeId, normalizeOutgoing(edges));
-  });
+  const shiftConfig = readShiftConfig(scenario);
+  const outgoingMap = graphAnalysis.outgoingMap;
   const terminalNodeSet = resolveTerminalNodeIds(model.graph, outgoingMap);
 
   const queueQty = new Map<string, number>(nodeIds.map((nodeId) => [nodeId, 0]));
-  const cumulativeProcessedQtyByStep = new Map<string, number>(nodeIds.map((nodeId) => [nodeId, 0]));
+  const processedQtyByStep = new Map<string, number>(nodeIds.map((nodeId) => [nodeId, 0]));
   const snapshotProcessedRateByStep = new Map<string, number>(nodeIds.map((nodeId) => [nodeId, 0]));
   const completedQtyByStep = new Map<string, number>(nodeIds.map((nodeId) => [nodeId, 0]));
   const blockedIdleHoursByStep = new Map<string, number>(nodeIds.map((nodeId) => [nodeId, 0]));
   let arrivals = new Map<string, number>(nodeIds.map((nodeId) => [nodeId, 0]));
   let totalCompletedQty = 0;
   const cappedElapsed = Math.max(0, elapsedHours);
-  const activeElapsedHours = activeHoursBetween(0, cappedElapsed, activeHoursPerDay);
+  const activeElapsedHours = activeHoursBetween(
+    0,
+    cappedElapsed,
+    shiftConfig.shiftDurationHours,
+    shiftConfig.shiftStartHour
+  );
+  const warnings: string[] = [];
+  if (!graphAnalysis.isDag) {
+    warnings.push("Runtime flow uses conservative next-tick carry for cycle edges; cyclic throughput should be treated cautiously.");
+  }
+  const warmupHours = estimateWarmupHours(
+    orderedNodes,
+    outgoingMap,
+    system,
+    startNodes,
+    graphAnalysis.isDag
+  );
   if (cappedElapsed > 0) {
     const maxSteps = 1800;
     const targetDt = 1 / 240; // 15 seconds in simulation time
     const rawSteps = Math.ceil(cappedElapsed / targetDt);
     const steps = Math.max(1, Math.min(maxSteps, rawSteps));
+    const makeZeroMap = () => new Map<string, number>(nodeIds.map((nodeId) => [nodeId, 0]));
     const dtHours = cappedElapsed / steps;
 
     for (let tick = 0; tick < steps; tick += 1) {
       const intervalStartHours = tick * dtHours;
       const intervalEndHours = intervalStartHours + dtHours;
-      const activeHours = activeHoursBetween(intervalStartHours, intervalEndHours, activeHoursPerDay);
+      const activeHours = activeHoursBetween(
+        intervalStartHours,
+        intervalEndHours,
+        shiftConfig.shiftDurationHours,
+        shiftConfig.shiftStartHour
+      );
+      const tickArrivals = new Map(arrivals);
 
       for (const startId of startNodes) {
-        arrivals.set(startId, (arrivals.get(startId) ?? 0) + startRatePerNode * dtHours);
+        tickArrivals.set(startId, (tickArrivals.get(startId) ?? 0) + startRatePerNode * dtHours);
       }
 
-      const nextArrivals = new Map<string, number>(nodeIds.map((nodeId) => [nodeId, 0]));
+      const nextArrivals = makeZeroMap();
       for (const nodeId of orderedNodes) {
         const stepEval = system.stepEvals[nodeId];
-        const incomingQty = arrivals.get(nodeId) ?? 0;
+        const currentOrder = graphAnalysis.nodeOrder.get(nodeId) ?? -1;
+        const incomingQty = tickArrivals.get(nodeId) ?? 0;
         const outgoing = outgoingMap.get(nodeId) ?? [];
+        const routeForward = (toNodeId: string, quantity: number) => {
+          if (quantity <= 0) {
+            return;
+          }
+          const targetOrder = graphAnalysis.nodeOrder.get(toNodeId) ?? Number.MAX_SAFE_INTEGER;
+          if (graphAnalysis.isDag && targetOrder > currentOrder) {
+            tickArrivals.set(toNodeId, (tickArrivals.get(toNodeId) ?? 0) + quantity);
+            return;
+          }
+          nextArrivals.set(toNodeId, (nextArrivals.get(toNodeId) ?? 0) + quantity);
+        };
+
         if (!stepEval || stepEval.capacityPerHour === null || stepEval.capacityPerHour <= 0) {
           if (terminalNodeSet.has(nodeId)) {
             totalCompletedQty += incomingQty;
+            completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) ?? 0) + incomingQty);
           }
-          completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) ?? 0) + incomingQty);
           for (const edge of outgoing) {
-            nextArrivals.set(edge.to, (nextArrivals.get(edge.to) ?? 0) + incomingQty * edge.probability);
+            routeForward(edge.to, incomingQty * edge.probability);
           }
-          cumulativeProcessedQtyByStep.set(
+          processedQtyByStep.set(
             nodeId,
-            (cumulativeProcessedQtyByStep.get(nodeId) ?? 0) + incomingQty
+            (processedQtyByStep.get(nodeId) ?? 0) + incomingQty
           );
           snapshotProcessedRateByStep.set(nodeId, activeHours > 0 ? incomingQty / activeHours : 0);
           continue;
@@ -563,12 +795,12 @@ function simulateRuntimeFlow(
               continue;
             }
             const childQueueQty = queueQty.get(edge.to) ?? 0;
-            const childPendingQty = (arrivals.get(edge.to) ?? 0) + (nextArrivals.get(edge.to) ?? 0);
+            const childPendingQty = (tickArrivals.get(edge.to) ?? 0) + (nextArrivals.get(edge.to) ?? 0);
             const childProjectedLoad = childQueueQty + childPendingQty;
             const childCalendarCapacity =
               childEval.calendarCapacityPerHour ?? childEval.capacityPerHour ?? 0;
-            const childBufferQty = Math.max(1, childCalendarCapacity * 12);
-            const childAcceptance = clamp(1 - childProjectedLoad / childBufferQty, 0.25, 1);
+            const childBufferQty = Math.max(1, childCalendarCapacity * 2);
+            const childAcceptance = clamp(1 - childProjectedLoad / childBufferQty, 0, 1);
             weightedAcceptance += childAcceptance * probability;
           }
           if (totalProbability > 0) {
@@ -579,12 +811,11 @@ function simulateRuntimeFlow(
         const processedQty = Math.min(availableQty, capacityQty * downstreamAcceptance);
         const queueRemaining = Math.max(0, availableQty - processedQty);
         queueQty.set(nodeId, queueRemaining);
-        cumulativeProcessedQtyByStep.set(
+        processedQtyByStep.set(
           nodeId,
-          (cumulativeProcessedQtyByStep.get(nodeId) ?? 0) + processedQty
+          (processedQtyByStep.get(nodeId) ?? 0) + processedQty
         );
         snapshotProcessedRateByStep.set(nodeId, activeHours > 0 ? processedQty / activeHours : 0);
-        completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) ?? 0) + processedQty);
 
         if (activeHours > 0 && outgoing.length > 0 && availableQty > 1e-9 && capacityQty > 1e-9) {
           const blockedIdleRatio = clamp(
@@ -600,24 +831,30 @@ function simulateRuntimeFlow(
 
         if (terminalNodeSet.has(nodeId)) {
           totalCompletedQty += processedQty;
+          completedQtyByStep.set(nodeId, (completedQtyByStep.get(nodeId) ?? 0) + processedQty);
         }
 
         if (outgoing.length === 0) {
           continue;
         }
         for (const edge of outgoing) {
-          nextArrivals.set(edge.to, (nextArrivals.get(edge.to) ?? 0) + processedQty * edge.probability);
+          routeForward(edge.to, processedQty * edge.probability);
         }
       }
       arrivals = nextArrivals;
+    }
+    for (const nodeId of nodeIds) {
+      const remainingArrivalQty = arrivals.get(nodeId) ?? 0;
+      if (remainingArrivalQty > 0) {
+        queueQty.set(nodeId, (queueQty.get(nodeId) ?? 0) + remainingArrivalQty);
+      }
     }
   }
 
   const node: RuntimeSnapshot["node"] = {};
   let totalWipQty = 0;
-  let bottleneckStepId: string | null = null;
-  let bottleneckIndex = 0;
-  let realizedThroughput = cappedElapsed > 0 ? totalCompletedQty / cappedElapsed : 0;
+  const ranked: Array<{ stepId: string; score: number }> = [];
+  const realizedThroughput = cappedElapsed > 0 ? totalCompletedQty / Math.max(1e-9, cappedElapsed) : 0;
 
   for (const nodeId of nodeIds) {
     const stepEval = system.stepEvals[nodeId];
@@ -627,6 +864,7 @@ function simulateRuntimeFlow(
         queueRisk: null,
         queueDepth: null,
         wipQty: null,
+        processedQty: Math.max(0, processedQtyByStep.get(nodeId) ?? 0),
         completedQty: Math.max(0, completedQtyByStep.get(nodeId) ?? 0),
         idleWaitHours: null,
         idleWaitPct: null,
@@ -638,7 +876,7 @@ function simulateRuntimeFlow(
 
     const displayedCapacityPerHour =
       stepEval.calendarCapacityPerHour ?? stepEval.capacityPerHour ?? 0;
-    const cumulativeProcessedQty = cumulativeProcessedQtyByStep.get(nodeId) ?? 0;
+    const cumulativeProcessedQty = processedQtyByStep.get(nodeId) ?? 0;
     const realizedRate = cappedElapsed > 0 ? cumulativeProcessedQty / Math.max(1e-9, cappedElapsed) : 0;
     const utilizationRaw = realizedRate / Math.max(0.001, displayedCapacityPerHour);
     const utilization = clamp(utilizationRaw, 0, 1.35);
@@ -650,41 +888,56 @@ function simulateRuntimeFlow(
     const idleWaitHours = Math.max(0, blockedIdleHoursByStep.get(nodeId) ?? 0);
     const idleWaitPct =
       activeElapsedHours > 0 ? clamp(idleWaitHours / activeElapsedHours, 0, 1) : 0;
-    const queueRisk = clamp(queueDepth / Math.max(1, displayedCapacityPerHour * 0.6), 0, 1);
-    const stepBottleneckIndex = clamp(0.65 * utilization + 0.35 * queueRisk, 0, 1);
+    const queueRisk = queueRiskFromDepth(queueDepth, displayedCapacityPerHour);
+    const stepBottleneckIndex = bottleneckIndexFrom(utilization, queueRisk);
     const status = stepStatus(utilization, stepBottleneckIndex);
-
-    const currentCapacity = displayedCapacityPerHour;
-    const bestCapacity =
-      bottleneckStepId !== null
-        ? system.stepEvals[bottleneckStepId]?.calendarCapacityPerHour ??
-          system.stepEvals[bottleneckStepId]?.capacityPerHour ??
-          Number.POSITIVE_INFINITY
-        : Number.POSITIVE_INFINITY;
-    if (
-      stepBottleneckIndex > bottleneckIndex + 1e-9 ||
-      (Math.abs(stepBottleneckIndex - bottleneckIndex) <= 1e-9 && currentCapacity < bestCapacity)
-    ) {
-      bottleneckIndex = stepBottleneckIndex;
-      bottleneckStepId = nodeId;
-    }
 
     node[nodeId] = {
       utilization,
       queueRisk,
       queueDepth,
       wipQty,
+      processedQty: Math.max(0, processedQtyByStep.get(nodeId) ?? 0),
       completedQty: Math.max(0, completedQtyByStep.get(nodeId) ?? 0),
       idleWaitHours,
       idleWaitPct,
       bottleneckIndex: stepBottleneckIndex,
       status
     };
+    ranked.push({ stepId: nodeId, score: stepBottleneckIndex });
   }
 
+  ranked.sort((a, b) => {
+    const scoreDelta = b.score - a.score;
+    if (Math.abs(scoreDelta) > 1e-9) {
+      return scoreDelta;
+    }
+    const aCapacity = node[a.stepId]?.utilization !== null
+      ? system.stepEvals[a.stepId]?.calendarCapacityPerHour ?? system.stepEvals[a.stepId]?.capacityPerHour ?? Number.POSITIVE_INFINITY
+      : Number.POSITIVE_INFINITY;
+    const bCapacity = node[b.stepId]?.utilization !== null
+      ? system.stepEvals[b.stepId]?.calendarCapacityPerHour ?? system.stepEvals[b.stepId]?.capacityPerHour ?? Number.POSITIVE_INFINITY
+      : Number.POSITIVE_INFINITY;
+    return aCapacity - bCapacity;
+  });
+  const bottleneckStepId = ranked[0]?.stepId ?? null;
+  const bottleneckIndex = ranked[0]?.score ?? 0;
+
+  const processedQtyRecord: Record<string, number> = {};
   const completedQtyRecord: Record<string, number> = {};
   for (const nodeId of nodeIds) {
+    processedQtyRecord[nodeId] = Math.max(0, processedQtyByStep.get(nodeId) ?? 0);
     completedQtyRecord[nodeId] = Math.max(0, completedQtyByStep.get(nodeId) ?? 0);
+  }
+
+  let throughputState: RuntimeSnapshot["throughputState"] = "fallback-analytical";
+  if (cappedElapsed > 0) {
+    throughputState = cappedElapsed + 1e-9 < warmupHours ? "transient" : "steady-state";
+    if (throughputState === "transient") {
+      warnings.push(
+        `Forecast throughput is transient because elapsed time (${cappedElapsed.toFixed(2)} h) is shorter than the estimated warmup (${warmupHours.toFixed(2)} h).`
+      );
+    }
   }
 
   return {
@@ -694,7 +947,12 @@ function simulateRuntimeFlow(
     bottleneckIndex,
     realizedThroughput,
     completedOutputQty: totalCompletedQty,
-    completedQtyByStep: completedQtyRecord
+    processedQtyByStep: processedQtyRecord,
+    completedQtyByStep: completedQtyRecord,
+    sortedByBottleneck: ranked,
+    throughputState,
+    warmupHours,
+    warnings
   };
 }
 
@@ -720,35 +978,38 @@ function migrationLabel(
 
 export function createConstraintForecast(
   model: CompiledForecastModel,
-  scenario: Record<string, number | string>
+  scenario: ScenarioState
 ): ConstraintForecastSnapshot {
-  const visitFactors = computeVisitFactors(model.graph);
-  const baseline = evaluateSystem(model, scenario, visitFactors, "", 0);
+  const visitFactorResult = computeVisitFactors(model.graph);
+  const baseline = evaluateSystem(model, scenario, visitFactorResult.visitFactors, "", 0);
   const reliefUnits = Math.max(0, Math.round(num(scenario.bottleneckReliefUnits, 1)));
   const relief =
     baseline.bottleneckStepId && reliefUnits > 0
-      ? evaluateSystem(model, scenario, visitFactors, baseline.bottleneckStepId, reliefUnits)
+      ? evaluateSystem(model, scenario, visitFactorResult.visitFactors, baseline.bottleneckStepId, reliefUnits)
       : baseline;
+  const warnings = [...visitFactorResult.warnings, ...baseline.warnings, ...relief.warnings];
 
   return {
     baseline,
     relief,
     reliefUnits,
-    visitFactors
+    visitFactors: visitFactorResult.visitFactors,
+    warnings
   };
 }
 
 export function createBottleneckForecastOutput(
   model: CompiledForecastModel,
-  scenario: Record<string, number | string>,
+  scenario: ScenarioState,
   elapsedHours = 0
 ): SimulationOutput {
   const stepLabelById = new Map(model.stepModels.map((step) => [step.stepId, step.label]));
-  const { baseline, relief } = createConstraintForecast(model, scenario);
+  const forecast = createConstraintForecast(model, scenario);
+  const { baseline, relief } = forecast;
   const runtime = simulateRuntimeFlow(model, baseline, elapsedHours, scenario);
 
   const topScore = runtime.bottleneckIndex;
-  const secondScore = baseline.sortedByBottleneck[1]?.score ?? 0;
+  const secondScore = runtime.sortedByBottleneck[1]?.score ?? 0;
   const margin = Math.max(0, topScore - secondScore);
   const knownNodes = Object.values(runtime.node).filter((step) => step.utilization !== null);
   const nearSatCount = knownNodes.filter((step) => (step.utilization ?? 0) >= 0.9).length;
@@ -784,14 +1045,15 @@ export function createBottleneckForecastOutput(
       nodeMetrics[step.stepId] = {
         utilization: null,
         headroom: null,
-        queueRisk: null,
-        queueDepth: null,
-        wipQty: null,
-        completedQty: 0,
-        idleWaitHours: null,
-        idleWaitPct: null,
-        leadTimeMinutes: null,
-        capacityPerHour: null,
+      queueRisk: null,
+      queueDepth: null,
+      wipQty: null,
+      processedQty: 0,
+      completedQty: 0,
+      idleWaitHours: null,
+      idleWaitPct: null,
+      leadTimeMinutes: null,
+      capacityPerHour: null,
         bottleneckIndex: null,
         bottleneckFlag: false,
         status: "unknown"
@@ -820,6 +1082,7 @@ export function createBottleneckForecastOutput(
       queueRisk: evalStep.queueRisk,
       queueDepth: evalStep.queueDepth,
       wipQty: evalStep.wipQty,
+      processedQty: evalStep.processedQty,
       completedQty: evalStep.completedQty,
       idleWaitHours: evalStep.idleWaitHours,
       idleWaitPct: evalStep.idleWaitPct,
@@ -827,7 +1090,7 @@ export function createBottleneckForecastOutput(
       capacityPerHour,
       bottleneckIndex: evalStep.bottleneckIndex,
       bottleneckFlag: step.stepId === runtime.bottleneckStepId,
-      status: step.stepId === runtime.bottleneckStepId ? "critical" : evalStep.status
+      status: evalStep.status
     };
   }
   const compiledBaselineLeadTime = num(
@@ -835,11 +1098,16 @@ export function createBottleneckForecastOutput(
     baseline.totalLeadTimeMinutes
   );
   const waitSharePct = totalLeadTimeMinutes > 0 ? totalExplicitLeadTimeMinutes / totalLeadTimeMinutes : 0;
+  const forecastThroughput =
+    runtime.throughputState === "fallback-analytical" ? baseline.throughput : runtime.realizedThroughput;
+  const warnings = [...forecast.warnings, ...runtime.warnings];
 
   return {
     globalMetrics: {
       simElapsedHours: elapsedHours,
-      forecastThroughput: runtime.realizedThroughput > 0 ? runtime.realizedThroughput : baseline.throughput,
+      forecastThroughput,
+      throughputState: runtime.throughputState,
+      warmupHours: runtime.warmupHours,
       totalCompletedOutputPieces: runtime.completedOutputQty,
       totalWipQty: runtime.totalWipQty,
       worstCaseTouchTime: baseline.worstCaseTouchTime,
@@ -852,6 +1120,7 @@ export function createBottleneckForecastOutput(
       bottleneckIndex: topScore,
       brittleness
     },
-    nodeMetrics
+    nodeMetrics,
+    warnings
   };
 }

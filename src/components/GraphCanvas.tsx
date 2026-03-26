@@ -39,8 +39,11 @@ function metricLabel(key: string): string {
   if (key === "wipQty") {
     return "lot/wip";
   }
+  if (key === "processedQty") {
+    return "processed lot";
+  }
   if (key === "completedQty") {
-    return "Completed Lot";
+    return "completed lot";
   }
   if (key === "idleWaitHours") {
     return "idle wait";
@@ -78,6 +81,9 @@ function metricValue(value: unknown, key: string): string {
       return value.toFixed(1);
     }
     if (key === "wipQty") {
+      return `${Math.round(value)} pcs`;
+    }
+    if (key === "processedQty") {
       return `${Math.round(value)} pcs`;
     }
     if (key === "completedQty") {

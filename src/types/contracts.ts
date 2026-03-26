@@ -248,6 +248,7 @@ export interface CompiledForecastModel {
         queueRisk: number | null;
         queueDepth?: number | null;
         wipQty?: number | null;
+        processedQty?: number | null;
         completedQty?: number | null;
         idleWaitHours?: number | null;
         idleWaitPct?: number | null;
@@ -276,6 +277,7 @@ export interface SimulationOutput {
       queueRisk: number | null;
       queueDepth?: number | null;
       wipQty?: number | null;
+      processedQty?: number | null;
       completedQty?: number | null;
       idleWaitHours?: number | null;
       idleWaitPct?: number | null;
@@ -286,6 +288,7 @@ export interface SimulationOutput {
       status: "healthy" | "risk" | "critical" | "unknown";
     }
   >;
+  warnings?: string[];
 }
 
 export type ThroughputEfficiencyStatus = "high" | "medium" | "low";
