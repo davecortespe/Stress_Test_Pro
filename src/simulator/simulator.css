@@ -7943,7 +7943,7 @@
 .header-shell .cmd-title {
   margin: 0;
   color: #edf4ff;
-  font-size: clamp(2.35rem, 4.15vw, 4.1rem);
+  font-size: clamp(2.1rem, 3.75vw, 3.75rem);
   line-height: 0.95;
   letter-spacing: -0.05em;
   font-weight: 800;
