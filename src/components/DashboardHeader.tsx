@@ -143,11 +143,11 @@ export function DashboardHeader({
           {subtitle ? <p className="cmd-subtitle">{subtitle}</p> : null}
         </div>
         <div className="cmd-utils">
+          <button type="button" className="secondary cmd-btn cmd-util cmd-util-guide" onClick={onOpenQuickStartGuide}>
+            Instruction Guide
+          </button>
           <button type="button" className="secondary cmd-btn cmd-util" onClick={onOpenExecutivePdf}>
             Executive Report
-          </button>
-          <button type="button" className="secondary cmd-btn cmd-util" onClick={onOpenQuickStartGuide}>
-            Instruction Guide
           </button>
         </div>
       </div>

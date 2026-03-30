@@ -8013,9 +8013,27 @@
   padding-inline: 12px;
 }
 
+.header-shell .cmd-util-guide {
+  color: #f7d9f1;
+  border-color: rgba(208, 92, 192, 0.62);
+  background: linear-gradient(180deg, rgba(58, 24, 54, 0.96), rgba(30, 15, 28, 0.98));
+  box-shadow:
+    0 0 0 1px rgba(208, 92, 192, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
 .header-shell .cmd-util:hover {
   color: #f3f7ff;
   border-color: rgba(124, 156, 196, 0.58);
+}
+
+.header-shell .cmd-util-guide:hover {
+  color: #fff0fc;
+  border-color: rgba(224, 123, 212, 0.82);
+  box-shadow:
+    0 0 0 1px rgba(224, 123, 212, 0.16),
+    0 0 16px rgba(224, 123, 212, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .cmd-cards {
