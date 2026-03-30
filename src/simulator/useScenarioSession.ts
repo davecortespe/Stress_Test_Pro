@@ -146,6 +146,10 @@ export function useScenarioSession({
   const toggleStartPause = () => {
     if (isPaused) {
       if (simElapsedHours >= simHorizonHours - 1e-6) {
+        setCommittedScenario(cloneScenario(stagedScenario));
+        setSimElapsedHours(0);
+        setResetViewSignal((current) => current + 1);
+        setIsPaused(false);
         return;
       }
       setCommittedScenario(cloneScenario(stagedScenario));

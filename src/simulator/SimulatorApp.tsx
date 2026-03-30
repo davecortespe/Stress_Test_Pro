@@ -473,10 +473,6 @@ export default function SimulatorApp() {
 
   // ── Other actions ───────────────────────────────────────────────────────────
   const startPauseWithInspectorReset = () => {
-    if (isPaused && simElapsedHours >= simHorizonHours - 1e-6) {
-      showNotice("warning", "Simulation has reached the horizon. Use Reset to run it again from the start.");
-      return;
-    }
     toggleStartPause();
     closeInspector();
   };
