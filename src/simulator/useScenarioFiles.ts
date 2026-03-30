@@ -67,7 +67,7 @@ export type OpenFileResult =
   | {
       entry: ScenarioLibraryEntry;
       /** Set when the file contained more than one row (old library format). */
-      multiRowWarning?: { rowCount: number; firstName: string };
+      multiRowWarning?: { rowCount: number; firstName: string; importedCount: number };
     }
   | null;
 
@@ -185,6 +185,7 @@ export function useScenarioFiles({
 }: UseScenarioFilesInput): UseScenarioFilesResult {
   const [activeRunHandle, setActiveRunHandle] = useState<FileHandleLike | null>(null);
   const [activeRunName, setActiveRunName] = useState<string | null>(null);
+  const [activeRunScenarioId, setActiveRunScenarioId] = useState<string | null>(null);
   const [issues, setIssues] = useState<ScenarioLibraryIssue[]>([]);
   // Recent runs are shortcuts only. Files on disk are the source of truth.
   const [recentFiles, setRecentFiles] = useState<RecentFileRecord[]>(loadRecentFromStorage);
@@ -193,13 +194,13 @@ export function useScenarioFiles({
 
   // ── Internal helpers ────────────────────────────────────────────────────────
 
-  const addToRecent = useCallback((entry: ScenarioLibraryEntry, fileName?: string): void => {
+  const addEntriesToRecent = useCallback((entries: ScenarioLibraryEntry[], fileName?: string): void => {
     setRecentFiles((prev) => {
-      const deduped = prev.filter((r) => r.scenarioId !== entry.scenarioId);
-      const next: RecentFileRecord[] = [{ ...entry, fileName }, ...deduped].slice(
-        0,
-        RECENT_FILES_MAX
+      const deduped = prev.filter(
+        (record) => !entries.some((entry) => entry.scenarioId === record.scenarioId)
       );
+      const imported = entries.map((entry) => ({ ...entry, fileName }));
+      const next: RecentFileRecord[] = [...imported, ...deduped].slice(0, RECENT_FILES_MAX);
       persistRecent(next);
       return next;
     });
@@ -215,19 +216,23 @@ export function useScenarioFiles({
         return null;
       }
 
+      addEntriesToRecent(parsed.entries, fileName);
       const entry = parsed.entries[0];
-      addToRecent(entry, fileName);
 
       if (parsed.entries.length > 1) {
         return {
           entry,
-          multiRowWarning: { rowCount: parsed.entries.length, firstName: entry.scenarioName }
+          multiRowWarning: {
+            rowCount: parsed.entries.length,
+            firstName: entry.scenarioName,
+            importedCount: parsed.entries.length
+          }
         };
       }
 
       return { entry };
     },
-    [scenarioColumns, addToRecent]
+    [scenarioColumns, addEntriesToRecent]
   );
 
   // ── saveCurrentRun ──────────────────────────────────────────────────────────
@@ -239,7 +244,7 @@ export function useScenarioFiles({
   ): Promise<SaveRunResult> => {
     const normalizedName = name.trim() || createTimestampName();
     const entry: ScenarioLibraryEntry = {
-      scenarioId: createScenarioId(),
+      scenarioId: activeRunScenarioId ?? createScenarioId(),
       scenarioName: normalizedName,
       savedAt: new Date().toISOString(),
       scenario: { ...scenario },
@@ -252,7 +257,8 @@ export function useScenarioFiles({
     if (activeRunHandle) {
       await writeHandleText(activeRunHandle, csvText);
       const runName = activeRunHandle.name;
-      addToRecent(entry, runName);
+      setActiveRunScenarioId(entry.scenarioId);
+      addEntriesToRecent([entry], runName);
       return { mode: "file", runName, savedEntry: entry };
     }
 
@@ -267,7 +273,8 @@ export function useScenarioFiles({
         await writeHandleText(handle, csvText);
         setActiveRunHandle(handle);
         setActiveRunName(handle.name);
-        addToRecent(entry, handle.name);
+        setActiveRunScenarioId(entry.scenarioId);
+        addEntriesToRecent([entry], handle.name);
         return { mode: "file", runName: handle.name, savedEntry: entry };
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -279,7 +286,8 @@ export function useScenarioFiles({
 
     // Fallback: browser download (File System Access API unavailable)
     setActiveRunName(defaultFileName);
-    addToRecent(entry, defaultFileName);
+    setActiveRunScenarioId(entry.scenarioId);
+    addEntriesToRecent([entry], defaultFileName);
     return { mode: "download", csvText, fileName: defaultFileName, savedEntry: entry };
   };
 
@@ -304,14 +312,26 @@ export function useScenarioFiles({
       });
       if (!handle) return null;
 
-      // Only update the save target when opening for simulation, not for comparison
-      if (setAsActiveRun) {
-        setActiveRunHandle(handle);
-        setActiveRunName(handle.name);
+      const text = await readHandleText(handle);
+      const result = parseAndReturn(text, handle.name);
+      if (!result) {
+        return null;
       }
 
-      const text = await readHandleText(handle);
-      return parseAndReturn(text, handle.name);
+      if (setAsActiveRun) {
+        if (result.multiRowWarning) {
+          // Legacy multi-row files should be imported, not overwritten in place.
+          setActiveRunHandle(null);
+          setActiveRunName(null);
+          setActiveRunScenarioId(null);
+        } else {
+          setActiveRunHandle(handle);
+          setActiveRunName(handle.name);
+          setActiveRunScenarioId(result.entry.scenarioId);
+        }
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return null; // User cancelled — no state change
@@ -326,6 +346,7 @@ export function useScenarioFiles({
     // Fallback path: no writable handle available for imported files
     setActiveRunHandle(null);
     setActiveRunName(file.name);
+    setActiveRunScenarioId(null);
     const text = await file.text();
     return parseAndReturn(text, file.name);
   };
@@ -335,6 +356,7 @@ export function useScenarioFiles({
   const clearActiveHandle = useCallback((): void => {
     setActiveRunHandle(null);
     setActiveRunName(null);
+    setActiveRunScenarioId(null);
   }, []);
 
   // ── Return ──────────────────────────────────────────────────────────────────

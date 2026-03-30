@@ -134,6 +134,7 @@ export default function SimulatorApp() {
   const [multiRowWarning, setMultiRowWarning] = useState<{
     rowCount: number;
     firstName: string;
+    importedCount: number;
   } | null>(null);
 
   const isReportMode = resultsMode !== "flow";
@@ -220,6 +221,23 @@ export default function SimulatorApp() {
       priorityChecks: assumptionsReport.priorityChecks.length
     }),
     [assumptionsReport]
+  );
+  const currentSavedMetrics = useMemo(
+    () => ({
+      forecastThroughput: output.globalMetrics.forecastThroughput ?? 0,
+      bottleneckIndex: output.globalMetrics.bottleneckIndex ?? 0,
+      totalWipQty: output.globalMetrics.totalWipQty ?? 0,
+      totalCompletedOutputPieces: output.globalMetrics.totalCompletedOutputPieces ?? 0,
+      activeConstraintName: operationalDiagnosis.primaryConstraint,
+      weightedLeadTimeMinutes: wasteAnalysis.summary.totalLeadTimeMinutes ?? 0,
+      tocThroughputPerUnit: throughputAnalysis.summary.tocThroughputPerUnit ?? "Blocked"
+    }),
+    [
+      operationalDiagnosis.primaryConstraint,
+      output.globalMetrics,
+      throughputAnalysis.summary,
+      wasteAnalysis.summary
+    ]
   );
   const activeKpis = useMemo(() => {
     if (resultsMode === "throughput") return throughputKpis;
@@ -375,6 +393,7 @@ export default function SimulatorApp() {
   /** Open a file and load it into the simulator (the opened file becomes the save target). */
   const handleOpenAndLoad = async () => {
     try {
+      pendingSlotRef.current = null;
       const result = await openScenarioFile({ setAsActiveRun: true });
       if (!result) return;
       handleMultiRowResult(result);
@@ -395,7 +414,9 @@ export default function SimulatorApp() {
    */
   const handleChooseFileForSlot = async (slot: "A" | "B") => {
     try {
+      pendingSlotRef.current = slot;
       const result = await openScenarioFile({ setAsActiveRun: false });
+      pendingSlotRef.current = null;
       if (!result) return;
       handleMultiRowResult(result);
       const otherEntry = slot === "A" ? slotB : slotA;
@@ -405,6 +426,7 @@ export default function SimulatorApp() {
       }
       assignEntry(slot, result.entry);
     } catch (error) {
+      pendingSlotRef.current = null;
       const message = error instanceof Error ? error.message : "Could not open file.";
       showNotice("error", `Open failed: ${message}`);
     }
@@ -446,17 +468,8 @@ export default function SimulatorApp() {
 
   const handleSaveModalConfirm = async (name: string) => {
     setIsSaveModalOpen(false);
-    const savedMetrics = {
-      forecastThroughput: output.globalMetrics.forecastThroughput ?? 0,
-      bottleneckIndex: output.globalMetrics.bottleneckIndex ?? 0,
-      totalWipQty: output.globalMetrics.totalWipQty ?? 0,
-      totalCompletedOutputPieces: output.globalMetrics.totalCompletedOutputPieces ?? 0,
-      activeConstraintName: operationalDiagnosis.primaryConstraint,
-      weightedLeadTimeMinutes: wasteAnalysis.summary.totalLeadTimeMinutes ?? 0,
-      tocThroughputPerUnit: throughputAnalysis.summary.tocThroughputPerUnit ?? "Blocked"
-    };
     try {
-      const result = await saveCurrentRun(resolvedStepScenario, name, savedMetrics);
+      const result = await saveCurrentRun(resolvedStepScenario, name, currentSavedMetrics);
       if (result.mode === "cancelled") return;
       if (result.mode === "download") {
         downloadTextFile(result.fileName, result.csvText, "text/csv;charset=utf-8");
@@ -713,7 +726,8 @@ export default function SimulatorApp() {
                 the first run — <strong>"{multiRowWarning.firstName}"</strong> — was loaded.
               </p>
               <p style={{ margin: "0 0 20px", color: "var(--ink-muted)" }}>
-                To use the others, save them individually as separate files.
+                The other {Math.max(0, multiRowWarning.importedCount - 1)} runs were added to Recent
+                Runs so you can open them and resave each one as its own file.
               </p>
               <button
                 type="button"

@@ -105,6 +105,7 @@
       "lotSize": 20,
       "reworkPct": 0.01,
       "equipmentReliabilityPct": 0.99,
+      "materialCostPerUnit": 7,
       "stage": "A",
       "stepDescription": "Pick plastic shells, screws, trigger, labels, and hardware kit",
       "sourceText": "Stage A | Housing Kit Prep | CT 2 min | LT 15 min | C/O 8 min | # of Equipment 1 | People Needed 1 | # of Shifts 1 | Lot Size 20 | Rework 1% | Equipment Reliability 99% | Fast feeder step"
@@ -204,6 +205,7 @@
       "lotSize": 20,
       "reworkPct": 0.02,
       "equipmentReliabilityPct": 0.98,
+      "materialCostPerUnit": 4,
       "stage": "D",
       "stepDescription": "Prepare battery pack, contacts, and fitment check",
       "sourceText": "Stage D | Battery Pack Prep | CT 3.5 min | LT 25 min | C/O 10 min | # of Equipment 1 | People Needed 1 | # of Shifts 1 | Lot Size 20 | Rework 2% | Equipment Reliability 98% | Usually keeps up"
