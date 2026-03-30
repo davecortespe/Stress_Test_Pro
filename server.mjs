@@ -89,7 +89,7 @@ app.post('/api/collect-lead', async (req, res) => {
 
 const distDir = path.join(__dirname, 'dist');
 app.use(express.static(distDir));
-app.get('*', (_req, res) => {
+app.get('/*splat', (_req, res) => {
   res.sendFile(path.join(distDir, 'index.html'));
 });
 
