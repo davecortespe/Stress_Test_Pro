@@ -208,6 +208,7 @@ export const marketingContent = {
     builtFor: "Built for {{COMPANY_NAME}}",
     poweredBy: "Operational decision intelligence for value stream systems",
     url: "LeanStorming.com",
+    termsUrl: "https://www.leanstorming.com/terms-of-service",
     signoff: "\u00A92026 by LeanStorming.com"
   }
 };

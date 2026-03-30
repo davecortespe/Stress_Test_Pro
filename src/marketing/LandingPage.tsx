@@ -267,6 +267,14 @@ export default function LandingPage() {
           <a href={leanStormingUrl} target="_blank" rel="noopener noreferrer">
             {marketingContent.footer.url}
           </a>
+          <a
+            href={marketingContent.footer.termsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="LeanStorming Terms of Service"
+          >
+            Terms of Service
+          </a>
           <Link to={SIMULATOR_ENTRY_PATH}>
             {marketingContent.hero.primaryCta}
           </Link>
