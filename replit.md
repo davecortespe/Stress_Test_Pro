@@ -28,10 +28,25 @@ A reusable starter kit for building industrial simulator cockpits. Translates Va
 ## Development
 
 ```bash
-npm run dev        # Start dev server on port 5000
-npm run build      # TypeScript compile + Vite build
-npm run preview    # Preview production build
+node server.mjs & npm run dev   # Start API server (port 3001) + Vite (port 5000)
+npm run build                   # TypeScript compile + Vite build
+npm run preview                 # Preview production build
 ```
+
+## Lead Capture
+
+- Landing page "Let's see the demo" buttons open a user info modal (name, email, company, role)
+- On submit, info is saved to Google Sheets via the backend API (`POST /api/collect-lead`)
+- Google Sheets integration is handled server-side via Replit's OAuth connector
+- Target sheet: `1WmClVgWMgZUyCnfWNmPBtjbkHwlOyCD8fMCKSQahPs0` (Sheet1)
+- After saving, the user is navigated to `/sim?view=diagnosis`
+
+## Architecture
+
+- `server.mjs` — Express backend on `localhost:3001` (Google Sheets API calls)
+- `vite.config.ts` — Proxies `/api/*` requests to `localhost:3001`
+- `src/marketing/DemoAccessModal.tsx` — User info collection modal
+- `src/marketing/demo-access-modal.css` — Modal styles
 
 ## Data Pipeline Scripts
 

@@ -149,7 +149,7 @@ export const marketingContent = {
     brandLine: "Sell the decision, not just the dashboard.",
     description:
       "LeanStorming converts mapped operations into simulation-backed decision views for system diagnosis, throughput and economics, improvement prioritization, waste analysis, and scenario testing.",
-    primaryCta: "Start the diagnosis",
+    primaryCta: "Let's see the demo",
     secondaryCta: "Explore analytics views",
     workspaceCta: "Go straight to simulation",
     supportText:
@@ -199,7 +199,7 @@ export const marketingContent = {
     body: [
       "Move from Flow Map to System Diagnosis, Throughput & Economics, Waste Analysis, and scenario testing in one workspace built for operational decisions under stress."
     ],
-    primaryCta: "Start the diagnosis",
+    primaryCta: "Let's see the demo",
     secondaryCta: "Go straight to simulation"
   },
 

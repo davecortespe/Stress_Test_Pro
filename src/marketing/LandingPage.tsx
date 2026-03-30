@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { SimulatorResultsMode } from "../types/contracts";
 import { heroMockData, marketingContent, reportShowcase } from "./marketingContent";
+import DemoAccessModal from "./DemoAccessModal";
 import "./landing.css";
 
 const SIMULATOR_ENTRY_PATH = "/sim";
@@ -67,10 +68,12 @@ function SectionIntro({
 
 function ReportShowcase({
   activeMode,
-  onSelectMode
+  onSelectMode,
+  onOpenModal
 }: {
   activeMode: SimulatorResultsMode;
   onSelectMode: (mode: SimulatorResultsMode) => void;
+  onOpenModal: () => void;
 }) {
   const activeReport = reportShowcase.find((item) => item.id === activeMode) ?? reportShowcase[0];
 
@@ -116,9 +119,9 @@ function ReportShowcase({
             ))}
           </div>
           <div className="report-preview-actions">
-            <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-primary">
+            <button type="button" className="ls-btn ls-btn-primary" onClick={onOpenModal}>
               {marketingContent.hero.primaryCta}
-            </Link>
+            </button>
             <Link to={SIMULATOR_ENTRY_PATH} className="ls-inline-link report-preview-link">
               {marketingContent.hero.workspaceCta}
             </Link>
@@ -131,7 +134,16 @@ function ReportShowcase({
 
 export default function LandingPage() {
   const [activeReportMode, setActiveReportMode] = useState<SimulatorResultsMode>("diagnosis");
+  const [showModal, setShowModal] = useState(false);
   const builtForLabel = marketingContent.footer.builtFor.replace("{{COMPANY_NAME}}", companyName);
+
+  function openModal() {
+    setShowModal(true);
+  }
+
+  function closeModal() {
+    setShowModal(false);
+  }
 
   return (
     <div className="landing-page">
@@ -171,9 +183,9 @@ export default function LandingPage() {
               </div>
 
               <div className="ls-cta-row">
-                <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-primary">
+                <button type="button" className="ls-btn ls-btn-primary" onClick={openModal}>
                   {marketingContent.hero.primaryCta}
-                </Link>
+                </button>
                 <button
                   type="button"
                   className="ls-btn ls-btn-secondary"
@@ -190,7 +202,11 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <ReportShowcase activeMode={activeReportMode} onSelectMode={setActiveReportMode} />
+            <ReportShowcase
+              activeMode={activeReportMode}
+              onSelectMode={setActiveReportMode}
+              onOpenModal={openModal}
+            />
           </div>
         </section>
 
@@ -244,9 +260,9 @@ export default function LandingPage() {
             </div>
 
             <div className="ls-contact-actions">
-              <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-primary">
+              <button type="button" className="ls-btn ls-btn-primary" onClick={openModal}>
                 {marketingContent.enter.primaryCta}
-              </Link>
+              </button>
               <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-secondary">
                 {marketingContent.enter.secondaryCta}
               </Link>
@@ -275,11 +291,13 @@ export default function LandingPage() {
           >
             Terms of Service
           </a>
-          <Link to={SIMULATOR_ENTRY_PATH}>
+          <button type="button" className="ls-btn ls-btn-secondary" style={{ minHeight: "auto", padding: "10px 16px" }} onClick={openModal}>
             {marketingContent.hero.primaryCta}
-          </Link>
+          </button>
         </div>
       </footer>
+
+      {showModal && <DemoAccessModal onClose={closeModal} />}
     </div>
   );
 }
