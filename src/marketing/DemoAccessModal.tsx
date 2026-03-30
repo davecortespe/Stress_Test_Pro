@@ -43,7 +43,7 @@ export default function DemoAccessModal({ onClose }: Props) {
         return;
       }
 
-      navigate("/sim?view=diagnosis");
+      navigate("/sim?view=flow");
     } catch {
       setError("Unable to connect. Please try again.");
       setSubmitting(false);
