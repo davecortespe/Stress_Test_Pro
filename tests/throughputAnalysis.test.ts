@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { createBottleneckForecastOutput } from "../src/lib/bottleneckForecast.ts";
 import {
+  createScenarioLibraryContext,
+  parseScenarioLibrary,
+  serializeScenarioLibrary
+} from "../src/lib/scenarioCsv.ts";
+import {
   buildThroughputAnalysis,
   buildThroughputStepCsv,
   buildThroughputSummaryCsv
@@ -198,6 +203,65 @@ run("scenario step-cost overrides take precedence over master-data defaults", ()
   assertClose(analysis.summary.laborCostPerUnit, (8 * 10) / 60 + (9 * 6) / 60);
 });
 
+run("capacity unit increases add FTE cost and survive save-load round-trip", () => {
+  const model = createModel();
+  const masterData = createMasterData();
+  const baselineScenario = {
+    ...model.inputDefaults,
+    sellingPricePerUnit: 100,
+    step_cut_capacityUnits: 1
+  };
+  const scenario = {
+    ...model.inputDefaults,
+    sellingPricePerUnit: 100,
+    step_cut_capacityUnits: 2
+  };
+  const baselineOutput = createBottleneckForecastOutput(model, baselineScenario, 0);
+  const baselineAnalysis = buildThroughputAnalysis(model, masterData, baselineScenario, baselineOutput);
+  const baselineCutRow = baselineAnalysis.stepRows.find((row) => row.stepId === "cut");
+  const output = createBottleneckForecastOutput(model, scenario, 0);
+  const analysis = buildThroughputAnalysis(model, masterData, scenario, output);
+  const cutRow = analysis.stepRows.find((row) => row.stepId === "cut");
+
+  assert.ok(baselineCutRow);
+  assert.equal(baselineCutRow?.addedFteCount, 0);
+  assertClose(baselineCutRow?.laborCostPerUnit ?? null, 1.3333333333333333);
+  assert.ok(cutRow);
+  assert.equal(cutRow?.addedFteCount, 1);
+  assertClose(cutRow?.addedFteLaborCostPerUnit ?? null, 1.3333333333333333);
+  assertClose(cutRow?.laborCostPerUnit ?? null, 2);
+  assert.ok((analysis.summary.laborCostPerUnit ?? 0) > (baselineAnalysis.summary.laborCostPerUnit ?? 0));
+
+  const csv = serializeScenarioLibrary(
+    [
+      {
+        scenarioId: "scenario-1",
+        scenarioName: "Capacity Added",
+        savedAt: "2026-03-09T12:00:00.000Z",
+        scenario: {
+          step_cut_capacityUnits: 2,
+          sellingPricePerUnit: 100
+        }
+      }
+    ],
+    createScenarioLibraryContext("Ops App", "Model A"),
+    ["step_cut_capacityUnits", "sellingPricePerUnit"]
+  );
+  const parsed = parseScenarioLibrary(csv, ["step_cut_capacityUnits", "sellingPricePerUnit"]);
+  const reloadedScenario = {
+    ...model.inputDefaults,
+    sellingPricePerUnit: 100,
+    ...(parsed.entries[0]?.scenario ?? {})
+  };
+  const reloadedOutput = createBottleneckForecastOutput(model, reloadedScenario, 0);
+  const reloadedAnalysis = buildThroughputAnalysis(model, masterData, reloadedScenario, reloadedOutput);
+  const reloadedCutRow = reloadedAnalysis.stepRows.find((row) => row.stepId === "cut");
+
+  assert.ok(reloadedCutRow);
+  assert.equal(reloadedCutRow?.addedFteCount, 1);
+  assertClose(reloadedCutRow?.laborCostPerUnit ?? null, cutRow?.laborCostPerUnit ?? 0);
+});
+
 run("missing selling price blocks analysis while missing costs use app defaults", () => {
   const model = createModel();
   const masterData = {
@@ -297,7 +361,7 @@ run("CSV builders include the expected summary and step fields", () => {
   assert.match(summaryCsv, /Fixture Scenario,A,100/);
   assert.match(
     stepCsv,
-    /Step Name,Material Cost Per Unit,Labor Rate Per Hour,Labor Cost Per Unit,Equipment Rate Per Hour,Equipment Cost Per Unit,Total Step Cost Per Unit,Missing Costs/
+    /Step Name,Material Cost Per Unit,Labor Rate Per Hour,Added FTEs,Added FTE Labor Per Unit,Labor Cost Per Unit,Equipment Rate Per Hour,Equipment Cost Per Unit,Total Step Cost Per Unit,Missing Costs/
   );
-  assert.match(stepCsv, /Cut,15,8,1\.3333333333333333,3,0\.5,16\.833333333333332,no/);
+  assert.match(stepCsv, /Cut,15,8,0,0,1\.3333333333333333,3,0\.5,16\.833333333333332,no/);
 });

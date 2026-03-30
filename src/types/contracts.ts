@@ -355,6 +355,8 @@ export interface ThroughputStepCostRow {
   materialCost: number | null;
   laborRatePerHour: number | null;
   equipmentRatePerHour: number | null;
+  addedFteCount: number;
+  addedFteLaborCostPerUnit: number | null;
   laborCostPerUnit: number | null;
   equipmentCostPerUnit: number | null;
   totalStepCost: number | null;

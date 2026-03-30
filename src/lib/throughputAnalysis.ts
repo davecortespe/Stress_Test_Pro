@@ -181,8 +181,24 @@ function buildStepRows(
       stepEval?.effectiveCtMinutes ?? null,
       stepEval?.effectiveUnits ?? null
     );
+    const baselineCapacityUnits = Math.max(1, Math.round(step.effectiveUnits));
+    const currentCapacityUnits = Math.max(
+      1,
+      Math.round(stepEval?.effectiveUnits ?? step.effectiveUnits)
+    );
+    const addedFteCount = Math.max(0, currentCapacityUnits - baselineCapacityUnits);
+    const baselineTimeHoursPerUnit = stepTimeHoursPerUnit(
+      step.effectiveCtMinutes ?? step.ctMinutes ?? null,
+      baselineCapacityUnits
+    );
+    const addedFteLaborCostPerUnit =
+      laborRatePerHour !== null && baselineTimeHoursPerUnit !== null
+        ? addedFteCount * laborRatePerHour * baselineTimeHoursPerUnit
+        : null;
     const laborCostPerUnit =
-      laborRatePerHour !== null && timeHoursPerUnit !== null ? laborRatePerHour * timeHoursPerUnit : null;
+      laborRatePerHour !== null && timeHoursPerUnit !== null
+        ? laborRatePerHour * timeHoursPerUnit + (addedFteLaborCostPerUnit ?? 0)
+        : null;
     const equipmentCostPerUnit =
       equipmentRatePerHour !== null && timeHoursPerUnit !== null
         ? equipmentRatePerHour * timeHoursPerUnit
@@ -198,6 +214,8 @@ function buildStepRows(
       materialCost,
       laborRatePerHour,
       equipmentRatePerHour,
+      addedFteCount,
+      addedFteLaborCostPerUnit,
       laborCostPerUnit,
       equipmentCostPerUnit,
       totalStepCost,
@@ -661,6 +679,8 @@ export function buildThroughputStepCsv(result: ThroughputAnalysisResult): string
       "Step Name",
       "Material Cost Per Unit",
       "Labor Rate Per Hour",
+      "Added FTEs",
+      "Added FTE Labor Per Unit",
       "Labor Cost Per Unit",
       "Equipment Rate Per Hour",
       "Equipment Cost Per Unit",
@@ -671,6 +691,8 @@ export function buildThroughputStepCsv(result: ThroughputAnalysisResult): string
       row.stepName,
       row.materialCost ?? "",
       row.laborRatePerHour ?? "",
+      row.addedFteCount,
+      row.addedFteLaborCostPerUnit ?? "",
       row.laborCostPerUnit ?? "",
       row.equipmentRatePerHour ?? "",
       row.equipmentCostPerUnit ?? "",

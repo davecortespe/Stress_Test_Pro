@@ -120,7 +120,16 @@ function buildStepRows(model, masterData, scenario) {
         const equipmentRatePerHour = resolveInputValue(scenario, processing, step.stepId, "equipmentRatePerHour");
         const stepEval = constraint.baseline.stepEvals[step.stepId];
         const timeHoursPerUnit = stepTimeHoursPerUnit(stepEval?.effectiveCtMinutes ?? null, stepEval?.effectiveUnits ?? null);
-        const laborCostPerUnit = laborRatePerHour !== null && timeHoursPerUnit !== null ? laborRatePerHour * timeHoursPerUnit : null;
+        const baselineCapacityUnits = Math.max(1, Math.round(step.effectiveUnits));
+        const currentCapacityUnits = Math.max(1, Math.round(stepEval?.effectiveUnits ?? step.effectiveUnits));
+        const addedFteCount = Math.max(0, currentCapacityUnits - baselineCapacityUnits);
+        const baselineTimeHoursPerUnit = stepTimeHoursPerUnit(step.effectiveCtMinutes ?? step.ctMinutes ?? null, baselineCapacityUnits);
+        const addedFteLaborCostPerUnit = laborRatePerHour !== null && baselineTimeHoursPerUnit !== null
+            ? addedFteCount * laborRatePerHour * baselineTimeHoursPerUnit
+            : null;
+        const laborCostPerUnit = laborRatePerHour !== null && timeHoursPerUnit !== null
+            ? laborRatePerHour * timeHoursPerUnit + (addedFteLaborCostPerUnit ?? 0)
+            : null;
         const equipmentCostPerUnit = equipmentRatePerHour !== null && timeHoursPerUnit !== null
             ? equipmentRatePerHour * timeHoursPerUnit
             : null;
@@ -133,6 +142,8 @@ function buildStepRows(model, masterData, scenario) {
             materialCost,
             laborRatePerHour,
             equipmentRatePerHour,
+            addedFteCount,
+            addedFteLaborCostPerUnit,
             laborCostPerUnit,
             equipmentCostPerUnit,
             totalStepCost,
@@ -514,6 +525,8 @@ export function buildThroughputStepCsv(result) {
         "Step Name",
         "Material Cost Per Unit",
         "Labor Rate Per Hour",
+        "Added FTEs",
+        "Added FTE Labor Per Unit",
         "Labor Cost Per Unit",
         "Equipment Rate Per Hour",
         "Equipment Cost Per Unit",
@@ -523,6 +536,8 @@ export function buildThroughputStepCsv(result) {
         row.stepName,
         row.materialCost ?? "",
         row.laborRatePerHour ?? "",
+        row.addedFteCount,
+        row.addedFteLaborCostPerUnit ?? "",
         row.laborCostPerUnit ?? "",
         row.equipmentRatePerHour ?? "",
         row.equipmentCostPerUnit ?? "",

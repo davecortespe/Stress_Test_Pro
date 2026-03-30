@@ -68,7 +68,7 @@ export function toNumber(value, fallback) {
     return fallback;
 }
 export function getSimulationHorizonHours(scenario) {
-    return Math.max(8, Math.min(720, Math.round(toNumber(scenario.simulationHorizonHours, 8))));
+    return Math.max(8, Math.min(720, Math.round(toNumber(scenario.simulationHorizonHours, 168))));
 }
 export function buildScenarioLibraryStepColumns(stepModels) {
     return stepModels.flatMap((step) => STEP_FIELDS.map((field) => stepScenarioKey(step.stepId, field)));

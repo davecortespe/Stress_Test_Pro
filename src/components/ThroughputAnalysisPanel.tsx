@@ -217,6 +217,8 @@ export function ThroughputAnalysisPanel({
                   <th>Step name</th>
                   <th>Material cost / unit</th>
                   <th>Labor rate / hr</th>
+                  <th>Added FTEs</th>
+                  <th>Added FTE labor / unit</th>
                   <th>Labor cost / unit</th>
                   <th>Equipment rate / hr</th>
                   <th>Equipment cost / unit</th>
@@ -229,6 +231,8 @@ export function ThroughputAnalysisPanel({
                     <th>{row.stepName}</th>
                     <td>{formatValue({ key: `${row.stepId}-material`, label: "", value: row.materialCost, format: "currency" })}</td>
                     <td>{formatValue({ key: `${row.stepId}-labor-rate`, label: "", value: row.laborRatePerHour, format: "currency" })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-added-fte`, label: "", value: row.addedFteCount, format: "number", decimals: 0 })}</td>
+                    <td>{formatValue({ key: `${row.stepId}-added-fte-cost`, label: "", value: row.addedFteLaborCostPerUnit, format: "currency" })}</td>
                     <td>{formatValue({ key: `${row.stepId}-labor-unit`, label: "", value: row.laborCostPerUnit, format: "currency" })}</td>
                     <td>{formatValue({ key: `${row.stepId}-equipment-rate`, label: "", value: row.equipmentRatePerHour, format: "currency" })}</td>
                     <td>{formatValue({ key: `${row.stepId}-equipment-unit`, label: "", value: row.equipmentCostPerUnit, format: "currency" })}</td>

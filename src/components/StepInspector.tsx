@@ -43,7 +43,7 @@ const DOWNTIME_PRESETS = [0, 5, 10, 15, 20, 30];
 
 const STEP_FIELD_HELP: Record<StepInspectorFieldKey, string> = {
   capacityUnits:
-    "Parallel units at this step (for example lines/stations). More units increase step capacity.",
+    "Parallel units at this step (for example lines/stations). More units increase step capacity and add modeled labor cost for the step.",
   ctBaseline:
     "Base cycle time per unit before scenario multipliers. Lower CT increases processing capacity.",
   ctMultiplier:
