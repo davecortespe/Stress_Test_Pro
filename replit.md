@@ -62,7 +62,9 @@ npm run export:replit         # Export Replit deployment bundle
 
 ## Deployment
 
-- **Type**: Static site (React SPA)
+- **Type**: Autoscale (Node.js server)
 - **Build command**: `npm run build`
-- **Output directory**: `dist`
-- **Dev server**: `0.0.0.0:5000`
+- **Run command**: `node server.mjs`
+- **Port**: `5000` (reads `PORT` env var, defaults to 5000)
+- `server.mjs` serves the built `dist/` files and handles `POST /api/collect-lead`
+- Dev server: `0.0.0.0:5000` (Vite, with API plugin middleware)
