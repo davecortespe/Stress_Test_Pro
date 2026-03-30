@@ -8013,12 +8013,15 @@
   padding-inline: 12px;
 }
 
-.header-shell .cmd-util-guide {
-  color: #f7d9f1;
-  border-color: rgba(208, 92, 192, 0.62);
-  background: linear-gradient(180deg, rgba(58, 24, 54, 0.96), rgba(30, 15, 28, 0.98));
+.header-shell .cmd-utils .cmd-util-guide {
+  color: #fff1fd;
+  border-color: rgba(232, 92, 255, 0.92);
+  background:
+    linear-gradient(180deg, rgba(111, 38, 102, 0.98), rgba(49, 12, 44, 0.98)),
+    radial-gradient(circle at 100% 0, rgba(232, 92, 255, 0.16), transparent 42%);
   box-shadow:
-    0 0 0 1px rgba(208, 92, 192, 0.14),
+    0 0 0 1px rgba(232, 92, 255, 0.22),
+    0 0 18px rgba(232, 92, 255, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
@@ -8027,12 +8030,12 @@
   border-color: rgba(124, 156, 196, 0.58);
 }
 
-.header-shell .cmd-util-guide:hover {
-  color: #fff0fc;
-  border-color: rgba(224, 123, 212, 0.82);
+.header-shell .cmd-utils .cmd-util-guide:hover {
+  color: #ffffff;
+  border-color: rgba(245, 172, 255, 0.98);
   box-shadow:
-    0 0 0 1px rgba(224, 123, 212, 0.16),
-    0 0 16px rgba(224, 123, 212, 0.16),
+    0 0 0 1px rgba(245, 172, 255, 0.2),
+    0 0 20px rgba(245, 172, 255, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
