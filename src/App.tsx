@@ -1,7 +1,5 @@
-import { Suspense, lazy, useEffect, useState } from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { SimulatorAccessDialog } from "./components/SimulatorAccessDialog";
-import { grantSimulatorAccess, hasSimulatorAccess } from "./lib/simulatorAccess";
+import { Suspense, lazy, useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import LandingPage from "./marketing/LandingPage";
 
 const SimulatorApp = lazy(() => import("./simulator/SimulatorApp"));
@@ -31,25 +29,6 @@ function RouteLoadingFallback() {
 }
 
 function SimulatorRouteGate() {
-  const navigate = useNavigate();
-  const [isAuthorized, setIsAuthorized] = useState(() => hasSimulatorAccess());
-
-  if (!isAuthorized) {
-    return (
-      <div className="route-loading-shell access-gate-page">
-        <SimulatorAccessDialog
-          body="Enter the access code to open the simulation workspace. Once accepted, this browser will remember it."
-          onValidated={() => {
-            grantSimulatorAccess();
-            setIsAuthorized(true);
-          }}
-          onCancel={() => navigate("/", { replace: true })}
-          cancelLabel="Back to Landing"
-        />
-      </div>
-    );
-  }
-
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <SimulatorApp />

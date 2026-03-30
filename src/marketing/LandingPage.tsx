@@ -1,7 +1,5 @@
-import { useState, type MouseEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { SimulatorAccessDialog } from "../components/SimulatorAccessDialog";
-import { grantSimulatorAccess, hasSimulatorAccess } from "../lib/simulatorAccess";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { SimulatorResultsMode } from "../types/contracts";
 import { heroMockData, marketingContent, reportShowcase } from "./marketingContent";
 import "./landing.css";
@@ -69,14 +67,10 @@ function SectionIntro({
 
 function ReportShowcase({
   activeMode,
-  onSelectMode,
-  onStartDiagnosis,
-  onGoStraightToSimulation
+  onSelectMode
 }: {
   activeMode: SimulatorResultsMode;
   onSelectMode: (mode: SimulatorResultsMode) => void;
-  onStartDiagnosis: (event: MouseEvent<HTMLAnchorElement>) => void;
-  onGoStraightToSimulation: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const activeReport = reportShowcase.find((item) => item.id === activeMode) ?? reportShowcase[0];
 
@@ -122,10 +116,10 @@ function ReportShowcase({
             ))}
           </div>
           <div className="report-preview-actions">
-            <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-primary" onClick={onStartDiagnosis}>
+            <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-primary">
               {marketingContent.hero.primaryCta}
             </Link>
-            <Link to={SIMULATOR_ENTRY_PATH} className="ls-inline-link report-preview-link" onClick={onGoStraightToSimulation}>
+            <Link to={SIMULATOR_ENTRY_PATH} className="ls-inline-link report-preview-link">
               {marketingContent.hero.workspaceCta}
             </Link>
           </div>
@@ -137,20 +131,7 @@ function ReportShowcase({
 
 export default function LandingPage() {
   const [activeReportMode, setActiveReportMode] = useState<SimulatorResultsMode>("diagnosis");
-  const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false);
-  const [pendingSimulationPath, setPendingSimulationPath] = useState(SIMULATOR_ENTRY_PATH);
-  const navigate = useNavigate();
   const builtForLabel = marketingContent.footer.builtFor.replace("{{COMPANY_NAME}}", companyName);
-
-  function requestSimulationEntry(event: MouseEvent<HTMLAnchorElement>, targetPath: string): void {
-    event.preventDefault();
-    setPendingSimulationPath(targetPath);
-    if (hasSimulatorAccess()) {
-      navigate(targetPath);
-      return;
-    }
-    setIsAccessDialogOpen(true);
-  }
 
   return (
     <div className="landing-page">
@@ -190,11 +171,7 @@ export default function LandingPage() {
               </div>
 
               <div className="ls-cta-row">
-                <Link
-                  to={SIMULATOR_ENTRY_PATH}
-                  className="ls-btn ls-btn-primary"
-                  onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
-                >
+                <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-primary">
                   {marketingContent.hero.primaryCta}
                 </Link>
                 <button
@@ -208,21 +185,12 @@ export default function LandingPage() {
 
               <p className="ls-cta-support">{marketingContent.hero.supportText}</p>
 
-              <Link
-                to={SIMULATOR_ENTRY_PATH}
-                className="ls-inline-link"
-                onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
-              >
+              <Link to={SIMULATOR_ENTRY_PATH} className="ls-inline-link">
                 {marketingContent.hero.workspaceCta}
               </Link>
             </div>
 
-            <ReportShowcase
-              activeMode={activeReportMode}
-              onSelectMode={setActiveReportMode}
-              onStartDiagnosis={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
-              onGoStraightToSimulation={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
-            />
+            <ReportShowcase activeMode={activeReportMode} onSelectMode={setActiveReportMode} />
           </div>
         </section>
 
@@ -276,18 +244,10 @@ export default function LandingPage() {
             </div>
 
             <div className="ls-contact-actions">
-              <Link
-                to={SIMULATOR_ENTRY_PATH}
-                className="ls-btn ls-btn-primary"
-                onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
-              >
+              <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-primary">
                 {marketingContent.enter.primaryCta}
               </Link>
-              <Link
-                to={SIMULATOR_ENTRY_PATH}
-                className="ls-btn ls-btn-secondary"
-                onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
-              >
+              <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-secondary">
                 {marketingContent.enter.secondaryCta}
               </Link>
             </div>
@@ -307,25 +267,11 @@ export default function LandingPage() {
           <a href={leanStormingUrl} target="_blank" rel="noopener noreferrer">
             {marketingContent.footer.url}
           </a>
-          <Link
-            to={SIMULATOR_ENTRY_PATH}
-            onClick={(event) => requestSimulationEntry(event, SIMULATOR_ENTRY_PATH)}
-          >
+          <Link to={SIMULATOR_ENTRY_PATH}>
             {marketingContent.hero.primaryCta}
           </Link>
         </div>
       </footer>
-
-      {isAccessDialogOpen ? (
-        <SimulatorAccessDialog
-          onValidated={() => {
-            grantSimulatorAccess();
-            setIsAccessDialogOpen(false);
-            navigate(pendingSimulationPath);
-          }}
-          onCancel={() => setIsAccessDialogOpen(false)}
-        />
-      ) : null}
     </div>
   );
 }
