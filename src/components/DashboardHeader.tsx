@@ -143,6 +143,14 @@ export function DashboardHeader({
           {subtitle ? <p className="cmd-subtitle">{subtitle}</p> : null}
         </div>
         <div className="cmd-utils">
+          <a
+            href="https://leanstorming.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="secondary cmd-btn cmd-util cmd-util-back"
+          >
+            ← Back to Leanstorming
+          </a>
           <button type="button" className="secondary cmd-btn cmd-util cmd-util-guide" onClick={onOpenQuickStartGuide}>
             Instruction Guide
           </button>
