@@ -6,7 +6,12 @@
       "Bash(python -m py_compile scripts/export_executive_report_pdf.py)",
       "Bash(node -e \":*)",
       "Bash(find 'c:/Users/webda/CODEX_FILES/FlowStress Dynamics Rev1/src' -type f \\\\\\(-name *.js -o -name *.ts -o -name *.jsx -o -name *.tsx -o -name *.json \\\\\\))",
-      "Bash(grep -E \"\\\\.mjs$|\\\\.js$\")"
+      "Bash(grep -E \"\\\\.mjs$|\\\\.js$\")",
+      "WebFetch(domain:flowstress-demo-r1.replit.app)",
+      "Bash(curl -sI https://flowstress-demo-r1.replit.app/)",
+      "Bash(curl -s https://flowstress-demo-r1.replit.app/)",
+      "Bash(curl -s https://flowstress-demo-r1.replit.app/assets/index-h6FUsJLs.js)",
+      "Bash(curl -sI https://flowstress-demo-r1.replit.app/assets/index-h6FUsJLs.js)"
     ]
   }
 }
