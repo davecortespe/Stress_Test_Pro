@@ -24,6 +24,9 @@ Include:
 - `result_metrics.json` (optional latest `globalMetrics` + `nodeMetrics`)
 - `operational_diagnosis.json` (accepted diagnosis snapshot)
 - `operational_diagnosis.md` (human-readable diagnosis)
+- `consulting_report_export.json` (consulting-style report spec)
+- `consulting_report_export.md` (reviewable report outline)
+- `consulting_report_export.html` (browser-presentable report deck)
 - `README.md` (how to run bundle)
 - `run_forecast.mjs` (portable deterministic CLI runner)
 - `browser_forecast.html` (standalone browser runner)
@@ -40,6 +43,8 @@ Optional full app package (when `includeFullApp=true`):
 4. If required value is missing, fail with explicit error.
 5. If `includeMetrics=false`, omit `result_metrics.json`.
 6. Always preserve accepted diagnosis files if present in `models/active/`.
+7. Always include the consulting report export trio in the bundle.
+8. Do not claim PDF outputs are bundled unless they are actually copied.
 
 ## Runner requirements (`run_forecast.mjs`)
 Runner must:
@@ -63,9 +68,9 @@ Exporter args commonly used:
 - `--name <scenarioName>`
 - `--scenario <path/to/scenario_committed.json>`
 - `--metrics <path/to/result_metrics.json>`
-- `--includeMetrics true|false`
-- `--includeFullApp true|false`
-- `--skipBuild true|false`
+- `--includeMetrics true|false` (default `true`)
+- `--includeFullApp true|false` (default `true`)
+- `--skipBuild true|false` (default `true`)
 
 ## Replit publish workflow (separate from timestamped bundle)
 For stable overwriteable Replit deploy output, use:
@@ -79,6 +84,7 @@ If the accepted app includes a simulator access gate:
 - keep the accepted code check deterministic
 - do not add server-side auth dependencies just for bundle export
 - document the access code expectation in the generated README when applicable
+- preserve the same `Instruction Guide`, `Executive Report`, and standard results surfaces in the full app export
 
 ## App integration
 Add button: `Export Scenario`
@@ -95,4 +101,5 @@ If prompting is unavailable, default name to app title + timestamp.
 - [ ] Bundle contains required files
 - [ ] CLI runner works with `node run_forecast.mjs --path <bundleFolder>`
 - [ ] README contains exact run command
+- [ ] Bundle includes `consulting_report_export.json`, `.md`, and `.html`
 - [ ] Stable Replit deploy output preserves current landing-to-simulator access behavior when the app is gated

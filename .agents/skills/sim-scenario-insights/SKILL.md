@@ -1,6 +1,6 @@
 ---
 name: sim-scenario-insights
-description: Use this skill to generate, run, and analyze simulation scenarios. Performs parameter sweeps and what-if analysis using the DES engine outputs to identify sensitivity, bottleneck stability, and actionable improvement levers. Produces comparison tables, charts-ready data, and plain-language recommendations.
+description: Use this skill to generate, run, and analyze simulation scenarios. Performs parameter sweeps and what-if analysis using DES or accepted forecast outputs to identify sensitivity, bottleneck stability, and actionable improvement levers. Produces comparison tables, charts-ready data, and plain-language recommendations.
 argument-hint: "[optional: mode=explore|compare|recommend]"
 ---
 
@@ -16,9 +16,9 @@ Transform raw simulation output into decision insight:
 ---
 
 ## Inputs
-- Base `compiled_sim_spec.json`
+- Base `compiled_sim_spec.json` or `models/active/compiled_forecast_model.json` in forecast-first repos
 - Parameter definitions from `dashboard_config.json`
-- Access to `runSimulation()` (Skill #3)
+- Access to `runSimulation()` (Skill #3) or the accepted forecast recompute path
 
 ---
 
@@ -27,6 +27,7 @@ Transform raw simulation output into decision insight:
 - `models/scenario_results.json`
 - `models/insights.md` (human-readable)
 - `models/sensitivity.json`
+- `models/active/scenario_comparisons.json` when the repo supports saved-run comparison exports
 - (optional) data for charts/tables in UI
 
 ---
@@ -40,8 +41,9 @@ Transform raw simulation output into decision insight:
 
 ### Mode: compare
 - User-defined A/B scenarios
-- Same seeds for fairness
-- Highlight deltas in throughput, lead time, WIP, bottlenecks
+- Same seeds for fairness, or the same deterministic forecast semantics when DES is not in use
+- Highlight deltas in throughput, lead time, WIP, bottlenecks, and constraint migration
+- Produce a comparison snapshot that can feed the in-app `COMPARE` surface and comparison executive export when those features exist
 
 ### Mode: recommend
 - Auto-generate 5–10 candidate changes:
@@ -92,6 +94,8 @@ Avoid generic advice.
 - Results must be consumable by UI but also readable standalone.
 - Do not auto-change base model.
 - Keep base scenario immutable.
+- In forecast-first repos, keep saved-run comparison artifacts separate from the active committed scenario.
+- If comparison exports are supported, write stable names and labels so `scenario_comparisons.json` can be used directly by report exporters.
 
 ---
 
@@ -101,3 +105,4 @@ Avoid generic advice.
 - [ ] Bottleneck stability assessed
 - [ ] Plain-language insights generated
 - [ ] Clear ranking of improvement levers
+- [ ] Comparison snapshots are ready for the app compare surface when compare mode is requested

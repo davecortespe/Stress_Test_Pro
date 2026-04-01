@@ -120,6 +120,10 @@ When the active non-DES forecast model has been accepted, the canonical active f
 - `models/active/result_metrics.json`
 - `models/active/operational_diagnosis.json`
 - `models/active/operational_diagnosis.md`
+- `models/active/consulting_report_export.json`
+- `models/active/consulting_report_export.md`
+- `models/active/consulting_report_export.html`
+- `models/active/scenario_comparisons.json` when comparison snapshots exist
 - `public/generated/leanstorming-executive-report.pdf`
 - `public/generated/leanstorming-comparison-executive-report.pdf` when comparison snapshots exist
 
@@ -185,6 +189,14 @@ Current template behavior for the top control ribbon:
 - Help tooltips for parameter fields should render as floating overlays so they are not clipped by the scroll container, and the info icons should open on click/focus as well as hover
 - `Simulation Horizon` is no longer treated as a left-rail what-if lever once the header clock control exists
 
+## Header utilities and result surfaces
+
+- The header utility row exposes `Instruction Guide` and `Executive Report` shortcuts above the simulator cards
+- Standard result surfaces are `FLOW`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, `WASTE`, `ASSUMPTIONS`, and `COMPARE`
+- `COMPARE` is a saved-run delta view, not a second live model: it reads two saved scenario files and shows A/B metric changes side by side
+- The scenario library should support assigning saved runs into comparison slots `A` and `B`, swapping them, clearing them, and opening compare mode without mutating the active committed scenario
+- Compare workflows should preserve the same underlying metric semantics as the live simulator, especially `forecastThroughput`, `processedQty`, `completedQty`, and bottleneck migration interpretation
+
 ## On-demand Replit publish workflow
 
 Use this only when you want a stable deployment target for Replit. It keeps the normal timestamped export flow intact, then republishes the latest accepted bundle into `deploy/replit/`:
@@ -240,6 +252,7 @@ How to run after publishing:
 - `models/active/consulting_report_export.json`
 - `models/active/consulting_report_export.md`
 - `models/active/consulting_report_export.html`
+- `models/active/scenario_comparisons.json` when comparison snapshots exist
 
 ## Consulting-grade report exporter
 
@@ -262,8 +275,10 @@ What it writes:
 
 Bundle behavior:
 
-- `npm run export:bundle` now includes `consulting_report_export.json` and `consulting_report_export.md`
+- `npm run export:bundle` now includes `consulting_report_export.json`, `consulting_report_export.md`, and `consulting_report_export.html`
 - these files are organization specs only; they do not rewrite the underlying analysis
+- timestamped bundles can include the portable browser snapshot and the full built app package at the same time
+- generated bundle READMEs document both the browser cockpit path and the CLI runner path
 - `models/vsm_graph.json` (legacy/standard compile path)
 - `models/master_data.json` (legacy/standard compile path)
 - `models/compiled_sim_spec.json` (legacy/standard compile path)
@@ -295,11 +310,14 @@ When using an assumptions-plan-execute-deliver workflow, insert `operational-dia
 - Repo is runnable with `npm run start:sim` (after install)
 - UI layout remains fixed while config/data changes content
 - Forecast workflow emits active compiled model, committed scenario, metrics, and diagnosis artifacts
+- Forecast workflow also keeps consulting report exports in sync with the accepted active artifacts
 - UI still renders using mocked output if DES is not implemented
 - Demand seeding assumptions are explicit and traceable in compiled model assumptions
 - Landing page requires access code `LEAN` before simulator entry unless prior acceptance cookie exists
 - Direct `/sim` navigation is gated by the same access flow
-- View surfaces include `FLOW`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, `WASTE`, and `ASSUMPTIONS`
+- Header utilities include `Instruction Guide` and `Executive Report`
+- View surfaces include `FLOW`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, `WASTE`, `ASSUMPTIONS`, and `COMPARE`
+- Saved-run comparison can assign two files and open Scenario Compare without overwriting the committed active scenario
 - Waste and Throughput report wording should remain operator-friendly without changing metrics or section structure
 - `Flow` opens with the graph framed near the first steps rather than centered low in the canvas
 - `What-if Controls` remain reachable when collapsed and show an obvious internal scrollbar when open

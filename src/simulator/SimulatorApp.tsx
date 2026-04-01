@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useRef, type CSSProperties } from "react";
 import { useLocation } from "react-router-dom";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { ParameterSidebar } from "../components/ParameterSidebar";
@@ -6,58 +6,24 @@ import { QuickStartGuideDialog } from "../components/QuickStartGuideDialog";
 import { SaveScenarioModal } from "../components/SaveScenarioModal";
 import { ScenarioLibraryPanel } from "../components/ScenarioLibraryPanel";
 import { StepInspector } from "../components/StepInspector";
-import { buildAssumptionsReport } from "../lib/assumptionsReport";
-import { createBottleneckForecastOutput } from "../lib/bottleneckForecast";
-import { openComparisonExecutiveReportWindow } from "../lib/comparisonExecutiveReport";
-import { buildKaizenReport } from "../lib/kaizenReport";
-import { buildThroughputAnalysis } from "../lib/throughputAnalysis";
-import { buildWasteAnalysis } from "../lib/wasteAnalysis";
-import type { RecentFileRecord, ScenarioLibraryEntry, SimulatorResultsMode } from "../types/contracts";
-import { buildInspectorValues, buildResolvedStepScenario } from "./scenarioState";
+import type { SimulatorResultsMode } from "../types/contracts";
 import { useScenarioComparison } from "./useScenarioComparison";
 import { useScenarioFiles } from "./useScenarioFiles";
+import { useSimulatorScenarioWorkflow } from "./useSimulatorScenarioWorkflow";
 import { useScenarioSession } from "./useScenarioSession";
-import {
-  assumptionsKpis,
-  downloadTextFile,
-  ExportNotice,
-  EXECUTIVE_PDF_URL,
-  kaizenKpis,
-  throughputKpis,
-  wasteKpis
-} from "./simulatorConfig";
-import { useOperationalDiagnosis } from "./useOperationalDiagnosis";
+import { EXECUTIVE_PDF_URL } from "./simulatorConfig";
 import { useParameterRail } from "./useParameterRail";
 import { SimulatorResultsStage } from "./SimulatorResultsStage";
+import { useSimulatorDerivedState } from "./useSimulatorDerivedState";
 import { useSimulatorModelData } from "./useSimulatorModelData";
+import { useSimulatorUiState } from "./useSimulatorUiState";
 import "./simulator.css";
 
 const DEFAULT_RESULTS_MODE: SimulatorResultsMode = "flow";
-const RESULTS_MODE_OPTIONS = new Set<SimulatorResultsMode>([
-  "flow",
-  "diagnosis",
-  "kaizen",
-  "throughput",
-  "waste",
-  "assumptions",
-  "compare"
-]);
-
-function getInitialResultsMode(search: string): SimulatorResultsMode {
-  const params = new URLSearchParams(search);
-  const requestedView = params.get("view");
-  if (requestedView && RESULTS_MODE_OPTIONS.has(requestedView as SimulatorResultsMode)) {
-    return requestedView as SimulatorResultsMode;
-  }
-  return DEFAULT_RESULTS_MODE;
-}
 
 export default function SimulatorApp() {
   const location = useLocation();
-  // Fallback file input for browsers without File System Access API
   const scenarioFileInputRef = useRef<HTMLInputElement | null>(null);
-  // Tracks whether the fallback input was triggered for a slot assignment (vs. load)
-  const pendingSlotRef = useRef<"A" | "B" | null>(null);
 
   const {
     dashboardConfig,
@@ -98,7 +64,34 @@ export default function SimulatorApp() {
     setParameterRailWidth
   } = useParameterRail();
 
-  // ── File-based scenario state ───────────────────────────────────────────────
+  const {
+    pendingComparisonSlotRef,
+    inspectorStepId,
+    inspectorAnchor,
+    appNotice,
+    pdfAvailability,
+    resultsMode,
+    isScenarioLibraryOpen,
+    isQuickStartGuideOpen,
+    isSaveModalOpen,
+    saveModalDefaultName,
+    multiRowWarning,
+    setInspectorStepId,
+    setInspectorAnchor,
+    setResultsMode,
+    setIsScenarioLibraryOpen,
+    setIsQuickStartGuideOpen,
+    setIsSaveModalOpen,
+    setSaveModalDefaultName,
+    setMultiRowWarning,
+    showNotice,
+    closeInspector
+  } = useSimulatorUiState({
+    initialSearch: location.search,
+    defaultResultsMode: DEFAULT_RESULTS_MODE,
+    executivePdfUrl: EXECUTIVE_PDF_URL
+  });
+
   const {
     activeRunName,
     issues: fileIssues,
@@ -113,376 +106,82 @@ export default function SimulatorApp() {
     onNeedFallbackOpen: () => scenarioFileInputRef.current?.click()
   });
 
-  // ── Comparison state ────────────────────────────────────────────────────────
-  // Slots hold full entries — no library lookup needed.
   const { slotA, slotB, readyToCompare, assignEntry, clearSlot, swapSlots, clearAll } =
     useScenarioComparison();
 
-  // ── UI state ────────────────────────────────────────────────────────────────
-  const [inspectorStepId, setInspectorStepId] = useState<string | null>(null);
-  const [inspectorAnchor, setInspectorAnchor] = useState<{ x: number; y: number } | null>(null);
-  const [appNotice, setAppNotice] = useState<ExportNotice | null>(null);
-  const [pdfAvailability, setPdfAvailability] = useState<boolean | null>(null);
-  const [resultsMode, setResultsMode] = useState<SimulatorResultsMode>(() =>
-    getInitialResultsMode(location.search)
-  );
-  const [isScenarioLibraryOpen, setIsScenarioLibraryOpen] = useState(false);
-  const [isQuickStartGuideOpen, setIsQuickStartGuideOpen] = useState(false);
-  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-  const [saveModalDefaultName, setSaveModalDefaultName] = useState("");
-  // Multi-row CSV warning modal (old library format detected)
-  const [multiRowWarning, setMultiRowWarning] = useState<{
-    rowCount: number;
-    firstName: string;
-    importedCount: number;
-  } | null>(null);
-
   const isReportMode = resultsMode !== "flow";
-
-  // ── Analyses ────────────────────────────────────────────────────────────────
-  const output = useMemo(
-    () => createBottleneckForecastOutput(forecastModel, committedScenario, simElapsedHours),
-    [forecastModel, committedScenario, simElapsedHours]
-  );
-  const operationalDiagnosis = useOperationalDiagnosis({
-    forecastModel,
+  const {
     output,
+    operationalDiagnosis,
+    throughputAnalysis,
+    wasteAnalysis,
+    kaizenReport,
+    assumptionsReport,
+    inspectorStep,
+    inspectorValues,
+    resolvedStepScenario,
+    currentSavedMetrics,
+    activeKpis,
+    activeMetrics,
+    simProgressPct,
+    isRunComplete,
+    pinnedEntries,
+    flowReferenceMetrics,
+    flowReferenceLabel
+  } = useSimulatorDerivedState({
+    forecastModel,
+    masterData,
+    dashboardConfig,
     committedScenario,
+    activeScenario,
+    simElapsedHours,
+    simHorizonHours,
     isPaused,
-    simElapsedHours
-  });
-  const throughputAnalysis = useMemo(
-    () => buildThroughputAnalysis(forecastModel, masterData, committedScenario, output),
-    [forecastModel, masterData, committedScenario, output]
-  );
-  const wasteAnalysis = useMemo(
-    () => buildWasteAnalysis(forecastModel, committedScenario, output),
-    [forecastModel, committedScenario, output]
-  );
-  const kaizenReport = useMemo(
-    () => buildKaizenReport(forecastModel, committedScenario, output),
-    [forecastModel, committedScenario, output]
-  );
-  const assumptionsReport = useMemo(
-    () => buildAssumptionsReport(forecastModel),
-    [forecastModel]
-  );
-  const inspectorDefaultsByStepId = useMemo(
-    () =>
-      new Map(
-        (masterData.processing ?? []).map((row) => [
-          row.stepId,
-          {
-            materialCostPerUnit: row.materialCostPerUnit ?? null,
-            laborRatePerHour: row.laborRatePerHour ?? null,
-            equipmentRatePerHour: row.equipmentRatePerHour ?? null
-          }
-        ])
-      ),
-    [masterData]
-  );
-  const inspectorStep = useMemo(
-    () => forecastModel.stepModels.find((step) => step.stepId === inspectorStepId) ?? null,
-    [forecastModel.stepModels, inspectorStepId]
-  );
-  const inspectorValues = useMemo(
-    () =>
-      buildInspectorValues(
-        inspectorStep,
-        activeScenario,
-        inspectorStep ? inspectorDefaultsByStepId.get(inspectorStep.stepId) : undefined
-      ),
-    [activeScenario, inspectorDefaultsByStepId, inspectorStep]
-  );
-  const resolvedStepScenario = useMemo(
-    () =>
-      buildResolvedStepScenario(
-        forecastModel.stepModels,
-        committedScenario,
-        inspectorDefaultsByStepId
-      ),
-    [committedScenario, forecastModel.stepModels, inspectorDefaultsByStepId]
-  );
-  const kaizenMetrics = useMemo<Record<string, number | string>>(
-    () => ({
-      topOpportunity: kaizenReport.kpiSummary.topOpportunity,
-      topOpportunityScore: kaizenReport.kpiSummary.topOpportunityScore,
-      opportunityCount: kaizenReport.kpiSummary.opportunityCount,
-      fishboneFocus: kaizenReport.kpiSummary.fishboneFocus,
-      missingSignalsCount: kaizenReport.kpiSummary.missingSignalsCount
-    }),
-    [kaizenReport.kpiSummary]
-  );
-  const assumptionsMetrics = useMemo<Record<string, number | string>>(
-    () => ({
-      trustLevel: assumptionsReport.trustLevel,
-      totalAssumptions: assumptionsReport.counts.total,
-      needsReview: assumptionsReport.counts.warning + assumptionsReport.counts.blocker,
-      priorityChecks: assumptionsReport.priorityChecks.length
-    }),
-    [assumptionsReport]
-  );
-  const currentSavedMetrics = useMemo(
-    () => ({
-      forecastThroughput: output.globalMetrics.forecastThroughput ?? 0,
-      bottleneckIndex: output.globalMetrics.bottleneckIndex ?? 0,
-      totalWipQty: output.globalMetrics.totalWipQty ?? 0,
-      totalCompletedOutputPieces: output.globalMetrics.totalCompletedOutputPieces ?? 0,
-      activeConstraintName: operationalDiagnosis.primaryConstraint,
-      weightedLeadTimeMinutes: wasteAnalysis.summary.totalLeadTimeMinutes ?? 0,
-      tocThroughputPerUnit: throughputAnalysis.summary.tocThroughputPerUnit ?? "Blocked"
-    }),
-    [
-      operationalDiagnosis.primaryConstraint,
-      output.globalMetrics,
-      throughputAnalysis.summary,
-      wasteAnalysis.summary
-    ]
-  );
-  const activeKpis = useMemo(() => {
-    if (resultsMode === "throughput") return throughputKpis;
-    if (resultsMode === "kaizen") return kaizenKpis;
-    if (resultsMode === "assumptions") return assumptionsKpis;
-    if (resultsMode === "waste") return wasteKpis;
-    return dashboardConfig.kpis;
-  }, [dashboardConfig.kpis, resultsMode]);
-  const activeMetrics = useMemo(() => {
-    if (resultsMode === "throughput") {
-      return {
-        tocThroughputPerUnit: throughputAnalysis.summary.tocThroughputPerUnit ?? "Blocked",
-        fullyLoadedProfitPerUnit: throughputAnalysis.summary.fullyLoadedProfitPerUnit ?? "Blocked",
-        tocThroughputPerBottleneckMinute:
-          throughputAnalysis.summary.tocThroughputPerBottleneckMinute ?? "Blocked",
-        estimatedGainPercent: throughputAnalysis.summary.estimatedGainPercent ?? "Blocked"
-      };
-    }
-    if (resultsMode === "waste") {
-      return {
-        totalLeadTimeMinutes: wasteAnalysis.summary.totalLeadTimeMinutes ?? 0,
-        totalTouchTimeMinutes: wasteAnalysis.summary.totalTouchTimeMinutes ?? 0,
-        totalWasteMinutes: wasteAnalysis.summary.totalWasteMinutes ?? 0,
-        totalWastePct: wasteAnalysis.summary.totalWastePct ?? 0,
-        topWasteStep: wasteAnalysis.summary.topWasteStep || "n/a"
-      };
-    }
-    if (resultsMode === "kaizen") return kaizenMetrics;
-    if (resultsMode === "assumptions") return assumptionsMetrics;
-    return output.globalMetrics;
-  }, [
-    assumptionsMetrics,
-    kaizenMetrics,
-    output.globalMetrics,
+    inspectorStepId,
     resultsMode,
-    throughputAnalysis.summary,
-    wasteAnalysis.summary
-  ]);
-  const simProgressPct = useMemo(() => {
-    if (!Number.isFinite(simHorizonHours) || simHorizonHours <= 0) return 0;
-    return Math.max(0, Math.min(100, (simElapsedHours / simHorizonHours) * 100));
-  }, [simElapsedHours, simHorizonHours]);
-  const isRunComplete = useMemo(
-    () => isPaused && simElapsedHours >= simHorizonHours - 1e-6,
-    [isPaused, simElapsedHours, simHorizonHours]
-  );
+    slotA,
+    slotB,
+    baselineScenario
+  });
 
-  // pinnedEntries: derived directly from slots — no library lookup needed.
-  // Falls back to metric recomputation for entries opened from old files without savedMetrics.
-  const pinnedEntries = useMemo(() => {
-    return [slotA, slotB]
-      .filter((e): e is ScenarioLibraryEntry => e !== null)
-      .map((entry) => {
-        if (entry.savedMetrics) return entry;
-        // Old file opened without savedMetrics — recompute from stored scenario params
-        const reScenario = { ...baselineScenario, ...entry.scenario };
-        const reOutput = createBottleneckForecastOutput(forecastModel, reScenario, simHorizonHours);
-        const reThroughput = buildThroughputAnalysis(
-          forecastModel,
-          masterData,
-          reScenario,
-          reOutput
-        );
-        const reWaste = buildWasteAnalysis(forecastModel, reScenario, reOutput);
-        const reBottleneckStep = forecastModel.stepModels.find(
-          (s) => reOutput.nodeMetrics[s.stepId]?.bottleneckFlag
-        );
-        return {
-          ...entry,
-          savedMetrics: {
-            forecastThroughput: reOutput.globalMetrics.forecastThroughput ?? 0,
-            bottleneckIndex: reOutput.globalMetrics.bottleneckIndex ?? 0,
-            totalWipQty: reOutput.globalMetrics.totalWipQty ?? 0,
-            totalCompletedOutputPieces: reOutput.globalMetrics.totalCompletedOutputPieces ?? 0,
-            activeConstraintName: reBottleneckStep?.label ?? "—",
-            weightedLeadTimeMinutes: reWaste.summary.totalLeadTimeMinutes ?? 0,
-            tocThroughputPerUnit: reThroughput.summary.tocThroughputPerUnit ?? "Blocked"
-          }
-        };
-      });
-  }, [slotA, slotB, baselineScenario, forecastModel, masterData, simHorizonHours]);
-
-  const flowReferenceMetrics = useMemo<Record<string, number> | undefined>(() => {
-    const baseline = pinnedEntries[0]?.savedMetrics;
-    if (!baseline) return undefined;
-    const result: Record<string, number> = {};
-    for (const [k, v] of Object.entries(baseline)) {
-      if (typeof v === "number" && Number.isFinite(v)) result[k] = v;
-    }
-    return Object.keys(result).length > 0 ? result : undefined;
-  }, [pinnedEntries]);
-
-  const flowReferenceLabel = pinnedEntries[0]?.scenarioName;
-
-  // ── PDF check ───────────────────────────────────────────────────────────────
-  useEffect(() => {
-    let cancelled = false;
-    const checkExecutivePdf = async () => {
-      try {
-        const response = await fetch(EXECUTIVE_PDF_URL, {
-          method: "GET",
-          cache: "no-store",
-          headers: { Accept: "application/pdf" }
-        });
-        const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-        if (!cancelled) setPdfAvailability(response.ok && contentType.includes("pdf"));
-      } catch {
-        if (!cancelled) setPdfAvailability(false);
-      }
-    };
-    void checkExecutivePdf();
-    return () => { cancelled = true; };
-  }, []);
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
-  const showNotice = (tone: ExportNotice["tone"], text: string) => {
-    setAppNotice({ tone, text });
-  };
-
-  const closeInspector = () => {
-    setInspectorStepId(null);
-    setInspectorAnchor(null);
-  };
-
-  const exitCompareIfActive = () => {
-    if (resultsMode === "compare") {
-      setResultsMode(DEFAULT_RESULTS_MODE);
-      clearAll();
-      showNotice("success", "Comparison cleared — save this run to compare again.");
-    }
-  };
-
-  const buildTimestampName = () => {
-    const now = new Date();
-    const month = now.toLocaleString("en-US", { month: "short" });
-    const day = now.getDate();
-    const time = now.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    });
-    return `Run · ${month} ${day} · ${time}`;
-  };
-
-  const handleMultiRowResult = (result: NonNullable<Awaited<ReturnType<typeof openScenarioFile>>>) => {
-    if (result.multiRowWarning) {
-      setMultiRowWarning(result.multiRowWarning);
-    }
-  };
-
-  // ── Scenario file actions ───────────────────────────────────────────────────
-
-  /** Open a file and load it into the simulator (the opened file becomes the save target). */
-  const handleOpenAndLoad = async () => {
-    try {
-      pendingSlotRef.current = null;
-      const result = await openScenarioFile({ setAsActiveRun: true });
-      if (!result) return;
-      handleMultiRowResult(result);
-      loadScenario({ ...baselineScenario, ...result.entry.scenario });
-      setResultsMode(DEFAULT_RESULTS_MODE);
-      closeInspector();
-      setIsScenarioLibraryOpen(false);
-      showNotice("success", `Loaded: ${result.entry.scenarioName}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not open file.";
-      showNotice("error", `Open failed: ${message}`);
-    }
-  };
-
-  /**
-   * Open a file picker and assign the result to a comparison slot.
-   * Does NOT load into the simulator and does NOT change the active save target.
-   */
-  const handleChooseFileForSlot = async (slot: "A" | "B") => {
-    try {
-      pendingSlotRef.current = slot;
-      const result = await openScenarioFile({ setAsActiveRun: false });
-      pendingSlotRef.current = null;
-      if (!result) return;
-      handleMultiRowResult(result);
-      const otherEntry = slot === "A" ? slotB : slotA;
-      if (otherEntry?.scenarioId === result.entry.scenarioId) {
-        showNotice("warning", "That run is already in the other comparison slot.");
-        return;
-      }
-      assignEntry(slot, result.entry);
-    } catch (error) {
-      pendingSlotRef.current = null;
-      const message = error instanceof Error ? error.message : "Could not open file.";
-      showNotice("error", `Open failed: ${message}`);
-    }
-  };
-
-  /** Load a recent run into the simulator (does NOT change the active save target). */
-  const handleLoadRecentFile = (record: RecentFileRecord) => {
-    loadScenario({ ...baselineScenario, ...record.scenario });
-    setResultsMode(DEFAULT_RESULTS_MODE);
-    closeInspector();
-    setIsScenarioLibraryOpen(false);
-    showNotice("success", `Loaded: ${record.scenarioName}`);
-  };
-
-  /** Assign a recent run to a comparison slot (does NOT load into simulator). */
-  const handleAssignRecentToSlot = (slot: "A" | "B", record: RecentFileRecord) => {
-    const otherEntry = slot === "A" ? slotB : slotA;
-    if (otherEntry?.scenarioId === record.scenarioId) {
-      showNotice("warning", "That run is already in the other comparison slot.");
-      return;
-    }
-    assignEntry(slot, record);
-  };
-
-  /** Open the compare view if both slots are filled; otherwise open the panel. */
-  const handleOpenCompareTwoFiles = () => {
-    if (readyToCompare) {
-      setResultsMode("compare");
-    } else {
-      setIsScenarioLibraryOpen(true);
-    }
-  };
-
-  // ── Save actions ────────────────────────────────────────────────────────────
-  const openSaveRunModal = () => {
-    setSaveModalDefaultName(buildTimestampName());
-    setIsSaveModalOpen(true);
-  };
-
-  const handleSaveModalConfirm = async (name: string) => {
-    setIsSaveModalOpen(false);
-    try {
-      const result = await saveCurrentRun(resolvedStepScenario, name, currentSavedMetrics);
-      if (result.mode === "cancelled") return;
-      if (result.mode === "download") {
-        downloadTextFile(result.fileName, result.csvText, "text/csv;charset=utf-8");
-        showNotice("success", `Run saved. Downloaded to: ${result.fileName}`);
-      } else {
-        showNotice("success", `Run "${name}" saved to ${result.runName}.`);
-      }
-      setIsScenarioLibraryOpen(true);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Save failed.";
-      showNotice("error", `Save failed: ${message}`);
-    }
-  };
+  const {
+    exitCompareIfActive,
+    handleOpenAndLoad,
+    handleChooseFileForSlot,
+    handleLoadRecentFile,
+    handleAssignRecentToSlot,
+    handleOpenCompareTwoFiles,
+    openSaveRunModal,
+    handleSaveModalConfirm,
+    handleOpenComparisonReport,
+    handleCompareSelectedFiles,
+    handleFallbackFileImport
+  } = useSimulatorScenarioWorkflow({
+    baselineScenario,
+    dashboardConfig,
+    currentResultsMode: resultsMode,
+    slotA,
+    slotB,
+    readyToCompare,
+    pinnedEntries,
+    resolvedStepScenario,
+    currentSavedMetrics,
+    defaultResultsMode: DEFAULT_RESULTS_MODE,
+    pendingComparisonSlotRef,
+    openScenarioFile,
+    importScenarioFile,
+    saveCurrentRun,
+    loadScenario,
+    assignEntry,
+    clearAll,
+    closeInspector,
+    showNotice,
+    setResultsMode,
+    setIsScenarioLibraryOpen,
+    setIsSaveModalOpen,
+    setSaveModalDefaultName,
+    setMultiRowWarning
+  });
 
   // ── Other actions ───────────────────────────────────────────────────────────
   const startPauseWithInspectorReset = () => {
@@ -516,28 +215,6 @@ export default function SimulatorApp() {
     );
     showNotice("success", "Opened the latest executive PDF report.");
   };
-
-  const openComparisonReport = () => {
-    if (pinnedEntries.length < 2) {
-      showNotice("error", "Choose File A and File B before opening the comparison report.");
-      return;
-    }
-    const opened = openComparisonExecutiveReportWindow({
-      entryA: pinnedEntries[0],
-      entryB: pinnedEntries[1],
-      parameterGroups: dashboardConfig.parameterGroups,
-      operationName: dashboardConfig.appTitle
-    });
-    if (!opened) {
-      showNotice("error", "Comparison report pop-up was blocked by the browser.");
-      return;
-    }
-    showNotice(
-      "success",
-      "Opened the live comparison executive report. Use Print / Save PDF in the new window if you need a PDF copy."
-    );
-  };
-
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -634,7 +311,7 @@ export default function SimulatorApp() {
               setInspectorAnchor(anchor);
             }}
             onOpenExecutivePdf={openExecutivePdf}
-            onOpenComparisonReport={openComparisonReport}
+            onOpenComparisonReport={handleOpenComparisonReport}
             onOpenScenarioFiles={() => setIsScenarioLibraryOpen(true)}
             onSwapComparison={swapSlots}
             onClearComparison={clearAll}
@@ -688,10 +365,7 @@ export default function SimulatorApp() {
           onClearSlot={clearSlot}
           onSwapSlots={swapSlots}
           onClearComparison={clearAll}
-          onCompare={() => {
-            setResultsMode("compare");
-            setIsScenarioLibraryOpen(false);
-          }}
+          onCompare={handleCompareSelectedFiles}
           onClose={() => setIsScenarioLibraryOpen(false)}
         />
 
@@ -749,37 +423,10 @@ export default function SimulatorApp() {
           onChange={async (event) => {
             const file = event.target.files?.[0];
             event.currentTarget.value = "";
-            if (!file) return;
-
-            try {
-              const slot = pendingSlotRef.current;
-              pendingSlotRef.current = null;
-
-              const result = await importScenarioFile(file);
-              if (!result) return;
-
-              if (result.multiRowWarning) setMultiRowWarning(result.multiRowWarning);
-
-              if (slot) {
-                // Was triggered by handleChooseFileForSlot
-                const otherEntry = slot === "A" ? slotB : slotA;
-                if (otherEntry?.scenarioId === result.entry.scenarioId) {
-                  showNotice("warning", "That run is already in the other comparison slot.");
-                  return;
-                }
-                assignEntry(slot, result.entry);
-              } else {
-                // Was triggered by handleOpenAndLoad
-                loadScenario({ ...baselineScenario, ...result.entry.scenario });
-                setResultsMode(DEFAULT_RESULTS_MODE);
-                closeInspector();
-                setIsScenarioLibraryOpen(false);
-                showNotice("success", `Loaded: ${result.entry.scenarioName}`);
-              }
-            } catch (error) {
-              const message = error instanceof Error ? error.message : "Could not read file.";
-              showNotice("error", `Open failed: ${message}`);
+            if (!file) {
+              return;
             }
+            await handleFallbackFileImport(file);
           }}
         />
       </div>

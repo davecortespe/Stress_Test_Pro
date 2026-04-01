@@ -82,7 +82,10 @@ Apply this profile when building the same style of cockpit achieved in this repo
   - yellow brand mark: `LeanStorming Operational Stress Labs`
   - title + subtitle
   - actions: `Start/Pause`, `Reset Time`, `Save Scenario`
-  - playback chips below actions: `x1`, `x2`, `x5`, `x50`, `x200`, `5s/mo`
+  - playback chips below actions: `x1`, `x2`, `x5`, `x100`, `x200`, `x1000`
+- Utility row:
+  - `Instruction Guide`
+  - `Executive Report`
 - Right cluster:
   - large `Sim Time {elapsed} / {horizon} h` chip with inline `Simulation Horizon` preset dropdown
   - progress bar + percent
@@ -113,6 +116,12 @@ Apply this profile when building the same style of cockpit achieved in this repo
 - `THROUGHPUT`
 - `WASTE`
 - `ASSUMPTIONS`
+- `COMPARE`
+
+### Scenario compare behavior
+- Saved runs can be assigned into comparison slots `A` and `B` from the scenario library.
+- `COMPARE` opens a side-by-side delta stage and should not mutate the active committed scenario.
+- The compare workflow should support opening the library, choosing files, swapping slots, and clearing the comparison set.
 
 ### Report-language guidance
 - Keep report structure and metrics stable.
@@ -188,6 +197,7 @@ Apply this profile when building the same style of cockpit achieved in this repo
 
 ### Header (top bar)
 - Left: brand mark + title + subtitle (from config)
+- Utility row: instruction + report shortcuts
 - Left controls: actions grid + playback row
 - Right status strip: large Sim Time chip + horizon dropdown + progress + live state + scenario chip
 
@@ -303,8 +313,9 @@ The app must render a working dashboard immediately.
 - [ ] Sidebar renders parameter groups from config with proper controls and value badges
 - [ ] Header uses Start/Pause + Reset Time and keeps playback controls below actions
 - [ ] Brand line appears above title with warning/yellow styling
+- [ ] Utility row exposes `Instruction Guide` and `Executive Report`
 - [ ] Large timer chip is on the right side of header and contains the horizon preset dropdown
-- [ ] Speed chips x1/x2/x5/x50/x200/5s/mo are visible and selectable below actions
+- [ ] Speed chips x1/x2/x5/x100/x200/x1000 are visible and selectable below actions
 - [ ] Reset Time does not wipe edited parameters
 - [ ] Simulation Horizon control includes 8 hrs, 16 hrs, 24 hrs, 1 week, and 1 month presets in the timer chip
 - [ ] `Recommended move` collapses to title-only with `more`/`less` expansion
@@ -313,6 +324,8 @@ The app must render a working dashboard immediately.
 - [ ] `Flow` mode can render KPIs as a compact in-canvas ribbon to preserve simulation space
 - [ ] View buttons span the width of the View card with large, readable targets
 - [ ] Each view button contains an in-button `(i)` explainer affordance
+- [ ] Standard result surfaces include `COMPARE` alongside the other report views
+- [ ] Scenario library compare flow can assign two saved runs and open compare mode without mutating the active scenario
 - [ ] Graph canvas renders nodes/edges from graph JSON
 - [ ] Canvas uses dark grid background with overlaid zoom/pan controls
 - [ ] Edges are curved + dashed + animated
