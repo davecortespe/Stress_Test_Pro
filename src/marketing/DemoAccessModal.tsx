@@ -11,16 +11,18 @@ interface FormState {
   email: string;
   company: string;
   role: string;
+  optIn: boolean;
 }
 
 export default function DemoAccessModal({ onClose }: Props) {
   const navigate = useNavigate();
-  const [form, setForm] = useState<FormState>({ name: "", email: "", company: "", role: "" });
+  const [form, setForm] = useState<FormState>({ name: "", email: "", company: "", role: "", optIn: false });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -122,6 +124,17 @@ export default function DemoAccessModal({ onClose }: Props) {
               disabled={submitting}
             />
           </div>
+
+          <label className="dam-optin">
+            <input
+              name="optIn"
+              type="checkbox"
+              checked={form.optIn}
+              onChange={handleChange}
+              disabled={submitting}
+            />
+            <span>Keep me updated with LeanStorming tips and news</span>
+          </label>
 
           {error && <p className="dam-error" role="alert">{error}</p>}
 

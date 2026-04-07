@@ -138,6 +138,36 @@
   cursor: not-allowed;
 }
 
+.dam-optin {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.dam-optin input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 1px solid rgba(72, 100, 132, 0.55);
+  border-radius: 5px;
+  background: rgba(8, 14, 24, 0.9);
+  accent-color: #f2bc43;
+  cursor: pointer;
+}
+
+.dam-optin input[type="checkbox"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dam-optin span {
+  color: #9aafc5;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 .dam-error {
   margin: 0;
   padding: 12px 14px;

@@ -71,7 +71,7 @@ export function apiPlugin() {
         }
 
         try {
-          const { name, email, company, role } = await readBody(req);
+          const { name, email, company, role, optIn } = await readBody(req);
 
           if (!name || !email) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -84,9 +84,9 @@ export function apiPlugin() {
 
           await sheets.spreadsheets.values.append({
             spreadsheetId: SPREADSHEET_ID,
-            range: `${SHEET_NAME}!A:E`,
+            range: `${SHEET_NAME}!A:F`,
             valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [[timestamp, name, email, company || '', role || '']] }
+            requestBody: { values: [[timestamp, name, email, company || '', role || '', optIn ? 'Yes' : 'No']] }
           });
 
           res.writeHead(200, { 'Content-Type': 'application/json' });

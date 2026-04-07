@@ -64,7 +64,7 @@ async function getUncachableGoogleSheetClient() {
 
 app.post('/api/collect-lead', async (req, res) => {
   try {
-    const { name, email, company, role } = req.body;
+    const { name, email, company, role, optIn } = req.body;
 
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required.' });
@@ -75,9 +75,9 @@ app.post('/api/collect-lead', async (req, res) => {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:E`,
+      range: `${SHEET_NAME}!A:F`,
       valueInputOption: 'USER_ENTERED',
-      requestBody: { values: [[timestamp, name, email, company || '', role || '']] }
+      requestBody: { values: [[timestamp, name, email, company || '', role || '', optIn ? 'Yes' : 'No']] }
     });
 
     res.json({ success: true });
