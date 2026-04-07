@@ -16,7 +16,7 @@ interface FormState {
 
 export default function DemoAccessModal({ onClose }: Props) {
   const navigate = useNavigate();
-  const [form, setForm] = useState<FormState>({ name: "", email: "", company: "", role: "", optIn: false });
+  const [form, setForm] = useState<FormState>({ name: "", email: "", company: "", role: "", optIn: true });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
