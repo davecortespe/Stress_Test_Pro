@@ -111,11 +111,10 @@ Rules:
 - Parameter help tooltips must not be clipped by the rail; use floating overlay behavior when needed.
 - Scenario library flows should support choosing saved files for slot `A` and slot `B`, then opening compare mode without mutating the committed active scenario.
 
-## Access Gate Contract
-- Landing-page entry into `/sim` must be gated by a validation prompt.
-- Accepted code: `LEAN`.
-- Successful validation must persist in browser cookie storage so the same browser is not prompted every time.
-- Direct route access to `/sim` must use the same validation rule.
+## Landing Route Contract
+- Landing-page CTAs and direct `/sim` navigation should resolve to the same simulator workspace.
+- Do not add an access gate unless the accepted product behavior explicitly requires one.
+- If a gate already exists, preserve it consistently across landing-page and direct-route entry.
 
 ## Delivery Hygiene
 - Work in batches.

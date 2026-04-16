@@ -7,8 +7,8 @@
  *   - Recent runs are stored in localStorage as convenience shortcuts only.
  *     Files on disk are the source of truth — localStorage data may be stale.
  *
- * This hook replaces useScenarioLibrary, which treated all runs as rows in a single
- * shared library file. There is no longer a shared library or a "libraryEntries" array.
+ * Older multi-run CSV files are still imported safely: we load the first run and surface
+ * the remaining runs as recent-file entries so they can be resaved one file at a time.
  */
 
 import { useCallback, useState } from "react";
@@ -39,8 +39,7 @@ interface FileHandleLike {
   createWritable: () => Promise<WritableFileStreamLike>;
 }
 
-// These augment the global Window interface; merging is safe if useScenarioLibrary
-// is still loaded during the transition period (Phase I removes that file).
+// These augment the browser File System Access API types used by the save/open workflow.
 declare global {
   interface Window {
     showOpenFilePicker?: (options?: {
@@ -66,7 +65,7 @@ export type SaveRunResult =
 export type OpenFileResult =
   | {
       entry: ScenarioLibraryEntry;
-      /** Set when the file contained more than one row (old library format). */
+      /** Set when the file contained more than one saved run in a single CSV. */
       multiRowWarning?: { rowCount: number; firstName: string; importedCount: number };
     }
   | null;

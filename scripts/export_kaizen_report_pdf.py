@@ -16,7 +16,7 @@ from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import KeepTogether, ListFlowable, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import ListFlowable, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -250,14 +250,6 @@ def top_fact(category: str, facts: list[StepFact], maxima: dict[str, float]) -> 
     return ranked[0]
 
 
-def confidence_for_step(fact: StepFact) -> str:
-    if fact.missing_ct and fact.missing_lead_time:
-        return "low"
-    if fact.missing_ct or fact.missing_lead_time or fact.assumption_count > 1:
-        return "medium"
-    return "high"
-
-
 def observed_condition(category: str, fact: StepFact) -> str:
     if category == "manpower":
         return f"{fact.step_name} is running at {fmt_pct(fact.utilization)} utilization with {fmt_minutes(fact.queue_delay_minutes)} of queue delay, {fmt_num(fact.wip_qty, 1)} units of WIP, and {fact.worker_count} modeled operators. Headroom is {fmt_pct(fact.headroom)}."
@@ -291,7 +283,7 @@ def failure_modes(category: str, fact: StepFact) -> list[str]:
         ]
     if category == "material":
         return [
-            f"Jobs are likely being released before material, paperwork, approvals, or upstream prep are fully ready.",
+            "Jobs are likely being released before material, paperwork, approvals, or upstream prep are fully ready.",
             f"Input shortages or information gaps are likely causing stop-start flow at {fact.step_name} rather than steady feed.",
             "Queue is probably being created by readiness failures upstream, not only by local process speed.",
         ]
@@ -326,7 +318,7 @@ def audit_checks(category: str, fact: StepFact) -> list[str]:
         return [
             f"Pull stop logs for {fact.step_name} and sort downtime by cause and duration.",
             f"Verify actual available units versus planned units at {fact.step_name}.",
-            f"Watch two recoveries from a stop and time restart-to-first-good-unit.",
+            "Watch two recoveries from a stop and time restart-to-first-good-unit.",
         ]
     if category == "method":
         return [
@@ -338,7 +330,7 @@ def audit_checks(category: str, fact: StepFact) -> list[str]:
         return [
             f"Audit the last 10 jobs released to {fact.step_name} for missing materials, paperwork, approvals, or prep.",
             f"Compare explicit wait before {fact.step_name} with upstream completion timestamps.",
-            f"Walk the queue physically and confirm whether queued work is truly ready to run.",
+            "Walk the queue physically and confirm whether queued work is truly ready to run.",
         ]
     return [
         f"Verify whether {fact.step_name} has live queue, WIP, downtime, and variation triggers visible to the floor.",
@@ -369,7 +361,7 @@ def targeted_fixes(category: str, fact: StepFact) -> list[str]:
     if category == "material":
         return [
             f"Gate release into {fact.step_name} on material and information readiness, not calendar promise alone.",
-            f"Add a short pre-release check for missing paperwork, approvals, or prep that currently creates hidden waiting.",
+            "Add a short pre-release check for missing paperwork, approvals, or prep that currently creates hidden waiting.",
             "Separate not-ready jobs from runnable jobs so the queue only contains executable work.",
         ]
     return [

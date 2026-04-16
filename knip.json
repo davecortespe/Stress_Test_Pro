@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "entry": [
+    "scripts/*.mjs",
+    "tests/**/*.ts"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.mjs",
+    "tests/**/*.ts"
+  ],
+  "ignoreBinaries": [
+    "powershell",
+    "python"
+  ],
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  },
+  "ignoreIssues": {
+    "src/lib/exportScenarioBundle.ts": [
+      "exports"
+    ]
+  }
+}

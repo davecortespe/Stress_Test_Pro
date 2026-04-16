@@ -1,0 +1,13 @@
+[tool.ruff]
+exclude = [".tools", "dist", "node_modules", "output", "public/generated", "tmp"]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E701", "F"]
+
+[tool.vulture]
+paths = ["scripts"]
+min_confidence = 70
+exclude = [".tools/", "dist/", "node_modules/", "output/", "public/generated/", "tmp/"]
+ignore_names = ["availHeight", "draw", "wrap"]

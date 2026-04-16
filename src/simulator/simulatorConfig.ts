@@ -36,12 +36,12 @@ export const COMPARISON_METRIC_CONFIGS: ComparisonMetricConfig[] = [
 ];
 
 export const EXECUTIVE_PDF_URL = "/generated/leanstorming-executive-report.pdf";
-export const COMPARISON_EXECUTIVE_PDF_URL = "/generated/leanstorming-comparison-executive-report.pdf";
 export const PARAMETER_RAIL_WIDTH_STORAGE_KEY = "stress-test-pro.parameter-rail-width-v1";
 export const PARAMETER_RAIL_MIN_WIDTH = 290;
 export const PARAMETER_RAIL_DEFAULT_WIDTH = 320;
-export const PARAMETER_RAIL_HARD_MAX_WIDTH = 520;
 export const DEFAULT_VIEWPORT_WIDTH = 1440;
+
+const PARAMETER_RAIL_HARD_MAX_WIDTH = 520;
 
 export const throughputKpis: KpiConfig[] = [
   {

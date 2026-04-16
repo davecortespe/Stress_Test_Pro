@@ -382,7 +382,7 @@ export default function SimulatorApp() {
           onOpenExecutivePdf={openExecutivePdf}
         />
 
-        {/* Multi-row CSV warning modal (old library format) ────────────── */}
+        {/* Multi-row CSV warning modal */}
         {multiRowWarning ? (
           <div className="library-shell" onClick={() => setMultiRowWarning(null)}>
             <section
@@ -396,8 +396,8 @@ export default function SimulatorApp() {
               <h2 style={{ margin: "0 0 14px" }}>Multiple Runs in File</h2>
               <p style={{ margin: "0 0 10px" }}>
                 This file contains{" "}
-                <strong>{multiRowWarning.rowCount} saved runs</strong> (old library format). Only
-                the first run — <strong>"{multiRowWarning.firstName}"</strong> — was loaded.
+                <strong>{multiRowWarning.rowCount} saved runs</strong> in a multi-run CSV. Only
+                the first run - <strong>"{multiRowWarning.firstName}"</strong> - was loaded.
               </p>
               <p style={{ margin: "0 0 20px", color: "var(--ink-muted)" }}>
                 The other {Math.max(0, multiRowWarning.importedCount - 1)} runs were added to Recent

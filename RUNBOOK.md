@@ -23,10 +23,7 @@ Use this repository as a reusable starter for simulator projects with a skills-f
 - `/` serves the FlowStress AI landing page
 - `/sim` serves the simulator
 - The simulator route is lazy-loaded so landing-page visitors do not pull model and graph code until they open `/sim`
-- Simulator access is gated by a validation code prompt before `/sim` opens
-- Accepted code: `LEAN`
-- On successful entry, the browser stores access in a cookie so repeat visits on the same browser do not prompt again
-- Direct visits to `/sim` must enforce the same code gate as the landing-page CTAs
+- Direct visits to `/sim` should open the same simulator workspace the landing-page CTAs reach
 
 ### Demo request configuration
 
@@ -40,6 +37,23 @@ Copy `.env.example` to a local env file and configure one or more of:
 
 If the app is deployed behind a static host, configure rewrites so any request such as `/sim`
 returns `index.html`. Without that rewrite, direct refreshes on nested routes will fail.
+
+## Static cleanup workflow
+
+Use this cleanup loop before removing code or tightening exports:
+
+1. Install JS dependencies:
+   `npm install`
+2. Install Python analyzer dependencies into your active Python environment:
+   `python -m pip install -r requirements-dev.txt`
+3. Run unused-code analysis:
+   `npm run lint:knip`
+4. Check for circular imports:
+   `npm run lint:cycles`
+5. Lint Python scripts for dead/invalid paths:
+   `npm run lint:python`
+6. Rebuild after cleanup:
+   `npm run build`
 
 ## Workflow A-F
 
@@ -282,8 +296,6 @@ Bundle behavior:
 - `models/vsm_graph.json` (legacy/standard compile path)
 - `models/master_data.json` (legacy/standard compile path)
 - `models/compiled_sim_spec.json` (legacy/standard compile path)
-- `src/lib/simulatorAccess.ts`
-- `src/components/SimulatorAccessDialog.tsx`
 
 ## Skills
 
@@ -308,13 +320,13 @@ When using an assumptions-plan-execute-deliver workflow, insert `operational-dia
 ## Acceptance checklist
 
 - Repo is runnable with `npm run start:sim` (after install)
+- Cleanup tooling is runnable with `npm run lint:knip`, `npm run lint:cycles`, and `npm run lint:python` after installing `requirements-dev.txt`
 - UI layout remains fixed while config/data changes content
 - Forecast workflow emits active compiled model, committed scenario, metrics, and diagnosis artifacts
 - Forecast workflow also keeps consulting report exports in sync with the accepted active artifacts
 - UI still renders using mocked output if DES is not implemented
 - Demand seeding assumptions are explicit and traceable in compiled model assumptions
-- Landing page requires access code `LEAN` before simulator entry unless prior acceptance cookie exists
-- Direct `/sim` navigation is gated by the same access flow
+- Direct `/sim` navigation reaches the same simulator workspace as the landing-page CTAs
 - Header utilities include `Instruction Guide` and `Executive Report`
 - View surfaces include `FLOW`, `DIAGNOSIS`, `KAIZEN`, `THROUGHPUT`, `WASTE`, `ASSUMPTIONS`, and `COMPARE`
 - Saved-run comparison can assign two files and open Scenario Compare without overwriting the committed active scenario

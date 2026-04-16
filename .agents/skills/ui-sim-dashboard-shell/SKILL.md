@@ -131,11 +131,10 @@ Apply this profile when building the same style of cockpit achieved in this repo
   - "Waste" -> "delay" language where it improves understanding
   - "Economic constraint" -> "step holding back output" style plain English
 
-### Landing-to-simulator access gate
-- If the project uses a marketing landing page before the simulator, intercept all entry points to the simulator.
-- Require access code `LEAN`.
-- Store accepted access in a cookie so repeat visits from the same browser bypass the prompt.
-- Direct visits to the simulator route must enforce the same gate.
+### Landing-to-simulator routing
+- If the project uses a marketing landing page before the simulator, keep routing consistent between CTA entry and direct simulator entry.
+- Do not invent an access-code gate by default.
+- Only preserve a gate when the accepted product behavior already requires one.
 
 ### Node card contract
 - Must show at least:

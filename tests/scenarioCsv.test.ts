@@ -35,7 +35,14 @@ run("buildScenarioLibraryColumns is deterministic", () => {
     "modelName",
     "step_cut_ctBaseline",
     "step_cut_materialCostPerUnit",
-    "step_pack_capacityUnits"
+    "step_pack_capacityUnits",
+    "savedForecastThroughput",
+    "savedBottleneckIndex",
+    "savedTotalWipQty",
+    "savedTotalCompletedOutputPieces",
+    "savedActiveConstraintName",
+    "savedWeightedLeadTimeMinutes",
+    "savedTocThroughputPerUnit"
   ]);
 });
 

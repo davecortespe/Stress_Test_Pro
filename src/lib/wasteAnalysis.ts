@@ -66,7 +66,7 @@ function routeWeightForStep(stepEval: ConstraintStepEval | undefined, lineDemand
   return stepDemand / lineDemand;
 }
 
-export function resolveWasteComparisonTimes(args: {
+function resolveWasteComparisonTimes(args: {
   stepId: string;
   stepCtMinutes: number | null;
   stepEffectiveCtMinutes: number | null;

@@ -20,6 +20,10 @@
     "test:throughput": "node scripts/run-throughput-tests.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "lint:knip": "knip",
+    "lint:cycles": "madge --circular --extensions ts,tsx,mjs src scripts",
+    "lint:python": "python -m ruff check scripts && python -m vulture scripts",
+    "lint:dead": "npm run lint:knip && npm run lint:cycles && npm run lint:python",
     "preview": "vite preview",
     "start:sim": "npm run bootstrap && npm run dev",
     "start:replit-bundle": "node deploy/replit/server.mjs --root deploy/replit/app"
@@ -33,6 +37,8 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
+    "knip": "^6.4.1",
+    "madge": "^8.0.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
   }

@@ -176,7 +176,6 @@ def step_override(scenario: dict[str, Any], step_id: str, field: str) -> Any:
 class StepFact:
     step_id: str
     step_name: str
-    stage: str
     utilization: float | None
     queue_risk: float | None
     bottleneck_index: float | None
@@ -230,7 +229,6 @@ class CategoryReport:
 class FlowBehaviorSummary:
     top_queue_steps: list[StepFact]
     top_pressure_steps: list[StepFact]
-    top_lead_time_steps: list[StepFact]
     queue_instability_steps: list[StepFact]
 
 
@@ -268,7 +266,6 @@ class WasteStep:
 class WasteSummary:
     total_elapsed_minutes: float | None
     total_touch_minutes: float | None
-    total_delay_minutes: float | None
     delay_share: float | None
     value_add_ratio: float | None
     top_delay_step: str
@@ -278,7 +275,6 @@ class WasteSummary:
 
 @dataclass
 class AssumptionItem:
-    identifier: str
     severity: str
     category: str
     title: str
@@ -516,7 +512,6 @@ def build_step_facts(model: dict[str, Any], scenario: dict[str, Any], metrics: d
             StepFact(
                 step_id=step_id,
                 step_name=clean(step.get("label", step_id)),
-                stage=clean(step.get("stage", "")),
                 utilization=optional_num(node.get("utilization")),
                 queue_risk=optional_num(node.get("queueRisk")),
                 bottleneck_index=optional_num(node.get("bottleneckIndex")),
@@ -610,7 +605,7 @@ def failure_modes(category: str, fact: StepFact) -> list[str]:
         ]
     if category == "material":
         return [
-            f"Jobs are likely being released before material, paperwork, approvals, or upstream prep are fully ready.",
+            "Jobs are likely being released before material, paperwork, approvals, or upstream prep are fully ready.",
             f"Input shortages or information gaps are likely causing stop-start flow at {fact.step_name} rather than steady feed.",
             "Queue is probably being created by readiness failures upstream, not only by local process speed.",
         ]
@@ -645,7 +640,7 @@ def audit_checks(category: str, fact: StepFact) -> list[str]:
         return [
             f"Pull stop logs for {fact.step_name} and sort downtime by cause and duration.",
             f"Verify actual available units versus planned units at {fact.step_name}.",
-            f"Watch two recoveries from a stop and time restart-to-first-good-unit.",
+            "Watch two recoveries from a stop and time restart-to-first-good-unit.",
         ]
     if category == "method":
         return [
@@ -657,7 +652,7 @@ def audit_checks(category: str, fact: StepFact) -> list[str]:
         return [
             f"Audit the last 10 jobs released to {fact.step_name} for missing materials, paperwork, approvals, or prep.",
             f"Compare explicit wait before {fact.step_name} with upstream completion timestamps.",
-            f"Walk the queue physically and confirm whether queued work is truly ready to run.",
+            "Walk the queue physically and confirm whether queued work is truly ready to run.",
         ]
     return [
         f"Verify whether {fact.step_name} has live queue, WIP, downtime, and variation triggers visible to the floor.",
@@ -688,7 +683,7 @@ def targeted_fixes(category: str, fact: StepFact) -> list[str]:
     if category == "material":
         return [
             f"Gate release into {fact.step_name} on material and information readiness, not calendar promise alone.",
-            f"Add a short pre-release check for missing paperwork, approvals, or prep that currently creates hidden waiting.",
+            "Add a short pre-release check for missing paperwork, approvals, or prep that currently creates hidden waiting.",
             "Separate not-ready jobs from runnable jobs so the queue only contains executable work.",
         ]
     return [
@@ -776,13 +771,11 @@ def build_category_reports(model: dict[str, Any], scenario: dict[str, Any], metr
 def build_flow_behavior(facts: list[StepFact]) -> FlowBehaviorSummary:
     by_queue = sorted(facts, key=lambda fact: (num(fact.queue_depth, -1), num(fact.wip_qty, -1)), reverse=True)
     by_pressure = sorted(facts, key=lambda fact: (num(fact.bottleneck_index, -1), num(fact.utilization, -1)), reverse=True)
-    by_lead = sorted(facts, key=lambda fact: num(fact.lead_time_minutes, -1), reverse=True)
     unstable = [fact for fact in facts if num(fact.queue_risk, 0) >= 0.7 or num(fact.bottleneck_index, 0) >= 0.85]
     unstable = sorted(unstable, key=lambda fact: (num(fact.queue_risk, -1), num(fact.bottleneck_index, -1)), reverse=True)
     return FlowBehaviorSummary(
         top_queue_steps=by_queue[:4],
         top_pressure_steps=by_pressure[:4],
-        top_lead_time_steps=by_lead[:4],
         queue_instability_steps=unstable[:4] if unstable else by_pressure[:3],
     )
 
@@ -907,7 +900,6 @@ def build_assumptions_summary(model: dict[str, Any]) -> AssumptionsSummary:
     assumptions = model.get("assumptions", [])
     items = [
         AssumptionItem(
-            identifier=clean(assumption.get("id") or f"assumption-{index + 1}"),
             severity=clean(assumption.get("severity", "info")),
             category=assumption_category(clean(assumption.get("text", ""))),
             title=assumption_title(clean(assumption.get("text", ""))),
@@ -1078,7 +1070,15 @@ def build_waste_summary(facts: list[StepFact]) -> WasteSummary:
     delay_share = safe_div(total_delay, total_elapsed)
     value_add_ratio = None if delay_share is None else max(0.0, 1.0 - delay_share)
     ranked = sorted(steps, key=lambda step: num(step.delay_minutes, -1), reverse=True)
-    return WasteSummary(round_or_none(total_elapsed, 1), round_or_none(total_touch, 1), round_or_none(total_delay, 1), delay_share, value_add_ratio, ranked[0].step_name if ranked else "n/a", list(dict.fromkeys(warnings))[:6], ranked)
+    return WasteSummary(
+        round_or_none(total_elapsed, 1),
+        round_or_none(total_touch, 1),
+        delay_share,
+        value_add_ratio,
+        ranked[0].step_name if ranked else "n/a",
+        list(dict.fromkeys(warnings))[:6],
+        ranked,
+    )
 
 
 def build_recommended_actions(diagnosis: dict[str, Any], kaizen_reports: list[CategoryReport], waste_summary: WasteSummary, assumptions_summary: AssumptionsSummary, flow_summary: FlowBehaviorSummary) -> list[dict[str, str]]:
@@ -1155,12 +1155,6 @@ def paragraph(text: str, style: ParagraphStyle) -> Paragraph:
 
 def bullet_list(items: Iterable[str], style: ParagraphStyle) -> ListFlowable:
     return ListFlowable([paragraph(item, style) for item in items if clean(item)], bulletType="bullet", bulletText="-", leftIndent=16, bulletFontName="Helvetica-Bold", bulletFontSize=10, bulletOffsetY=2)
-
-
-def divider() -> Table:
-    table = Table([[""]], colWidths=[CONTENT_W], rowHeights=[2])
-    table.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), DIVIDER)]))
-    return table
 
 
 def tinted_box(content: list[Any], fill: colors.Color = SURFACE_ALT, border: colors.Color = BORDER, left_accent: colors.Color | None = None, padding: int = 12, width: float = CONTENT_W) -> Table:
@@ -1247,158 +1241,6 @@ def make_page_decorator(operation_name: str):
         canvas.drawRightString(PAGE_W - MARGIN, 16, f"Page {canvas.getPageNumber()}")
         canvas.restoreState()
     return page_decorator
-
-
-def _comparison_delta_text(val_a: Any, val_b: Any, fmt_fn, direction: str) -> tuple[str, str]:
-    """Return (formatted_delta, semantic) where semantic is 'positive'|'negative'|'neutral'."""
-    a = optional_num(val_a)
-    b = optional_num(val_b)
-    if a is None or b is None:
-        return "—", "neutral"
-    delta = b - a
-    if abs(delta) < 1e-9:
-        return "—", "neutral"
-    sign = "+" if delta > 0 else ""
-    text = f"{sign}{fmt_fn(delta)}" if fmt_fn else f"{sign}{delta:.2f}"
-    if direction == "higher_better":
-        semantic = "positive" if delta > 0 else "alert"
-    elif direction == "lower_better":
-        semantic = "positive" if delta < 0 else "alert"
-    else:
-        semantic = "neutral"
-    return text, semantic
-
-
-def _comparison_interpretation(snap_a: dict[str, Any], snap_b: dict[str, Any]) -> str:
-    m_a = snap_a.get("metrics") or {}
-    m_b = snap_b.get("metrics") or {}
-    parts: list[str] = []
-    ta, tb = optional_num(m_a.get("forecastThroughput")), optional_num(m_b.get("forecastThroughput"))
-    if ta and tb and ta > 0:
-        delta_pct = (tb - ta) / ta
-        if delta_pct > 0.20:
-            parts.append(f"Scenario B delivers a material throughput improvement of {fmt_pct(delta_pct, 0)}, which is a significant operating gain worth validating with a follow-up run.")
-        elif delta_pct > 0:
-            parts.append(f"Throughput increases by {fmt_pct(delta_pct, 0)} in Scenario B.")
-        elif delta_pct < -0.05:
-            parts.append(f"Throughput degrades by {fmt_pct(abs(delta_pct), 0)} in Scenario B — verify the parameter changes before actioning.")
-    wa, wb = optional_num(m_a.get("totalWipQty")), optional_num(m_b.get("totalWipQty"))
-    if wa and wb and wa > 0:
-        delta_pct = (wb - wa) / wa
-        if delta_pct < -0.30:
-            parts.append(f"WIP load drops by {fmt_pct(abs(delta_pct), 0)}, indicating significant queue relief as the bottleneck constraint loosens.")
-    ca = clean(str(m_a.get("activeConstraintName") or ""))
-    cb = clean(str(m_b.get("activeConstraintName") or ""))
-    if ca and cb and ca.lower() != cb.lower():
-        parts.append(f"The active bottleneck migrates from {ca} to {cb} — confirm this shift with a follow-up run before widening the improvement scope.")
-    if not parts:
-        return "The two scenarios show comparable operating performance across the tracked metrics. Review the parameter diff table to confirm which inputs changed."
-    return " ".join(parts)
-
-
-def build_scenario_comparison_page(snapshots: list[dict[str, Any]], styles: dict[str, ParagraphStyle]) -> list[Any]:
-    if len(snapshots) < 2:
-        return []
-    snap_a, snap_b = snapshots[0], snapshots[1]
-    name_a = clean(snap_a.get("scenarioName") or "Scenario A")
-    name_b = clean(snap_b.get("scenarioName") or "Scenario B")
-    m_a = snap_a.get("metrics") or {}
-    m_b = snap_b.get("metrics") or {}
-
-    metric_rows: list[tuple[str, Any, Any, str, str]] = [
-        ("Forecast Output / hr",   m_a.get("forecastThroughput"),        m_b.get("forecastThroughput"),        lambda v: fmt_num(v, 2),     "higher_better"),
-        ("Constraint Pressure",    m_a.get("bottleneckIndex"),            m_b.get("bottleneckIndex"),            fmt_pct,                     "lower_better"),
-        ("WIP Load",               m_a.get("totalWipQty"),                m_b.get("totalWipQty"),                lambda v: fmt_num(v, 0),     "lower_better"),
-        ("Weighted Lead Time",     m_a.get("weightedLeadTimeMinutes"),    m_b.get("weightedLeadTimeMinutes"),    fmt_minutes,                 "lower_better"),
-        ("Total Completed Lots",   m_a.get("totalCompletedOutputPieces"), m_b.get("totalCompletedOutputPieces"), lambda v: fmt_num(v, 1),    "higher_better"),
-        ("TOC Throughput / Unit",  m_a.get("tocThroughputPerUnit"),       m_b.get("tocThroughputPerUnit"),       fmt_currency,                "higher_better"),
-        ("Active Constraint",      m_a.get("activeConstraintName"),       m_b.get("activeConstraintName"),       None,                        "neutral"),
-    ]
-
-    _pos_fill = colors.HexColor("#EDF6F3")
-    _neg_fill = colors.HexColor("#F9EDEC")
-    _amber_fill = colors.HexColor("#FFF8EC")
-
-    col_w = [CONTENT_W * 0.28, CONTENT_W * 0.20, CONTENT_W * 0.20, CONTENT_W * 0.20]
-    header_row = [paragraph("Metric", styles["MetricLabel"]), paragraph(name_a, styles["MetricLabel"]), paragraph(name_b, styles["MetricLabel"]), paragraph("Delta (B \u2212 A)", styles["MetricLabel"])]
-    table_data = [header_row]
-    fill_cmds: list[Any] = []
-
-    for row_idx, (label, val_a, val_b, fmt_fn, direction) in enumerate(metric_rows, start=1):
-        if direction == "neutral":
-            str_a = clean(str(val_a)) if val_a is not None else "\u2014"
-            str_b = clean(str(val_b)) if val_b is not None else "\u2014"
-            delta_text = "\u2014" if str_a.lower() == str_b.lower() else "migrated"
-            delta_fill = _amber_fill if delta_text == "migrated" else None
-        else:
-            a_fmt = fmt_fn(val_a) if fmt_fn and optional_num(val_a) is not None else (clean(str(val_a)) if val_a is not None else "\u2014")
-            b_fmt = fmt_fn(val_b) if fmt_fn and optional_num(val_b) is not None else (clean(str(val_b)) if val_b is not None else "\u2014")
-            str_a, str_b = a_fmt, b_fmt
-            delta_text, semantic = _comparison_delta_text(val_a, val_b, fmt_fn, direction)
-            delta_fill = _pos_fill if semantic == "positive" else (_neg_fill if semantic == "alert" else None)
-
-        table_data.append([
-            paragraph(label, styles["Body"]),
-            paragraph(str_a, styles["BodyMuted"]),
-            paragraph(str_b, styles["BodyStrong"]),
-            paragraph(f"<b>{delta_text}</b>", styles["BodyStrong"]),
-        ])
-        if delta_fill:
-            fill_cmds.append(("BACKGROUND", (3, row_idx), (3, row_idx), delta_fill))
-
-    comp_table = Table(table_data, colWidths=col_w, repeatRows=1)
-    base_style = [
-        ("BOX", (0, 0), (-1, -1), 0.8, BORDER),
-        ("INNERGRID", (0, 0), (-1, -1), 0.5, BORDER),
-        ("BACKGROUND", (0, 0), (-1, 0), SURFACE_ALT),
-        ("LEFTPADDING", (0, 0), (-1, -1), 8),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [SURFACE, SURFACE_ALT]),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ] + fill_cmds
-    comp_table.setStyle(TableStyle(base_style))
-
-    interpretation = _comparison_interpretation(snap_a, snap_b)
-
-    return [
-        PageBreak(),
-        *section_header(
-            "SCENARIO COMPARISON",
-            f"Scenario Comparison \u2014 {name_a} vs. {name_b}",
-            interpretation,
-            styles,
-        ),
-        comp_table,
-    ]
-
-
-def build_param_diff_page(snapshots: list[dict[str, Any]], styles: dict[str, ParagraphStyle]) -> list[Any]:
-    if len(snapshots) < 2:
-        return []
-    snap_a, snap_b = snapshots[0], snapshots[1]
-    sc_a: dict[str, Any] = snap_a.get("scenario") or {}
-    sc_b: dict[str, Any] = snap_b.get("scenario") or {}
-    all_keys = sorted(set(sc_a) | set(sc_b))
-    diff_rows: list[list[str]] = []
-    for key in all_keys:
-        str_a = clean(str(sc_a.get(key, "\u2014")))
-        str_b = clean(str(sc_b.get(key, "\u2014")))
-        if str_a != str_b:
-            label = key.replace("_", " ").replace("-", " ").title()
-            diff_rows.append([label, str_a, str_b])
-    if not diff_rows:
-        return []
-    col_w = [CONTENT_W * 0.36, CONTENT_W * 0.28, CONTENT_W * 0.28]
-    return [
-        Spacer(1, 0.18 * inch),
-        paragraph("PARAMETER DIFF", styles["Eyebrow"]),
-        Spacer(1, 0.04 * inch),
-        Paragraph("Parameters that changed between scenarios — identical inputs are omitted.", styles["BodyMuted"]),
-        Spacer(1, 0.08 * inch),
-        evidence_table(["Parameter", snap_a.get("scenarioName") or "Scenario A", snap_b.get("scenarioName") or "Scenario B"], diff_rows, col_w, styles),
-    ]
 
 
 COMPARISON_METRIC_SPECS: list[dict[str, Any]] = [
@@ -1997,8 +1839,10 @@ def build_flow_behavior_page(flow_summary: FlowBehaviorSummary, styles: dict[str
     takeaway = f"Instability is concentrating around {unstable_names}, which means the system is behaving like a constrained flow, not a balanced line."
     queue_rows = [[step.step_name, fmt_num(step.queue_depth, 1), fmt_pct(step.queue_risk), fmt_minutes(step.lead_time_minutes)] for step in flow_summary.top_queue_steps]
     def _pressure_color(bi: float) -> Any:
-        if bi >= 0.85: return ALERT
-        if bi >= 0.65: return CAUTION
+        if bi >= 0.85:
+            return ALERT
+        if bi >= 0.65:
+            return CAUTION
         return SUCCESS
     pressure_max = max_known(step.bottleneck_index for step in flow_summary.top_pressure_steps)
     pressure_chart = RankedBarChart(
@@ -2026,8 +1870,10 @@ def build_kaizen_page(kaizen_reports: list[CategoryReport], styles: dict[str, Pa
     kaizen_max = max_known(report.priority_score for report in kaizen_reports)
     def _kaizen_color(score: float) -> Any:
         ratio = score / max(kaizen_max, 0.01)
-        if ratio >= 0.85: return ACCENT
-        if ratio >= 0.65: return ACCENT_MUTED
+        if ratio >= 0.85:
+            return ACCENT
+        if ratio >= 0.65:
+            return ACCENT_MUTED
         return TEXT_DISABLED
     chart = RankedBarChart(
         items=[(report.label, report.priority_score, f"{report.priority_score:.1f}") for report in kaizen_reports],

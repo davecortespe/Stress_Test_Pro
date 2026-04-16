@@ -57,7 +57,7 @@ function buildTimestampName(): string {
     minute: "2-digit",
     hour12: false
   });
-  return `Run · ${month} ${day} · ${time}`;
+  return `Run - ${month} ${day} - ${time}`;
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -113,7 +113,7 @@ export function useSimulatorScenarioWorkflow({
     if (currentResultsMode === "compare") {
       setResultsMode(defaultResultsMode);
       clearAll();
-      showNotice("success", "Comparison cleared — save this run to compare again.");
+      showNotice("success", "Comparison cleared - save this run to compare again.");
     }
   };
 

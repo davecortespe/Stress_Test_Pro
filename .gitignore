@@ -1,4 +1,8 @@
 node_modules
 dist
 *.log
+.tools
+output
+public/generated
+tmp
 

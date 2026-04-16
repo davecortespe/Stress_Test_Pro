@@ -166,24 +166,6 @@ export interface DashboardConfig {
 
 export type SimulatorResultsMode = "flow" | "diagnosis" | "kaizen" | "throughput" | "waste" | "assumptions" | "compare";
 
-export interface ChecklistItem {
-  severity: "warning" | "critical";
-  code: string;
-  message: string;
-}
-
-export interface CompiledSimSpec {
-  version: string;
-  generatedAt: string;
-  graph: VsmGraph;
-  masterData: MasterData;
-  scenarioDefaults: Record<string, number | string>;
-  validationSummary: {
-    missingItemCount: number;
-    hasCritical: boolean;
-  };
-}
-
 export type ForecastInputType = "number" | "select";
 
 export interface ForecastInputDefinition {
@@ -616,25 +598,25 @@ export interface ScenarioLibraryParseResult {
   context: ScenarioLibraryFileContext | null;
 }
 
-export interface ConsultingReportSourceArtifact {
+interface ConsultingReportSourceArtifact {
   artifact_id: string;
   artifact_path: string;
   status: "present" | "missing";
 }
 
-export interface ConsultingReportContentItem {
+interface ConsultingReportContentItem {
   label: string;
   content_ref: string;
   source_value: unknown;
 }
 
-export interface ConsultingReportContentGroup {
+interface ConsultingReportContentGroup {
   group_label: string;
   content_refs: string[];
   content_items: ConsultingReportContentItem[];
 }
 
-export interface ConsultingReportPage {
+interface ConsultingReportPage {
   page_number: number;
   page_title: string;
   section: string;
@@ -644,20 +626,8 @@ export interface ConsultingReportPage {
   reviewer_notes: string[];
 }
 
-export interface ConsultingReportSection {
+interface ConsultingReportSection {
   section_title: string;
   purpose: string;
   pages: number[];
-}
-
-export interface ConsultingReportExportSpec {
-  export_title: string;
-  export_mode: "consulting_grade_organization";
-  source_artifacts: ConsultingReportSourceArtifact[];
-  sections: ConsultingReportSection[];
-  pages: ConsultingReportPage[];
-  export_notes: string[];
-  presenter_notes: string[];
-  reviewer_notes: string[];
-  scenario_snapshot: Record<string, number | string> | null;
 }
