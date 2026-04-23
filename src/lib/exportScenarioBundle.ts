@@ -619,54 +619,178 @@ export function buildBrowserSnapshotHtmlSource(
     };
     const operationalDiagnosis = ${diagnosisJson};
 
+    function toDisplayText(value, fallback) {
+      if (value === null || value === undefined || value === "") {
+        return fallback === undefined ? "--" : String(fallback);
+      }
+      return String(value);
+    }
+
+    function joinNonEmpty(values, separator, fallback) {
+      const parts = values
+        .filter((value) => value !== null && value !== undefined && value !== "")
+        .map((value) => String(value));
+      return parts.length > 0 ? parts.join(separator) : fallback;
+    }
+
+    function createElement(tagName, className) {
+      const element = document.createElement(tagName);
+      if (className) {
+        element.className = className;
+      }
+      return element;
+    }
+
+    function createTextElement(tagName, className, value, fallback) {
+      const element = createElement(tagName, className);
+      element.textContent = toDisplayText(value, fallback);
+      return element;
+    }
+
+    function buildKpiCard(label, value) {
+      const card = createElement("div", "kpi");
+      card.append(
+        createTextElement("div", "label", label, "--"),
+        createTextElement("div", "value", value, "--")
+      );
+      return card;
+    }
+
+    function buildNodeMetricLine(label, value) {
+      return createTextElement("p", "", label + ": " + toDisplayText(value, "--"));
+    }
+
+    function buildNodeCard(node, metrics) {
+      const status = toDisplayText(metrics.status, "unknown");
+      const cardClassName = status === "critical" ? "node critical" : status === "risk" ? "node risk" : "node";
+      const card = createElement("article", cardClassName);
+      const util = typeof metrics.utilization === "number" ? (metrics.utilization * 100).toFixed(1) + "%" : "--";
+      const wip = typeof metrics.wipQty === "number" ? Math.round(metrics.wipQty) + " pcs" : "--";
+      const processed = typeof metrics.processedQty === "number" ? Math.round(metrics.processedQty) + " pcs" : "--";
+      const completed = typeof metrics.completedQty === "number" ? Math.round(metrics.completedQty) + " pcs" : "--";
+
+      card.append(
+        createTextElement("h3", "", node && node.label, "--"),
+        buildNodeMetricLine("util", util),
+        buildNodeMetricLine("lot/wip", wip),
+        buildNodeMetricLine("processed", processed),
+        buildNodeMetricLine("completed", completed),
+        buildNodeMetricLine("status", status)
+      );
+      return card;
+    }
+
+    function buildDiagnosisArticle(title, value) {
+      const article = createElement("article", "");
+      article.append(
+        createTextElement("h3", "", title),
+        createTextElement("p", "", value, "--")
+      );
+      return article;
+    }
+
+    function buildDiagnosisGrid(items) {
+      const grid = createElement("div", "diagnosis-grid");
+      items.forEach((item) => {
+        grid.append(buildDiagnosisArticle(item.title, item.value));
+      });
+      return grid;
+    }
+
+    function buildOpportunityLensItem(label, value) {
+      const item = createElement("li", "");
+      const strong = createTextElement("strong", "", label + ":");
+      item.append(strong, document.createTextNode(" " + toDisplayText(value, "--")));
+      return item;
+    }
+
+    function buildOpportunityLensBlock(aiOpportunityLens) {
+      const wrapper = createElement("div", "");
+      wrapper.style.marginTop = "10px";
+
+      const heading = createElement("h3", "");
+      heading.style.margin = "0 0 6px";
+      heading.style.color = "#9fd4e6";
+      heading.style.fontSize = "13px";
+      heading.style.textTransform = "uppercase";
+      heading.style.letterSpacing = "0.04em";
+      heading.textContent = "AI Opportunity Lens";
+      wrapper.append(heading);
+
+      if (!aiOpportunityLens) {
+        wrapper.append(
+          createTextElement("p", "", "AI opportunity lens details were not included in this export.")
+        );
+        return wrapper;
+      }
+
+      const list = createElement("ul", "");
+      list.append(
+        buildOpportunityLensItem("Data already exists but is underused", aiOpportunityLens.dataAlreadyExists),
+        buildOpportunityLensItem("Manual but pattern-based decisions", aiOpportunityLens.manualPatternDecisions),
+        buildOpportunityLensItem("Backward-looking vs predictive gap", aiOpportunityLens.predictiveGap),
+        buildOpportunityLensItem("Tribal knowledge / email as database", aiOpportunityLens.tribalKnowledge),
+        buildOpportunityLensItem("Visibility gaps causing profit leakage", aiOpportunityLens.visibilityGap)
+      );
+      wrapper.append(list);
+      return wrapper;
+    }
+
     document.getElementById("title").textContent = dashboardConfig.appTitle || "Forecast Browser Snapshot";
     document.getElementById("subtitle").textContent = dashboardConfig.subtitle || "Portable export";
     document.getElementById("scenario").textContent = JSON.stringify(committedScenario, null, 2);
 
     const kpis = Array.isArray(dashboardConfig.kpis) ? dashboardConfig.kpis : [];
     const kpiContainer = document.getElementById("kpis");
-    kpiContainer.innerHTML = kpis.map((kpi) => {
+    kpiContainer.replaceChildren(...kpis.map((kpi) => {
       const value = resultMetrics.globalMetrics && resultMetrics.globalMetrics[kpi.key] != null ? resultMetrics.globalMetrics[kpi.key] : "--";
-      return "<div class=\\"kpi\\"><div class=\\"label\\">" + kpi.label + "</div><div class=\\"value\\">" + String(value) + "</div></div>";
-    }).join("");
+      return buildKpiCard(kpi && kpi.label, value);
+    }));
 
     const nodes = Array.isArray(compiledForecastModel.graph && compiledForecastModel.graph.nodes)
       ? compiledForecastModel.graph.nodes
       : [];
     const nodeMetrics = resultMetrics.nodeMetrics || {};
-    document.getElementById("nodes").innerHTML = nodes.map((node) => {
-      const m = nodeMetrics[node.id] || {};
-      const status = String(m.status || "unknown");
-      const klass = status === "critical" ? "critical" : (status === "risk" ? "risk" : "");
-      const util = typeof m.utilization === "number" ? (m.utilization * 100).toFixed(1) + "%" : "--";
-      const wip = typeof m.wipQty === "number" ? Math.round(m.wipQty) + " pcs" : "--";
-      const processed = typeof m.processedQty === "number" ? Math.round(m.processedQty) + " pcs" : "--";
-      const completed = typeof m.completedQty === "number" ? Math.round(m.completedQty) + " pcs" : "--";
-      return "<article class=\\"node " + klass + "\\"><h3>" + node.label + "</h3><p>util: " + util + "</p><p>lot/wip: " + wip + "</p><p>processed: " + processed + "</p><p>completed: " + completed + "</p><p>status: " + status + "</p></article>";
-    }).join("");
+    document.getElementById("nodes").replaceChildren(...nodes.map((node) => {
+      const metrics = nodeMetrics[node.id] || {};
+      return buildNodeCard(node, metrics);
+    }));
 
     const diagnosisEl = document.getElementById("diagnosis");
     if (operationalDiagnosis) {
-      diagnosisEl.innerHTML =
-        "<div class=\\"diagnosis-grid\\">" +
-        "<article><h3>System Status</h3><p>" + operationalDiagnosis.statusSummary + "</p></article>" +
-        "<article><h3>Primary Constraint</h3><p>" + operationalDiagnosis.primaryConstraint + "</p></article>" +
-        "<article><h3>Constraint Mechanism</h3><p>" + operationalDiagnosis.constraintMechanism + "</p></article>" +
-        "<article><h3>Downstream Effects</h3><p>" + operationalDiagnosis.downstreamEffects + "</p></article>" +
-        "<article><h3>Economic Interpretation</h3><p>" + operationalDiagnosis.economicInterpretation + "</p></article>" +
-        "<article><h3>Recommended Action</h3><p>" + operationalDiagnosis.recommendedAction + "</p></article>" +
-        "</div>" +
-        "<div class=\\"diagnosis-grid\\" style=\\"margin-top:10px\\">" +
-        "<article><h3>Scenario Guidance</h3><p>" + operationalDiagnosis.scenarioGuidance + "</p></article>" +
-        "<article><h3>Confidence</h3><p>" + operationalDiagnosis.confidence + " - " + operationalDiagnosis.confidenceNote + "</p></article>" +
-        "</div>" +
-        "<div style=\\"margin-top:10px\\"><h3 style=\\"margin:0 0 6px;color:#9fd4e6;font-size:13px;text-transform:uppercase;letter-spacing:0.04em;\\">AI Opportunity Lens</h3><ul>" +
-        "<li><strong>Data already exists but is underused:</strong> " + operationalDiagnosis.aiOpportunityLens.dataAlreadyExists + "</li>" +
-        "<li><strong>Manual but pattern-based decisions:</strong> " + operationalDiagnosis.aiOpportunityLens.manualPatternDecisions + "</li>" +
-        "<li><strong>Backward-looking vs predictive gap:</strong> " + operationalDiagnosis.aiOpportunityLens.predictiveGap + "</li>" +
-        "<li><strong>Tribal knowledge / email as database:</strong> " + operationalDiagnosis.aiOpportunityLens.tribalKnowledge + "</li>" +
-        "<li><strong>Visibility gaps causing profit leakage:</strong> " + operationalDiagnosis.aiOpportunityLens.visibilityGap + "</li>" +
-        "</ul></div>";
+      const primaryGrid = buildDiagnosisGrid([
+        { title: "System Status", value: operationalDiagnosis.statusSummary },
+        { title: "Primary Constraint", value: operationalDiagnosis.primaryConstraint },
+        { title: "Constraint Mechanism", value: operationalDiagnosis.constraintMechanism },
+        { title: "Downstream Effects", value: operationalDiagnosis.downstreamEffects },
+        { title: "Economic Interpretation", value: operationalDiagnosis.economicInterpretation },
+        { title: "Recommended Action", value: operationalDiagnosis.recommendedAction }
+      ]);
+
+      const secondaryGrid = buildDiagnosisGrid([
+        { title: "Scenario Guidance", value: operationalDiagnosis.scenarioGuidance },
+        {
+          title: "Confidence",
+          value: joinNonEmpty(
+            [operationalDiagnosis.confidence, operationalDiagnosis.confidenceNote],
+            " - ",
+            "--"
+          )
+        }
+      ]);
+      secondaryGrid.style.marginTop = "10px";
+
+      const aiOpportunityLens =
+        operationalDiagnosis.aiOpportunityLens &&
+        typeof operationalDiagnosis.aiOpportunityLens === "object"
+          ? operationalDiagnosis.aiOpportunityLens
+          : null;
+
+      diagnosisEl.replaceChildren(
+        primaryGrid,
+        secondaryGrid,
+        buildOpportunityLensBlock(aiOpportunityLens)
+      );
     } else {
       diagnosisEl.textContent = "Operational diagnosis not included in this export.";
     }

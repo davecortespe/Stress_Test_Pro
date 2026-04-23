@@ -1,3 +1,4 @@
+import type { FormEvent } from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { SimulatorResultsMode } from "../types/contracts";
@@ -5,6 +6,51 @@ import { heroMockData, marketingContent, reportShowcase } from "./marketingConte
 import "./landing.css";
 
 const SIMULATOR_ENTRY_PATH = "/sim";
+const PILOT_ENTRY_PATH = "/pilot";
+const PERSONAL_EMAIL_DOMAINS = new Set([
+  "aol.com",
+  "att.net",
+  "comcast.net",
+  "gmail.com",
+  "hotmail.com",
+  "icloud.com",
+  "live.com",
+  "mac.com",
+  "mail.com",
+  "me.com",
+  "msn.com",
+  "outlook.com",
+  "proton.me",
+  "protonmail.com",
+  "sbcglobal.net",
+  "verizon.net",
+  "yahoo.com",
+  "ymail.com"
+]);
+
+type IntakeFormState = {
+  name: string;
+  company: string;
+  email: string;
+  challenge: string;
+};
+
+type IntakeFormField = keyof IntakeFormState;
+
+type IntakeFormErrors = Partial<Record<IntakeFormField, string>>;
+
+type SubmissionState =
+  | { kind: "idle" }
+  | { kind: "submitting" }
+  | { kind: "success"; message: string }
+  | { kind: "error"; message: string };
+
+const INITIAL_INTAKE_FORM: IntakeFormState = {
+  name: "",
+  company: "",
+  email: "",
+  challenge: ""
+};
 
 function hasTemplateToken(value: string): boolean {
   return value.includes("{{") && value.includes("}}");
@@ -25,11 +71,87 @@ function resolveUrl(value: string, fallback: string): string {
   return `https://${resolved}`;
 }
 
+function resolveOptionalHref(value: string): string {
+  const resolved = value.trim();
+  if (!resolved) {
+    return "";
+  }
+  if (/^(https?:\/\/|mailto:|\/)/i.test(resolved)) {
+    return resolved;
+  }
+  return `https://${resolved}`;
+}
+
 function scrollToSection(sectionId: string): void {
   const section = document.getElementById(sectionId);
   if (section) {
     section.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+}
+
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function isValidEmailFormat(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
+}
+
+function getEmailDomain(value: string): string | null {
+  const email = normalizeEmail(value);
+  const atIndex = email.lastIndexOf("@");
+  if (atIndex <= 0 || atIndex === email.length - 1) {
+    return null;
+  }
+  return email.slice(atIndex + 1);
+}
+
+function isWorkEmail(value: string): boolean {
+  if (!isValidEmailFormat(value)) {
+    return false;
+  }
+  const domain = getEmailDomain(value);
+  if (!domain) {
+    return false;
+  }
+  return !PERSONAL_EMAIL_DOMAINS.has(domain);
+}
+
+function validateIntakeForm(form: IntakeFormState): IntakeFormErrors {
+  const errors: IntakeFormErrors = {};
+
+  if (!form.name.trim()) {
+    errors.name = "Name is required.";
+  }
+  if (!form.company.trim()) {
+    errors.company = "Company is required.";
+  }
+  if (!form.email.trim()) {
+    errors.email = "Work email is required.";
+  } else if (!isValidEmailFormat(form.email)) {
+    errors.email = "Enter a valid email address.";
+  } else if (!isWorkEmail(form.email)) {
+    errors.email = "Use your work email. Personal inboxes are not accepted.";
+  }
+  if (!form.challenge.trim()) {
+    errors.challenge = "Tell us what you want to diagnose.";
+  }
+
+  return errors;
+}
+
+function buildMailtoHref(targetEmail: string, form: IntakeFormState): string {
+  const subject = `Operational Stress Labs intake: ${form.company.trim()}`;
+  const body = [
+    `Name: ${form.name.trim()}`,
+    `Company: ${form.company.trim()}`,
+    `Work email: ${normalizeEmail(form.email)}`,
+    "",
+    "What we want to diagnose:",
+    form.challenge.trim()
+  ].join("\n");
+
+  return `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 const companyName = resolveTemplate(
@@ -45,6 +167,9 @@ const leanStormingUrl = resolveUrl(
   import.meta.env.VITE_LEANSTORMING_URL || marketingContent.leanStormingUrl,
   "leanstorming.com"
 );
+const demoFormEndpoint = resolveTemplate(import.meta.env.VITE_DEMO_FORM_ENDPOINT || "", "").trim();
+const demoContactUrl = resolveOptionalHref(resolveTemplate(import.meta.env.VITE_DEMO_CONTACT_URL || "", ""));
+const demoContactEmail = resolveTemplate(import.meta.env.VITE_DEMO_CONTACT_EMAIL || "", "").trim();
 const operationalStressLabsBrand = "LeanStorming's Operational Stress Labs";
 
 function SectionIntro({
@@ -131,7 +256,97 @@ function ReportShowcase({
 
 export default function LandingPage() {
   const [activeReportMode, setActiveReportMode] = useState<SimulatorResultsMode>("diagnosis");
+  const [intakeForm, setIntakeForm] = useState<IntakeFormState>(INITIAL_INTAKE_FORM);
+  const [intakeErrors, setIntakeErrors] = useState<IntakeFormErrors>({});
+  const [submissionState, setSubmissionState] = useState<SubmissionState>({ kind: "idle" });
   const builtForLabel = marketingContent.footer.builtFor.replace("{{COMPANY_NAME}}", companyName);
+
+  function handleFieldChange(field: IntakeFormField, value: string): void {
+    setIntakeForm((current) => ({ ...current, [field]: value }));
+    setIntakeErrors((current) => {
+      if (!current[field]) {
+        return current;
+      }
+      return { ...current, [field]: undefined };
+    });
+    if (submissionState.kind !== "idle") {
+      setSubmissionState({ kind: "idle" });
+    }
+  }
+
+  async function handleIntakeSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+
+    const trimmedForm: IntakeFormState = {
+      name: intakeForm.name.trim(),
+      company: intakeForm.company.trim(),
+      email: normalizeEmail(intakeForm.email),
+      challenge: intakeForm.challenge.trim()
+    };
+
+    const errors = validateIntakeForm(trimmedForm);
+    if (Object.keys(errors).length > 0) {
+      setIntakeErrors(errors);
+      setSubmissionState({ kind: "error", message: "Please fix the highlighted fields and try again." });
+      return;
+    }
+
+    setIntakeErrors({});
+    setSubmissionState({ kind: "submitting" });
+
+    try {
+      if (demoFormEndpoint) {
+        const response = await fetch(demoFormEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ...trimmedForm,
+            source: "landing-page-intake",
+            submittedAt: new Date().toISOString()
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        setIntakeForm(INITIAL_INTAKE_FORM);
+        setSubmissionState({
+          kind: "success",
+          message: "Thanks. We received your intake and will follow up using your work email."
+        });
+        return;
+      }
+
+      if (demoContactEmail) {
+        window.location.href = buildMailtoHref(demoContactEmail, trimmedForm);
+        setSubmissionState({
+          kind: "success",
+          message: "Your email client should open with the intake details addressed to our team."
+        });
+        return;
+      }
+
+      if (demoContactUrl) {
+        window.open(demoContactUrl, "_blank", "noopener,noreferrer");
+        setSubmissionState({
+          kind: "success",
+          message: "We opened the configured contact page so you can finish the request there."
+        });
+        return;
+      }
+
+      throw new Error("No demo contact destination is configured.");
+    } catch (error) {
+      console.error(error);
+      setSubmissionState({
+        kind: "error",
+        message: "The intake request could not be sent. Configure a form endpoint or contact fallback and try again."
+      });
+    }
+  }
 
   return (
     <div className="landing-page">
@@ -148,6 +363,7 @@ export default function LandingPage() {
                 {item.label}
               </a>
             ))}
+            <Link to={PILOT_ENTRY_PATH}>Apply for the pilot</Link>
           </nav>
         </div>
       </header>
@@ -187,6 +403,10 @@ export default function LandingPage() {
 
               <Link to={SIMULATOR_ENTRY_PATH} className="ls-inline-link">
                 {marketingContent.hero.workspaceCta}
+              </Link>
+
+              <Link to={PILOT_ENTRY_PATH} className="ls-inline-link ls-inline-link-emphasis">
+                Apply for the pilot
               </Link>
             </div>
 
@@ -243,13 +463,121 @@ export default function LandingPage() {
               ))}
             </div>
 
-            <div className="ls-contact-actions">
-              <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-primary">
-                {marketingContent.enter.primaryCta}
-              </Link>
-              <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-secondary">
-                {marketingContent.enter.secondaryCta}
-              </Link>
+            <div className="ls-intake-shell">
+              <form className="ls-intake-form" onSubmit={handleIntakeSubmit} noValidate>
+                <div>
+                  <p className="ls-card-label">Request Access</p>
+                  <h3>Use your work email to request a guided intake.</h3>
+                  <p className="ls-form-note">
+                    Personal email domains are blocked so we can route follow-up inside a real operating context.
+                  </p>
+                </div>
+
+                <div className="ls-intake-grid">
+                  <label className="ls-field">
+                    <span className="ls-field-label">Name</span>
+                    <input
+                      name="name"
+                      type="text"
+                      autoComplete="name"
+                      value={intakeForm.name}
+                      onChange={(event) => handleFieldChange("name", event.target.value)}
+                      aria-invalid={Boolean(intakeErrors.name)}
+                      aria-describedby={intakeErrors.name ? "landing-intake-name-error" : undefined}
+                    />
+                    {intakeErrors.name ? (
+                      <span id="landing-intake-name-error" className="ls-field-error">
+                        {intakeErrors.name}
+                      </span>
+                    ) : null}
+                  </label>
+
+                  <label className="ls-field">
+                    <span className="ls-field-label">Company</span>
+                    <input
+                      name="company"
+                      type="text"
+                      autoComplete="organization"
+                      value={intakeForm.company}
+                      onChange={(event) => handleFieldChange("company", event.target.value)}
+                      aria-invalid={Boolean(intakeErrors.company)}
+                      aria-describedby={intakeErrors.company ? "landing-intake-company-error" : undefined}
+                    />
+                    {intakeErrors.company ? (
+                      <span id="landing-intake-company-error" className="ls-field-error">
+                        {intakeErrors.company}
+                      </span>
+                    ) : null}
+                  </label>
+
+                  <label className="ls-field ls-field-full">
+                    <span className="ls-field-label">Work email</span>
+                    <input
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      inputMode="email"
+                      placeholder="you@company.com"
+                      value={intakeForm.email}
+                      onChange={(event) => handleFieldChange("email", event.target.value)}
+                      aria-invalid={Boolean(intakeErrors.email)}
+                      aria-describedby={intakeErrors.email ? "landing-intake-email-error" : "landing-intake-email-help"}
+                    />
+                    <span id="landing-intake-email-help" className="ls-field-help">
+                      Work email required.
+                    </span>
+                    {intakeErrors.email ? (
+                      <span id="landing-intake-email-error" className="ls-field-error">
+                        {intakeErrors.email}
+                      </span>
+                    ) : null}
+                  </label>
+
+                  <label className="ls-field ls-field-full">
+                    <span className="ls-field-label">What are you trying to diagnose?</span>
+                    <textarea
+                      name="challenge"
+                      rows={5}
+                      placeholder="Example: We want to understand why queue buildup keeps moving between packaging and inspection."
+                      value={intakeForm.challenge}
+                      onChange={(event) => handleFieldChange("challenge", event.target.value)}
+                      aria-invalid={Boolean(intakeErrors.challenge)}
+                      aria-describedby={intakeErrors.challenge ? "landing-intake-challenge-error" : undefined}
+                    />
+                    {intakeErrors.challenge ? (
+                      <span id="landing-intake-challenge-error" className="ls-field-error">
+                        {intakeErrors.challenge}
+                      </span>
+                    ) : null}
+                  </label>
+                </div>
+
+                <div className="ls-intake-actions">
+                  <button type="submit" className="ls-btn ls-btn-primary" disabled={submissionState.kind === "submitting"}>
+                    {submissionState.kind === "submitting" ? "Sending intake..." : "Request guided intake"}
+                  </button>
+                  <Link to={SIMULATOR_ENTRY_PATH} className="ls-btn ls-btn-secondary">
+                    {marketingContent.enter.secondaryCta}
+                  </Link>
+                </div>
+
+                <p
+                  className={`ls-form-status ${
+                    submissionState.kind === "success"
+                      ? "is-success"
+                      : submissionState.kind === "error"
+                        ? "is-error"
+                        : ""
+                  }`}
+                  aria-live="polite"
+                >
+                  {submissionState.kind === "idle"
+                    ? "We’ll use this to route the right follow-up."
+                    : submissionState.kind === "submitting"
+                      ? "Sending intake..."
+                      : submissionState.message}
+                </p>
+              </form>
             </div>
           </div>
         </section>
@@ -275,6 +603,7 @@ export default function LandingPage() {
           >
             Terms of Service
           </a>
+          <Link to={PILOT_ENTRY_PATH}>Apply for the pilot</Link>
           <Link to={SIMULATOR_ENTRY_PATH}>
             {marketingContent.hero.primaryCta}
           </Link>

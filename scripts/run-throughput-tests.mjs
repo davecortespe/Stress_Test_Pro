@@ -7,6 +7,7 @@ const repoRoot = process.cwd();
 const tempDir = path.join(repoRoot, ".tmp-tests");
 const filesToTranspile = [
   path.join("tests", "scenarioCsv.test.ts"),
+  path.join("tests", "exportScenarioBundle.test.ts"),
   path.join("tests", "bottleneckForecastMath.test.ts"),
   path.join("tests", "wasteAnalysis.test.ts"),
   path.join("tests", "throughputAnalysis.test.ts"),
@@ -56,6 +57,7 @@ for (const relativeFilePath of filesToTranspile) {
 }
 
 await import(pathToFileURL(toOutputPath(path.join("tests", "scenarioCsv.test.ts"))).href);
+await import(pathToFileURL(toOutputPath(path.join("tests", "exportScenarioBundle.test.ts"))).href);
 await import(pathToFileURL(toOutputPath(path.join("tests", "bottleneckForecastMath.test.ts"))).href);
 await import(pathToFileURL(toOutputPath(path.join("tests", "wasteAnalysis.test.ts"))).href);
 await import(pathToFileURL(toOutputPath(path.join("tests", "throughputAnalysis.test.ts"))).href);

@@ -55,6 +55,8 @@ Use this cleanup loop before removing code or tightening exports:
 6. Rebuild after cleanup:
    `npm run build`
 
+Generated local artifacts such as `.tmp-tests/`, `*.tsbuildinfo`, and Python bytecode should remain untracked.
+
 ## Workflow A-F
 
 1. Import or paste VSM into a normalized graph:

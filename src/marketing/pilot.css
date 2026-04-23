@@ -1,0 +1,272 @@
+.pilot-page {
+  --pilot-copy-width: 42rem;
+}
+
+.pilot-hero-panel {
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.76fr);
+  align-items: stretch;
+}
+
+.pilot-hero-copy h1 {
+  max-width: 10ch;
+}
+
+.pilot-hero-subheadline {
+  max-width: 18ch;
+}
+
+.pilot-selection-note {
+  color: #d0dae9;
+  font-weight: 600;
+}
+
+.pilot-hero-brief,
+.pilot-side-callout {
+  position: relative;
+  border: 1px solid rgba(80, 108, 142, 0.46);
+  border-radius: 24px;
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(12, 21, 34, 0.98), rgba(7, 13, 22, 0.98)),
+    linear-gradient(135deg, rgba(227, 170, 48, 0.06), transparent 36%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.pilot-hero-brief {
+  display: grid;
+  align-content: space-between;
+  gap: 20px;
+}
+
+.pilot-hero-brief strong {
+  font-family: "Oswald", "IBM Plex Sans", sans-serif;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 0.96;
+}
+
+.pilot-hero-proof {
+  padding-top: 18px;
+  border-top: 1px solid rgba(86, 113, 146, 0.36);
+}
+
+.pilot-hero-proof span {
+  display: block;
+  margin-bottom: 8px;
+  color: #f6ca64;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pilot-hero-proof p,
+.pilot-section-intro p,
+.pilot-section-lead,
+.pilot-support-copy,
+.pilot-criteria-row p,
+.pilot-side-callout p,
+.pilot-form-footnote,
+.pilot-form-status p {
+  margin: 0;
+  color: #b5c3d7;
+  line-height: 1.72;
+}
+
+.pilot-statement-shell,
+.pilot-detail-block,
+.pilot-criteria-shell {
+  padding: 32px;
+}
+
+.pilot-dual-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.pilot-detail-block .pilot-section-intro,
+.pilot-criteria-shell .pilot-section-intro {
+  margin-bottom: 0;
+}
+
+.pilot-section-lead {
+  max-width: var(--pilot-copy-width);
+  margin: 12px 0 0;
+  color: #d5dfec;
+}
+
+.pilot-bullet-list {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.pilot-bullet-list li {
+  position: relative;
+  padding-left: 20px;
+  color: #eef3fb;
+  line-height: 1.55;
+}
+
+.pilot-bullet-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e3aa30;
+  box-shadow: 0 0 14px rgba(227, 170, 48, 0.28);
+}
+
+.pilot-support-copy {
+  max-width: var(--pilot-copy-width);
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(83, 110, 142, 0.34);
+}
+
+.pilot-criteria-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.pilot-criteria-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 18px;
+  padding: 18px 0;
+  border-top: 1px solid rgba(72, 96, 128, 0.34);
+}
+
+.pilot-criteria-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.pilot-criteria-row h3,
+.pilot-side-callout h3 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.pilot-why-band,
+.pilot-form-band {
+  align-items: stretch;
+}
+
+.pilot-why-band .ls-contact-copy,
+.pilot-form-copy {
+  max-width: 46rem;
+}
+
+.pilot-side-callout {
+  width: min(100%, 360px);
+}
+
+.pilot-intake-shell {
+  width: min(100%, 560px);
+}
+
+.pilot-intake-form {
+  gap: 20px;
+}
+
+.pilot-intake-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pilot-field-major textarea {
+  min-height: 132px;
+}
+
+.pilot-form-footnote {
+  padding-top: 2px;
+  color: #98abc4;
+  font-size: 0.92rem;
+}
+
+.pilot-form-status {
+  display: grid;
+  gap: 6px;
+  min-height: 56px;
+  padding-top: 4px;
+}
+
+.pilot-form-status strong {
+  color: #f4f7ff;
+  font-size: 1.05rem;
+}
+
+.pilot-form-status.is-success strong,
+.pilot-form-status.is-success p {
+  color: #a8efd0;
+}
+
+.pilot-form-status.is-error strong,
+.pilot-form-status.is-error p {
+  color: #ffb5bc;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pilot-hero-copy,
+  .pilot-hero-brief,
+  .pilot-detail-block,
+  .pilot-criteria-row,
+  .pilot-intake-shell {
+    animation: pilotLiftIn 560ms ease-out both;
+  }
+
+  .pilot-hero-brief {
+    animation-delay: 100ms;
+  }
+}
+
+@keyframes pilotLiftIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1180px) {
+  .pilot-hero-panel,
+  .pilot-dual-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pilot-side-callout,
+  .pilot-intake-shell {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .pilot-statement-shell,
+  .pilot-detail-block,
+  .pilot-criteria-shell {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 520px) {
+  .pilot-statement-shell,
+  .pilot-detail-block,
+  .pilot-criteria-shell {
+    padding: 18px;
+  }
+
+  .pilot-criteria-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
