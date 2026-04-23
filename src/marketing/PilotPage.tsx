@@ -142,24 +142,6 @@ function buildMailtoHref(targetEmail: string, form: PilotFormState): string {
   return `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-function PilotSectionIntro({
-  eyebrow,
-  title,
-  body
-}: {
-  eyebrow?: string;
-  title: string;
-  body?: string[];
-}) {
-  return (
-    <div className="ls-section-intro pilot-section-intro">
-      {eyebrow ? <p className="ls-section-eyebrow">{eyebrow}</p> : null}
-      <h2>{title}</h2>
-      {body ? body.map((paragraph) => <p key={paragraph}>{paragraph}</p>) : null}
-    </div>
-  );
-}
-
 function PilotBulletList({ items }: { items: string[] }) {
   return (
     <ul className="pilot-bullet-list">
@@ -314,118 +296,57 @@ export default function PilotPage() {
       </header>
 
       <main>
-        <section id="hero" className="ls-hero section-shell">
+        <section id="hero" className="ls-hero section-shell pilot-hero-shell">
           <div className="ls-hero-panel pilot-hero-panel">
             <div className="ls-hero-copy pilot-hero-copy">
-              <p className="ls-hero-eyebrow">{pilotContent.hero.eyebrow}</p>
-              <h1>{pilotContent.hero.headline}</h1>
-              <p className="ls-hero-kicker pilot-hero-subheadline">{pilotContent.hero.subheadline}</p>
-              {pilotContent.hero.body.map((paragraph) => (
-                <p key={paragraph} className="ls-hero-description">
-                  {paragraph}
-                </p>
-              ))}
-
-              <div className="ls-cta-row">
-                <button type="button" className="ls-btn ls-btn-primary" onClick={() => scrollToSection("apply")}>
-                  {pilotContent.hero.primaryCta}
-                </button>
-                <button type="button" className="ls-btn ls-btn-secondary" onClick={() => scrollToSection("selection")}>
-                  {pilotContent.hero.secondaryCta}
-                </button>
+              <div className="pilot-hero-copy-stack">
+                <p className="ls-hero-eyebrow">{pilotContent.hero.eyebrow}</p>
+                <h1>{pilotContent.hero.headline}</h1>
+                <p className="ls-hero-kicker pilot-hero-subheadline">{pilotContent.hero.subheadline}</p>
               </div>
 
-              <p className="ls-cta-support pilot-selection-note">{pilotContent.hero.supportText}</p>
+              <div className="pilot-hero-lower">
+                <div className="pilot-hero-body">
+                  {pilotContent.hero.body.map((paragraph) => (
+                    <p key={paragraph} className="ls-hero-description">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pilot-hero-action-block">
+                <div className="ls-cta-row">
+                  <button type="button" className="ls-btn ls-btn-primary" onClick={() => scrollToSection("apply")}>
+                    {pilotContent.hero.primaryCta}
+                  </button>
+                  <button type="button" className="ls-btn ls-btn-secondary" onClick={() => scrollToSection("apply")}>
+                    {pilotContent.hero.secondaryCta}
+                  </button>
+                </div>
+
+                <p className="ls-cta-support pilot-selection-note">{pilotContent.hero.supportText}</p>
+              </div>
             </div>
 
-            <aside className="pilot-hero-brief" aria-label="Pilot summary">
-              <p className="ls-card-label">{pilotContent.heroSummary.label}</p>
-              <strong>{pilotContent.heroSummary.proofValue}</strong>
-              <PilotBulletList items={pilotContent.heroSummary.bullets} />
-              <div className="pilot-hero-proof">
-                <span>{pilotContent.heroSummary.proofLabel}</span>
-                <p>
-                  We are looking for one operation with a live constraint, clear stakes, and direct access to the real
-                  process.
-                </p>
+            <aside className="pilot-hero-summary" aria-label="Pilot summary">
+              <div className="pilot-hero-summary-copy">
+                <p className="ls-card-label">{pilotContent.heroSummary.label}</p>
+                <h2 className="pilot-hero-summary-title">{pilotContent.heroSummary.title}</h2>
+                <p className="pilot-hero-summary-intro">{pilotContent.heroSummary.intro}</p>
+                <PilotBulletList items={pilotContent.heroSummary.bullets} />
+              </div>
+
+              <div className="pilot-hero-summary-footer">
+                <p className="pilot-hero-summary-kicker">Good fit requires</p>
+                <p className="pilot-hero-summary-proof">{pilotContent.heroSummary.proofValue}</p>
+                <div className="pilot-hero-summary-tags">
+                  {pilotContent.heroSummary.standards.map((item) => (
+                    <span key={item}>{item}</span>
+                  ))}
+                </div>
               </div>
             </aside>
-          </div>
-        </section>
-
-        <section className="ls-section section-shell">
-          <div className="ls-panel-shell pilot-statement-shell">
-            <PilotSectionIntro title={pilotContent.positioning.title} body={pilotContent.positioning.body} />
-          </div>
-        </section>
-
-        <section id="fit" className="ls-section section-shell">
-          <div className="pilot-dual-grid">
-            <article className="ls-panel-shell pilot-detail-block">
-              <PilotSectionIntro title={pilotContent.fit.title} />
-              <p className="pilot-section-lead">{pilotContent.fit.intro}</p>
-              <PilotBulletList items={pilotContent.fit.bullets} />
-            </article>
-
-            <article className="ls-panel-shell pilot-detail-block">
-              <PilotSectionIntro title={pilotContent.notFit.title} />
-              <p className="pilot-section-lead">{pilotContent.notFit.intro}</p>
-              <PilotBulletList items={pilotContent.notFit.bullets} />
-            </article>
-          </div>
-        </section>
-
-        <section className="ls-section section-shell">
-          <div className="pilot-dual-grid">
-            <article className="ls-panel-shell pilot-detail-block">
-              <PilotSectionIntro title={pilotContent.receive.title} />
-              <PilotBulletList items={pilotContent.receive.bullets} />
-              <p className="pilot-support-copy">{pilotContent.receive.support}</p>
-            </article>
-
-            <article className="ls-panel-shell pilot-detail-block">
-              <PilotSectionIntro title={pilotContent.participation.title} />
-              <PilotBulletList items={pilotContent.participation.bullets} />
-              <p className="pilot-support-copy">{pilotContent.participation.support}</p>
-            </article>
-          </div>
-        </section>
-
-        <section id="selection" className="ls-section section-shell">
-          <div className="ls-panel-shell pilot-criteria-shell">
-            <PilotSectionIntro title={pilotContent.selection.title} />
-            <div className="pilot-criteria-list">
-              {pilotContent.selection.criteria.map((criterion, index) => (
-                <article key={criterion.title} className="pilot-criteria-row">
-                  <p className="ls-step-index">{String(index + 1).padStart(2, "0")}</p>
-                  <div>
-                    <h3>{criterion.title}</h3>
-                    <p>{criterion.body}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="ls-section section-shell">
-          <div className="ls-contact-band pilot-why-band">
-            <div className="ls-contact-copy">
-              <p className="ls-section-eyebrow">Why we are offering it</p>
-              <h2>{pilotContent.why.title}</h2>
-              {pilotContent.why.body.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </div>
-
-            <div className="pilot-side-callout">
-              <p className="ls-card-label">Pilot exchange</p>
-              <h3>One live operation. One modeled readout. Direct product feedback.</h3>
-              <p>
-                This only works if the selected team is willing to tell us where the model sharpened the decision and
-                where it still needs work.
-              </p>
-            </div>
           </div>
         </section>
 
@@ -434,6 +355,11 @@ export default function PilotPage() {
             <div className="ls-contact-copy pilot-form-copy">
               <p className="ls-section-eyebrow">Apply for the pilot</p>
               <h2>{pilotContent.application.title}</h2>
+              <div className="pilot-form-why-copy">
+                <h2 className="pilot-form-why-title">{pilotContent.why.title}</h2>
+                <p>{`${pilotContent.why.body[0]} ${pilotContent.why.body[1]}`}</p>
+                <p>{pilotContent.why.body[2]}</p>
+              </div>
               {pilotContent.application.body.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
@@ -472,11 +398,7 @@ export default function PilotPage() {
                       >
                         <span className="ls-field-label">{field.label}</span>
                         {field.rows ? (
-                          <textarea
-                            {...commonProps}
-                            rows={field.rows}
-                            placeholder={field.placeholder}
-                          />
+                          <textarea {...commonProps} rows={field.rows} placeholder={field.placeholder} />
                         ) : (
                           <input
                             {...commonProps}
@@ -491,7 +413,7 @@ export default function PilotPage() {
                           </span>
                         ) : null}
                         {error ? (
-                          <span id={errorId} className="ls-field-error">
+                          <span id={errorId} className="ls-field-error" role="alert">
                             {error}
                           </span>
                         ) : null}
@@ -500,16 +422,9 @@ export default function PilotPage() {
                   })}
                 </div>
 
-                <div className="ls-intake-actions">
-                  <button type="submit" className="ls-btn ls-btn-primary" disabled={submissionState.kind === "submitting"}>
-                    {submissionState.kind === "submitting"
-                      ? "Submitting application..."
-                      : pilotContent.application.cta}
-                  </button>
-                  <button type="button" className="ls-btn ls-btn-secondary" onClick={() => scrollToSection("selection")}>
-                    Review selection criteria
-                  </button>
-                </div>
+                <button type="submit" className="ls-btn ls-btn-primary" disabled={submissionState.kind === "submitting"}>
+                  {submissionState.kind === "submitting" ? "Submitting..." : pilotContent.application.cta}
+                </button>
 
                 <p className="pilot-form-footnote">{pilotContent.application.footnote}</p>
 
@@ -528,20 +443,18 @@ export default function PilotPage() {
                       <strong>{pilotContent.application.successHeadline}</strong>
                       <p>{submissionState.message}</p>
                     </>
-                  ) : (
-                    <p>
-                      {submissionState.kind === "idle"
-                        ? "We will review submissions for fit, urgency, and feedback value."
-                        : submissionState.kind === "submitting"
-                          ? "Submitting application..."
-                          : submissionState.message}
-                    </p>
-                  )}
+                  ) : submissionState.kind === "error" ? (
+                    <>
+                      <strong>Unable to submit</strong>
+                      <p>{submissionState.message}</p>
+                    </>
+                  ) : null}
                 </div>
               </form>
             </div>
           </div>
         </section>
+
       </main>
 
       <footer className="ls-footer section-shell">

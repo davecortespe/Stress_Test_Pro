@@ -3,11 +3,6 @@ export interface PilotNavItem {
   label: string;
 }
 
-export interface PilotCriteria {
-  title: string;
-  body: string;
-}
-
 export interface PilotFormFieldDefinition {
   id: string;
   label: string;
@@ -19,109 +14,21 @@ export interface PilotFormFieldDefinition {
 
 export const pilotContent = {
   nav: [
-    { id: "fit", label: "Fit" },
-    { id: "selection", label: "Selection" },
     { id: "apply", label: "Apply" }
   ] satisfies PilotNavItem[],
 
   hero: {
-    eyebrow: "FlowStress Dynamics Pilot",
-    headline: "We are selecting 1 operation for a free pilot simulation.",
+    eyebrow: "This month only",
+    headline: "This month, we're opening 1 complimentary FlowStress Dynamics pilot.",
     subheadline:
-      "Turn your current-state value stream into a working operational model that shows where flow is breaking, what it is costing, and what to change first.",
+      "For one team with a real bottleneck, clear business stakes, and direct access to the process.",
     body: [
-      "FlowStress Dynamics converts a real process into a simulation-backed operational readout.",
-      "The selected team gets one free process simulation. In return, we get direct feedback from the people closest to the work so we can improve the product in real operating conditions."
+      "We'll turn your current-state value stream into a working simulation that shows where flow is breaking, what it is costing, and what to change first.",
+      "The selected team receives a simulation-backed operational readout built from the real process, not a static map review."
     ],
-    primaryCta: "Apply for the pilot",
-    secondaryCta: "See how selection works",
-    supportText: "Not all applications will be selected."
-  },
-
-  positioning: {
-    title: "This is a field pilot, not a giveaway.",
-    body: [
-      "We are selecting one team with a real operational problem, real process access, and a real need for decision clarity.",
-      "This pilot is designed to test where simulation creates value fastest: exposing the real constraint, separating delay from work, and helping teams focus on the first change most likely to stabilize output."
-    ]
-  },
-
-  fit: {
-    title: "Best fit for teams dealing with visible operational drag",
-    intro: "Apply if your operation is dealing with issues like:",
-    bullets: [
-      "backlog that keeps coming back",
-      "unstable lead times",
-      "chronic bottlenecks",
-      "firefighting and expediting",
-      "too much labor for too little output",
-      "handoff failures, queue buildup, or hidden waste",
-      "a value stream map that shows the steps but not the behavior"
-    ]
-  },
-
-  receive: {
-    title: "What you receive",
-    bullets: [
-      "One free simulation of a real process",
-      "A plain-English diagnosis of where the system is breaking",
-      "Constraint analysis across the flow",
-      "Readout on delay, throughput, and operational impact",
-      "Initial guidance on what to change first",
-      "A review session with your team"
-    ],
-    support: "This is not a static map review. It is a working model built to support an operational decision."
-  },
-
-  participation: {
-    title: "What participation requires",
-    bullets: [
-      "A real current-state process or value stream",
-      "Access to someone who understands how the work actually runs",
-      "Willingness to answer follow-up questions",
-      "Willingness to review the output and give direct feedback"
-    ],
-    support:
-      "We are looking for input from operators, supervisors, engineers, planners, and improvement leads who can speak to the operation as it really behaves, not just how it is documented."
-  },
-
-  selection: {
-    title: "How we select",
-    criteria: [
-      {
-        title: "Problem severity",
-        body:
-          "The issue is already hurting throughput, lead time, labor efficiency, service, quality, or margin."
-      },
-      {
-        title: "Problem clarity",
-        body: "You can describe what is breaking and where the pain shows up."
-      },
-      {
-        title: "Access to the real process",
-        body: "You are close enough to the work to provide usable inputs."
-      },
-      {
-        title: "Urgency",
-        body: "If nothing changes in the next 90 days, the consequences matter."
-      },
-      {
-        title: "Feedback value",
-        body: "You are willing to tell us what helped, what missed, and what needs to improve."
-      }
-    ] satisfies PilotCriteria[]
-  },
-
-  notFit: {
-    title: "This pilot is not for everyone",
-    intro: "This is probably not a fit if:",
-    bullets: [
-      "the problem is still vague",
-      "there is no visible business impact yet",
-      "you cannot share the real process",
-      "you are only browsing with no active operational priority",
-      "no one involved can validate how the work actually behaves"
-    ]
+    primaryCta: "Apply for consideration",
+    secondaryCta: "Read why",
+    supportText: "One operation will be selected for this pilot cycle."
   },
 
   why: {
@@ -137,7 +44,8 @@ export const pilotContent = {
     title: "Apply for the pilot",
     body: [
       "Tell us enough to judge fit quickly.",
-      "We are prioritizing operations with a real bottleneck, visible business impact, and a reason to act now."
+      "We are prioritizing operations with a real bottleneck, visible business impact, and a reason to act now.",
+      "If the process is messy but real, that is fine. We just need enough detail to tell whether the pilot can produce a useful readout fast."
     ],
     cta: "Apply for the free pilot simulation",
     supportText: "Not all applications will be selected.",
@@ -179,14 +87,20 @@ export const pilotContent = {
   },
 
   heroSummary: {
-    label: "Selected team receives",
+    label: "Includes",
+    title: "One live operation. One decision-ready readout.",
+    intro:
+      "We model the real flow, expose the constraint, and make the first useful change easier to see before more time gets burned in the wrong place.",
     bullets: [
       "One real process simulation",
       "Constraint and delay diagnosis",
-      "Operational impact readout",
-      "Guidance on what to change first"
+      "Operational impact readout"
     ],
-    proofLabel: "Pilot standard",
-    proofValue: "Serious applications only"
+    standards: [
+      "Live operational constraint",
+      "Clear business stakes",
+      "Direct access to the real process"
+    ],
+    proofValue: "Serious applications only."
   }
 };
